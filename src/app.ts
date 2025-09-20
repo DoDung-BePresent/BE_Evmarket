@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
  */
 import logger from "@/libs/logger";
 import config from "@/configs/env.config";
+import { setupSwagger } from "@/libs/swagger";
 import limiter from "@/libs/express-rate-limit";
 import { errorHandler, notFoundHandler } from "@/middlewares/error.middleware";
 
@@ -66,6 +67,9 @@ app.use(
   }),
 );
 app.use(limiter);
+
+// Setup Swagger
+setupSwagger(app);
 
 app.use("/api/v1", v1Routes);
 

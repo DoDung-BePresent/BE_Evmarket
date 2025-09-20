@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output = "erd"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ENUMS
+enum UserRole {
+  MEMBER
+  ADMIN
+}
+
+enum AccountType {
+  OAUTH
+  CREDENTIALS
+}
+
+enum Provider {
+  GOOGLE
+  CREDENTIALS
+}
+
+// MODELS
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  name            String?
+  avatar          String?
+  role            UserRole      @default(MEMBER)
+  isVerified      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  accounts    Account[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              AccountType
+  provider          Provider
+  providerAccountId String
+
+  password        String
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}

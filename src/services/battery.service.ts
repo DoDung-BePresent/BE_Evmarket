@@ -67,7 +67,7 @@ export const batteryService = {
     const totalResults = await prisma.battery.count({ where: filter });
 
     return {
-      results: batteries,
+      batteries,
       page,
       limit,
       totalPages: Math.ceil(totalResults / limit),

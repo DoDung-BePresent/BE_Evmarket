@@ -77,7 +77,7 @@ export const vehicleService = {
     const totalResults = await prisma.vehicle.count({ where: filter });
 
     return {
-      results: vehicles,
+      vehicles,
       page,
       limit,
       totalPages: Math.ceil(totalResults / limit),

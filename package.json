@@ -7,13 +7,19 @@
     "start": "node dist/server.js",
     "build": "tsc && tsc-alias",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
+    "seed:users": "ts-node -r tsconfig-paths/register prisma/seeds/users.seed.ts",
+    "seed:vehicles": "ts-node -r tsconfig-paths/register prisma/seeds/vehicles.seed.ts",
+    "seed:batteries": "ts-node -r tsconfig-paths/register prisma/seeds/batteries.seed.ts",
+    "db:reset": "npx prisma migrate reset --force && npm run seed"
   },
   "keywords": [],
   "author": "DoQuangDung",
   "license": "MIT",
   "description": "",
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",

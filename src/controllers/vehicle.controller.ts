@@ -41,7 +41,7 @@ export const vehicleController = {
     const result = await vehicleService.queryVehicles(filter, options);
     res.status(STATUS_CODE.OK).json({
       message: "Vehicles fetched successfully",
-      data: { result },
+      data: result,
     });
   }),
   getVehicle: asyncHandler(async (req, res) => {

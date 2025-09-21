@@ -21,7 +21,7 @@ export const batteryController = {
     const result = await batteryService.queryBatteries(filter, options);
     res.status(STATUS_CODE.OK).json({
       message: "Batteries fetched successfully",
-      data: { result },
+      data: result,
     });
   }),
   getBattery: asyncHandler(async (req, res) => {

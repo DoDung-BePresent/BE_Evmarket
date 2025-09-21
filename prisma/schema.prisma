@@ -29,6 +29,12 @@ enum Provider {
   CREDENTIALS
 }
 
+enum ListingStatus {
+  AVAILABLE
+  SOLD
+  DELISTED
+}
+
 // MODELS
 model User {
   id              String        @id @default(cuid())
@@ -41,7 +47,9 @@ model User {
   updatedAt       DateTime      @updatedAt
 
   // Relations
-  accounts    Account[]
+  accounts        Account[]
+  vehicles        Vehicle[]
+  batteries       Battery[]
 }
 
 model Account {
@@ -51,7 +59,7 @@ model Account {
   provider          Provider
   providerAccountId String
 
-  password        String
+  password          String
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -59,4 +67,49 @@ model Account {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+}
+
+model Vehicle {
+  id              String   @id  @default(cuid())
+  title           String
+  description     String
+  price           Float
+  images          String[]      @default([])
+  status          ListingStatus @default(AVAILABLE)
+
+  // Vehicle specific details
+  brand           String
+  model           String
+  year            Int
+  mileage         Int // in kilometers
+
+  isVerified      Boolean       @default(false) // Verified by Admin
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  sellerId        String
+  seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+model Battery {
+  id              String        @id @default(cuid())
+  title           String
+  description     String
+  price           Float
+  images          String[]      @default([])
+  status          ListingStatus @default(AVAILABLE)
+
+  // Battery specific details
+  brand           String
+  capacity        Float // in kWh
+  health          Float? // in percentage
+
+  isVerified      Boolean       @default(false) // Verified by Admin
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  sellerId        String
+  seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 }

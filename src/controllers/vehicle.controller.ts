@@ -34,7 +34,7 @@ export const vehicleController = {
     });
   }),
   getVehicles: asyncHandler(async (req, res) => {
-    const query = req.query as unknown as GetVehiclesQuery;
+    const query = req.validated?.query as GetVehiclesQuery;
 
     const filter = pick(query, ["brand"]);
     const options = pick(query, ["sortBy", "limit", "page"]);

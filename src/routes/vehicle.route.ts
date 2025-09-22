@@ -36,30 +36,7 @@ const vehicleRouter = Router();
  *       content:
  *         multipart/form-data:
  *           schema:
- *             type: object
- *             required: [title, description, price, brand, model, year, mileage, images]
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               brand:
- *                 type: string
- *               model:
- *                 type: string
- *               year:
- *                 type: integer
- *               mileage:
- *                 type: integer
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 maxItems: 5
- *                 description: Up to 5 images
+ *             $ref: '#/components/schemas/VehicleBody'
  *     responses:
  *       201:
  *         description: Vehicle listing created successfully
@@ -111,6 +88,10 @@ vehicleRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VehicleListResponse'
  */
 vehicleRouter.get(
   "/",
@@ -135,6 +116,10 @@ vehicleRouter.get(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Vehicle'
  *       404:
  *         description: Vehicle not found
  */

@@ -36,28 +36,7 @@ const batteryRouter = Router();
  *       content:
  *         multipart/form-data:
  *           schema:
- *             type: object
- *             required: [title, description, price, brand, capacity, images]
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               brand:
- *                 type: string
- *               capacity:
- *                 type: number
- *               health:
- *                 type: number
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 maxItems: 5
- *                 description: Up to 5 images
+ *             $ref: '#/components/schemas/BatteryBody'
  *     responses:
  *       201:
  *         description: Battery listing created successfully
@@ -109,6 +88,10 @@ batteryRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BatteryListResponse'
  */
 batteryRouter.get(
   "/",
@@ -133,6 +116,10 @@ batteryRouter.get(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Battery'
  *       404:
  *         description: Battery not found
  */

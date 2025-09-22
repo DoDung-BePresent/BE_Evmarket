@@ -1,4 +1,4 @@
-import type { User as PrismaUser } from '@prisma/client';
+import type { User as PrismaUser } from "@prisma/client";
 
 declare global {
   namespace Express {
@@ -9,6 +9,16 @@ declare global {
     interface Request {
       authInfo?: AuthInfo | undefined;
       user?: User | undefined;
+      /**
+       * Holds the validated and transformed data from the `validate` middleware.
+       * This object contains `body`, `query`, and `params` properties after
+       * being processed by Zod.
+       */
+      validated?: {
+        body?: any;
+        query?: any;
+        params?: any;
+      };
     }
   }
 }

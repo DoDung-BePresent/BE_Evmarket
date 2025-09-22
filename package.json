@@ -8,11 +8,13 @@
     "build": "tsc && tsc-alias",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
-    "seed:users": "ts-node -r tsconfig-paths/register prisma/seeds/users.seed.ts",
-    "seed:vehicles": "ts-node -r tsconfig-paths/register prisma/seeds/vehicles.seed.ts",
-    "seed:batteries": "ts-node -r tsconfig-paths/register prisma/seeds/batteries.seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npm run seed"
+    "seed": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
+    "seed:staging": "dotenv -e .env.staging -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
+    "seed:users": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/users.seed.ts",
+    "seed:vehicles": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/vehicles.seed.ts",
+    "seed:batteries": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/batteries.seed.ts",
+    "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed",
+    "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging"
   },
   "keywords": [],
   "author": "DoQuangDung",

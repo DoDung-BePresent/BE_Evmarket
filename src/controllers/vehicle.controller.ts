@@ -27,7 +27,11 @@ export const vehicleController = {
   createVehicle: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const files = req.files as Express.Multer.File[];
-    const vehicle = await vehicleService.createVehicle(userId, req.body, files);
+    const vehicle = await vehicleService.createVehicle(
+      userId,
+      req.validated?.body,
+      files,
+    );
     res.status(STATUS_CODE.CREATED).json({
       message: "Vehicle created successfully",
       data: { vehicle },
@@ -45,7 +49,9 @@ export const vehicleController = {
     });
   }),
   getVehicle: asyncHandler(async (req, res) => {
-    const vehicle = await vehicleService.getVehicleById(req.params.vehicleId);
+    const vehicle = await vehicleService.getVehicleById(
+      req.validated?.params.vehicleId,
+    );
     res.status(STATUS_CODE.OK).json({
       message: "Vehicle fetched successfully",
       data: { vehicle },

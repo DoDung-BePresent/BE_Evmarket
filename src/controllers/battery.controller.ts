@@ -8,7 +8,11 @@ export const batteryController = {
   createBattery: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const files = req.files as Express.Multer.File[];
-    const battery = await batteryService.createBattery(userId, req.body, files);
+    const battery = await batteryService.createBattery(
+      userId,
+      req.validated?.body,
+      files,
+    );
     res.status(STATUS_CODE.CREATED).json({
       message: "Battery created successfully",
       data: { battery },
@@ -26,7 +30,9 @@ export const batteryController = {
     });
   }),
   getBattery: asyncHandler(async (req, res) => {
-    const battery = await batteryService.getBatteryById(req.params.batteryId);
+    const battery = await batteryService.getBatteryById(
+      req.validated?.params.batteryId,
+    );
     res.status(STATUS_CODE.OK).json({
       message: "Battery fetched successfully",
       data: { battery },

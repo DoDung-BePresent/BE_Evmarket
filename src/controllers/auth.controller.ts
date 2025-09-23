@@ -1,51 +1,51 @@
 /**
  * Constants
  */
-import { STATUS_CODE } from '@/constants/error.constant';
+import { STATUS_CODE } from "@/constants/error.constant";
 
 /**
  * Configs
  */
-import config from '@/configs/env.config';
+import config from "@/configs/env.config";
 
 /**
  * Middlewares
  */
-import { asyncHandler } from '@/middlewares/error.middleware';
+import { asyncHandler } from "@/middlewares/error.middleware";
 
 /**
  * Services
  */
-import { authService } from '@/services/auth.service';
+import { authService } from "@/services/auth.service";
 
 /**
  * Libs
  */
-import prisma from '@/libs/prisma';
-import { UnauthorizedError } from '@/libs/error';
+import prisma from "@/libs/prisma";
+import { UnauthorizedError } from "@/libs/error";
 import {
   clearTokenCookie,
   generateTokens,
   setTokenCookie,
   verifyToken,
-} from '@/libs/jwt';
+} from "@/libs/jwt";
 
 // TODO: Remove validations in this controller!
 export const authController = {
   register: asyncHandler(async (req, res) => {
-    const user = await authService.register(req.body);
+    const user = await authService.register(req.validated?.body);
 
     const { accessToken, refreshToken } = generateTokens(user.id);
 
     setTokenCookie(
       res,
-      'refreshToken',
+      "refreshToken",
       refreshToken,
-      '/api/v1/auth/refresh-token',
+      "/api/v1/auth/refresh-token",
     );
 
     res.status(STATUS_CODE.CREATED).json({
-      message: 'User created successfully',
+      message: "User created successfully",
       data: {
         user,
         accessToken,
@@ -53,19 +53,19 @@ export const authController = {
     });
   }),
   login: asyncHandler(async (req, res) => {
-    const user = await authService.login(req.body);
+    const user = await authService.login(req.validated?.body);
 
     const { accessToken, refreshToken } = generateTokens(user.id);
 
     setTokenCookie(
       res,
-      'refreshToken',
+      "refreshToken",
       refreshToken,
-      '/api/v1/auth/refresh-token',
+      "/api/v1/auth/refresh-token",
     );
 
     res.status(STATUS_CODE.OK).json({
-      message: 'Login successfully',
+      message: "Login successfully",
       data: {
         user,
         accessToken,
@@ -73,15 +73,15 @@ export const authController = {
     });
   }),
   logout: asyncHandler(async (_req, res) => {
-    clearTokenCookie(res, 'refreshToken', '/api/v1/auth/refresh-token');
+    clearTokenCookie(res, "refreshToken", "/api/v1/auth/refresh-token");
     res.status(STATUS_CODE.OK).json({
-      message: 'Logged out successfully',
+      message: "Logged out successfully",
     });
   }),
   refreshToken: asyncHandler(async (req, res) => {
     const refreshTokenFromCookie = req.cookies.refreshToken;
     if (!refreshTokenFromCookie) {
-      throw new UnauthorizedError('Refresh token not found');
+      throw new UnauthorizedError("Refresh token not found");
     }
 
     const decoded = verifyToken(
@@ -94,7 +94,7 @@ export const authController = {
     });
 
     if (!userExists) {
-      throw new UnauthorizedError('User for this token no longer exists');
+      throw new UnauthorizedError("User for this token no longer exists");
     }
 
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(
@@ -103,13 +103,13 @@ export const authController = {
 
     setTokenCookie(
       res,
-      'refreshToken',
+      "refreshToken",
       newRefreshToken,
-      '/api/v1/auth/refresh-token',
+      "/api/v1/auth/refresh-token",
     );
 
     res.status(STATUS_CODE.OK).json({
-      message: 'Token refreshed successfully',
+      message: "Token refreshed successfully",
       data: {
         accessToken,
       },

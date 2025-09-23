@@ -3,46 +3,15 @@
  */
 import z from "zod";
 
-/**
- * @openapi
- * components:
- *   schemas:
- *     RegisterBody:
- *       type: object
- *       required:
- *         - email
- *         - password
- *       properties:
- *         email:
- *           type: string
- *           format: email
- *           description: User's email address
- *           example: johndoe@example.com
- *         password:
- *           type: string
- *           format: password
- *           description: User's password (min 8 characters)
- *           example: password123
- *     LoginBody:
- *       type: object
- *       required:
- *         - email
- *         - password
- *       properties:
- *         email:
- *           type: string
- *           format: email
- *           description: User's email address
- *           example: johndoe@example.com
- *         password:
- *           type: string
- *           format: password
- *           description: User's password
- *           example: password123
- */
 export const authValidation = {
   register: z.object({
     body: z.object({
+      name: z
+        .string()
+        .trim()
+        .nonempty()
+        .min(2, "Minimum 2 characters")
+        .max(50, "Maximum 50 characters"),
       email: z
         .string()
         .trim()
@@ -73,3 +42,8 @@ export const authValidation = {
     }),
   }),
 };
+
+export type RegisterPayload = z.infer<
+  typeof authValidation.register.shape.body
+>;
+export type LoginPayload = z.infer<typeof authValidation.login.shape.body>;

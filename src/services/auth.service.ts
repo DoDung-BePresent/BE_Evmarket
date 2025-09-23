@@ -9,14 +9,11 @@ import { BadRequestError, ConflictError } from "@/libs/error";
  * Constants
  */
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
-
-/**
- * Types
- */
-type CredentialPayload = { email: string; password: string };
+import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
 
 export const authService = {
-  register: async ({ email, password }: CredentialPayload) => {
+  // TODO: Apply verify email
+  register: async ({ email, password, name }: RegisterPayload) => {
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -29,7 +26,6 @@ export const authService = {
     }
 
     const hashedPassword = await hashPassword(password);
-    const name = email.split("@")[0];
 
     const user = await prisma.user.create({
       data: {
@@ -55,7 +51,7 @@ export const authService = {
     });
     return user;
   },
-  login: async ({ email, password }: CredentialPayload) => {
+  login: async ({ email, password }: LoginPayload) => {
     const existingUser = await prisma.user.findUnique({
       where: { email },
       include: {

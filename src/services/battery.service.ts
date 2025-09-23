@@ -20,7 +20,7 @@ export const batteryService = {
     if (!files || files.length === 0) {
       throw new BadRequestError("At least one image is required");
     }
-
+    // TODO: Resize images
     const imageUrls: string[] = [];
     const uploadPromises = files.map(async (file) => {
       const fileName = `${userId}/${Date.now()}-${file.originalname}`;

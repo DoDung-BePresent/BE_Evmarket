@@ -3,109 +3,6 @@
  */
 import z from "zod";
 
-/**
- * @openapi
- * components:
- *   schemas:
- *     VehicleBody:
- *       type: object
- *       required:
- *         - title
- *         - description
- *         - price
- *         - brand
- *         - model
- *         - year
- *         - mileage
- *       properties:
- *         title:
- *           type: string
- *           description: Vehicle listing title
- *           example: "2023 Tesla Model S"
- *         description:
- *           type: string
- *           description: Detailed description of the vehicle
- *           example: "Tesla Model S, 2023, excellent condition, low mileage, full options."
- *         price:
- *           type: number
- *           description: Listing price in USD
- *           example: 120000
- *         brand:
- *           type: string
- *           description: Vehicle brand
- *           example: "Tesla"
- *         model:
- *           type: string
- *           description: Vehicle model
- *           example: "Model S"
- *         year:
- *           type: integer
- *           description: Year of manufacture
- *           example: 2023
- *         mileage:
- *           type: integer
- *           description: Mileage in kilometers
- *           example: 15000
- *     Vehicle:
- *       allOf:
- *         - $ref: '#/components/schemas/VehicleBody'
- *         - type: object
- *           properties:
- *             id:
- *               type: string
- *               example: "clx123abc456def789"
- *             images:
- *               type: array
- *               items:
- *                 type: string
- *                 format: uri
- *               example: ["https://placehold.co/600x400?text=vehicle_1", "https://placehold.co/600x400?text=vehicle_2"]
- *             status:
- *               type: string
- *               enum: [AVAILABLE, SOLD, DELISTED]
- *               example: "AVAILABLE"
- *             isVerified:
- *               type: boolean
- *               example: true
- *             createdAt:
- *               type: string
- *               format: date-time
- *             updatedAt:
- *               type: string
- *               format: date-time
- *             seller:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                   example: "clx987zyx654cba321"
- *                 name:
- *                   type: string
- *                   example: "John Doe"
- *                 avatar:
- *                   type: string
- *                   format: uri
- *                   example: "https://i.pravatar.cc/150"
- *     VehicleListResponse:
- *       type: object
- *       properties:
- *         vehicles:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/Vehicle'
- *         page:
- *           type: integer
- *           example: 1
- *         limit:
- *           type: integer
- *           example: 10
- *         totalPages:
- *           type: integer
- *           example: 5
- *         totalResults:
- *           type: integer
- *           example: 48
- */
 export const vehicleValidation = {
   createVehicle: z.object({
     body: z.object({
@@ -120,6 +17,53 @@ export const vehicleValidation = {
         .min(1990)
         .max(new Date().getFullYear() + 1),
       mileage: z.coerce.number().int().min(0),
+      specifications: z
+        .preprocess(
+          (val) => {
+            if (typeof val === "string") {
+              try {
+                return JSON.parse(val);
+              } catch (error) {
+                return val; // Return original value to fail validation
+              }
+            }
+            return val;
+          },
+          z.object({
+            performance: z
+              .object({
+                topSpeed: z.string().optional(),
+                acceleration: z.string().optional(),
+                motorType: z.string().optional(),
+                horsepower: z.string().optional(),
+              })
+              .optional(),
+            dimensions: z
+              .object({
+                length: z.string().optional(),
+                width: z.string().optional(),
+                height: z.string().optional(),
+                curbWeight: z.string().optional(),
+              })
+              .optional(),
+            batteryAndCharging: z
+              .object({
+                batteryCapacity: z.string().optional(),
+                range: z.string().optional(),
+                chargingSpeed: z.string().optional(),
+                chargeTime: z.string().optional(),
+              })
+              .optional(),
+            warranty: z
+              .object({
+                basic: z.string().optional(),
+                battery: z.string().optional(),
+                drivetrain: z.string().optional(),
+              })
+              .optional(),
+          }),
+        )
+        .optional(),
     }),
   }),
   getVehicles: z.object({

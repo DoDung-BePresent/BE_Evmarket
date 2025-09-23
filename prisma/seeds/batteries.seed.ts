@@ -69,6 +69,16 @@ const createBatteries = async (count: number = 15) => {
       brand,
       capacity,
       health: faker.datatype.boolean(0.8) ? health : null, // 80% chance of having health data
+      specifications: {
+        weight: `${faker.number.int({ min: 400, max: 700 })}kg`,
+        voltage: `${faker.number.int({ min: 300, max: 450 })}V`,
+        warrantyPeriod: `${faker.number.int({ min: 1, max: 5 })} years remaining`,
+        chargingTime: `${faker.number.int({ min: 30, max: 90 })} minutes (0-80%)`,
+        chemistry: faker.helpers.arrayElement(["NCA", "NMC", "LFP"]),
+        temperatureRange: "-20°C to 60°C",
+        degradation: `${100 - health}% (${health}% capacity)`,
+        installation: "Professional required",
+      },
       isVerified: faker.datatype.boolean(0.6), // 60% chance of being verified
       sellerId: randomSeller.id,
     };

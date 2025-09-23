@@ -73,6 +73,35 @@ const createVehicles = async (count: number = 20) => {
       model,
       year,
       mileage,
+      specifications: {
+        performance: {
+          topSpeed: `${faker.number.int({ min: 120, max: 180 })} mph`,
+          acceleration: `${faker.number.float({ min: 2.5, max: 8, multipleOf: 0.1 })} seconds (0-60 mph)`,
+          motorType: faker.helpers.arrayElement([
+            "Single Motor RWD",
+            "Dual Motor AWD",
+            "Tri-Motor AWD",
+          ]),
+          horsepower: `${faker.number.int({ min: 250, max: 1000 })} hp`,
+        },
+        dimensions: {
+          length: `${faker.number.float({ min: 170, max: 200, multipleOf: 0.1 })} in`,
+          width: `${faker.number.float({ min: 70, max: 80, multipleOf: 0.1 })} in`,
+          height: `${faker.number.float({ min: 55, max: 70, multipleOf: 0.1 })} in`,
+          curbWeight: `${faker.number.int({ min: 3500, max: 5500 })} lbs`,
+        },
+        batteryAndCharging: {
+          batteryCapacity: `${faker.number.int({ min: 60, max: 120 })} kWh`,
+          range: `${faker.number.int({ min: 250, max: 450 })} miles (EPA)`,
+          chargingSpeed: `${faker.number.int({ min: 150, max: 350 })} kW`,
+          chargeTime: `${faker.number.int({ min: 20, max: 45 })} minutes (10-80%)`,
+        },
+        warranty: {
+          basic: "4 years / 50,000 miles",
+          battery: "8 years / 120,000 miles",
+          drivetrain: "8 years / 120,000 miles",
+        },
+      },
       isVerified: faker.datatype.boolean(0.7), // 70% chance of being verified
       sellerId: randomSeller.id,
     };

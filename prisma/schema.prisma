@@ -82,6 +82,7 @@ model Vehicle {
   model           String
   year            Int
   mileage         Int // in kilometers
+  specifications  Json?
 
   isVerified      Boolean       @default(false) // Verified by Admin
   createdAt       DateTime      @default(now())
@@ -104,6 +105,7 @@ model Battery {
   brand           String
   capacity        Float // in kWh
   health          Float? // in percentage
+  specifications  Json?
 
   isVerified      Boolean       @default(false) // Verified by Admin
   createdAt       DateTime      @default(now())

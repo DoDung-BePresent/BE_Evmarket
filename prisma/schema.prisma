@@ -104,6 +104,7 @@ model Battery {
   // Battery specific details
   brand           String
   capacity        Float // in kWh
+  year            Int
   health          Float? // in percentage
   specifications  Json?
 

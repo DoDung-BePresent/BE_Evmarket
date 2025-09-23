@@ -52,6 +52,7 @@ const createBatteries = async (count: number = 15) => {
 
   for (let i = 0; i < count; i++) {
     const brand = faker.helpers.arrayElement(batteryBrands);
+    const year = faker.number.int({ min: 2015, max: 2024 });
     const capacity = faker.number.float({ min: 40, max: 120, multipleOf: 5 });
     const health = faker.number.float({ min: 70, max: 100, multipleOf: 1 });
     const randomSeller = faker.helpers.arrayElement(users);
@@ -68,6 +69,7 @@ const createBatteries = async (count: number = 15) => {
       ]) as any,
       brand,
       capacity,
+      year,
       health: faker.datatype.boolean(0.8) ? health : null, // 80% chance of having health data
       specifications: {
         weight: `${faker.number.int({ min: 400, max: 700 })}kg`,

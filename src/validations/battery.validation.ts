@@ -10,6 +10,11 @@ export const batteryValidation = {
       description: z.string().min(20).max(5000),
       price: z.coerce.number().positive(),
       brand: z.string().min(2),
+      year: z.coerce
+        .number()
+        .int()
+        .min(1990)
+        .max(new Date().getFullYear() + 1),
       capacity: z.coerce.number().positive(),
       health: z.coerce.number().min(0).max(100).optional(),
       specifications: z

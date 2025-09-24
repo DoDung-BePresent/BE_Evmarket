@@ -35,6 +35,12 @@ enum ListingStatus {
   DELISTED
 }
 
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
 // MODELS
 model User {
   id              String        @id @default(cuid())
@@ -50,6 +56,8 @@ model User {
   accounts        Account[]
   vehicles        Vehicle[]
   batteries       Battery[]
+  transactions    Transaction[]
+  reviews         Review[]
 }
 
 model Account {
@@ -91,6 +99,7 @@ model Vehicle {
   // Relations
   sellerId        String
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
 }
 
 model Battery {
@@ -115,4 +124,46 @@ model Battery {
   // Relations
   sellerId        String
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  buyerId   String
+  buyer     User     @relation(fields: [buyerId], references: [id])
+  status    TransactionStatus @default(PENDING)
+
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  batteryId String?
+  battery   Battery? @relation(fields: [batteryId], references: [id])
+
+  review    Review? // A transaction can have one review
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([vehicleId])
+  @@index([batteryId])
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  rating        Int // 1 to 5
+  comment       String?
+  mediaUrls     String[] @default([])
+  hasBeenEdited Boolean  @default(false)
+
+  transactionId String   @unique // Each transaction can only have one review
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  reviewerId    String
+  reviewer      User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([reviewerId])
 }

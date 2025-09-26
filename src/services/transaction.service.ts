@@ -19,14 +19,14 @@ export const transactionService = {
         where: { id: vehicleId },
       });
       if (!vehicle) throw new NotFoundError("Vehicle not found");
-    //   sellerId = vehicle.sellerId;
+      //   sellerId = vehicle.sellerId;
     }
     if (batteryId) {
       const battery = await prisma.battery.findUnique({
         where: { id: batteryId },
       });
       if (!battery) throw new NotFoundError("Battery not found");
-    //   sellerId = battery.sellerId;
+      //   sellerId = battery.sellerId;
     }
     const transaction = await prisma.transaction.create({
       data: {
@@ -52,6 +52,17 @@ export const transactionService = {
         vehicle: true,
         battery: true,
         review: true,
+      },
+    });
+  },
+  getCompletedTransactions: async () => {
+    return prisma.transaction.findMany({
+      where: { status: "COMPLETED" },
+      include: {
+        vehicle: { select: { id: true, title: true, sellerId: true } },
+        battery: { select: { id: true, title: true, sellerId: true } },
+        buyer: { select: { id: true, name: true, avatar: true } },
+        review: { select: { id: true, rating: true, comment: true } },
       },
     });
   },

@@ -7,7 +7,6 @@ export const userValidation = {
       removeAvatar: z.enum(["true"]).optional(),
     }),
   }),
-
   updatePasswordSchema: z.object({
     body: z
       .object({
@@ -21,5 +20,10 @@ export const userValidation = {
         message: "New passwords don't match.",
         path: ["confirmPassword"],
       }),
+  }),
+  getSellerProfileSchema: z.object({
+    params: z.object({
+      sellerId: z.cuid(),
+    }),
   }),
 };

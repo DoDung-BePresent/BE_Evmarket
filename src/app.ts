@@ -5,6 +5,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import passport from "passport";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 
@@ -13,9 +14,9 @@ import cookieParser from "cookie-parser";
  */
 import logger from "@/libs/logger";
 import config from "@/configs/env.config";
-import { setupSwagger } from "@/libs/swagger";
 import limiter from "@/libs/express-rate-limit";
 import { errorHandler, notFoundHandler } from "@/middlewares/error.middleware";
+import "@/configs/passport.config";
 
 /**
  * Router
@@ -58,6 +59,7 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan("dev"));
+app.use(passport.initialize());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -67,9 +69,6 @@ app.use(
   }),
 );
 app.use(limiter);
-
-// Setup Swagger
-setupSwagger(app);
 
 app.use("/api/v1", v1Routes);
 

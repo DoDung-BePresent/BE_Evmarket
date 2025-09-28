@@ -2,6 +2,12 @@
  * Node modules
  */
 import { Router } from "express";
+import passport from "passport";
+
+/**
+ * Libs
+ */
+import { generateTokens, setTokenCookie } from "@/libs/jwt";
 
 /**
  * Controllers
@@ -22,6 +28,7 @@ import { authValidation } from "@/validations/auth.validation";
  * Middlewares
  */
 import { authenticate } from "@/middlewares/auth.middleware";
+import config from "@/configs/env.config";
 
 const authRouter = Router();
 
@@ -36,5 +43,32 @@ authRouter.post(
 authRouter.post("/refresh-token", authController.refreshToken);
 
 authRouter.post("/logout", authenticate, authController.logout);
+
+authRouter.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  }),
+);
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/auth/login",
+  }),
+  (req, res) => {
+    const user = req.user as any;
+    const { refreshToken } = generateTokens(user.id);
+    setTokenCookie(
+      res,
+      "refreshToken",
+      refreshToken,
+      "/api/v1/auth/refresh-token",
+    );
+    return res.redirect(`${config.CLIENT_URL}/auth/success`);
+  },
+);
 
 export default authRouter;

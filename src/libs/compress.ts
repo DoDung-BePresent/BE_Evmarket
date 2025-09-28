@@ -14,12 +14,13 @@ export async function compressImage(
   buffer: Buffer,
   options?: {
     width?: number;
+    height?: number;
     format?: "webp" | "jpeg" | "png";
     quality?: number;
   },
 ): Promise<Buffer> {
-  const { width = 800, format = "webp", quality = 80 } = options || {};
-  return sharp(buffer).resize({ width })[format]({ quality }).toBuffer();
+  const { width = 800,height,   format = "webp", quality = 80 } = options || {};
+  return sharp(buffer).resize({ width, height })[format]({ quality }).toBuffer();
 }
 
 /**

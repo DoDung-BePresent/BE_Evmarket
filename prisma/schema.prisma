@@ -26,6 +26,7 @@ enum AccountType {
 
 enum Provider {
   GOOGLE
+  FACEBOOK
   CREDENTIALS
 }
 
@@ -67,7 +68,7 @@ model Account {
   provider          Provider
   providerAccountId String
 
-  password          String
+  password          String?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

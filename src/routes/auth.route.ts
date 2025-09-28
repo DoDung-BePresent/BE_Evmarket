@@ -2,6 +2,12 @@
  * Node modules
  */
 import { Router } from "express";
+import passport from "passport";
+
+/**
+ * Libs
+ */
+import { generateTokens, setTokenCookie } from "@/libs/jwt";
 
 /**
  * Controllers
@@ -36,5 +42,56 @@ authRouter.post(
 authRouter.post("/refresh-token", authController.refreshToken);
 
 authRouter.post("/logout", authenticate, authController.logout);
+
+authRouter.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  }),
+);
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/auth/login",
+  }),
+  (req, res) => {
+    const user = req.user as any;
+    const { accessToken, refreshToken } = generateTokens(user.id);
+    setTokenCookie(
+      res,
+      "refreshToken",
+      refreshToken,
+      "/api/v1/auth/refresh-token",
+    );
+    res.json({ message: "OAuth login success", data: { user, accessToken } });
+  },
+);
+
+authRouter.get(
+  "/facebook",
+  passport.authenticate("facebook", { scope: ["email"], session: false }),
+);
+
+authRouter.get(
+  "/facebook/callback",
+  passport.authenticate("facebook", {
+    session: false,
+    failureRedirect: "/auth/login",
+  }),
+  (req, res) => {
+    const user = req.user as any;
+    const { accessToken, refreshToken } = generateTokens(user.id);
+    setTokenCookie(
+      res,
+      "refreshToken",
+      refreshToken,
+      "/api/v1/auth/refresh-token",
+    );
+    res.json({ message: "OAuth login success", data: { user, accessToken } });
+  },
+);
 
 export default authRouter;

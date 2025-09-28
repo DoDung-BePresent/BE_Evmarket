@@ -107,7 +107,7 @@ export const authService = {
     name,
     avatarUrl,
   }: {
-    provider: "GOOGLE" | "FACEBOOK";
+    provider: "GOOGLE";
     providerAccountId: string;
     email: string;
     name?: string;

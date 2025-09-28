@@ -1,6 +1,5 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as FacebookStrategy } from "passport-facebook";
 
 /**
  * Configs
@@ -43,50 +42,6 @@ passport.use(
         // Let authService handle create/find and avatar fetching/uploading
         const user = await authService.oauthLogin({
           provider: "GOOGLE",
-          providerAccountId: profile.id,
-          email,
-          name,
-          avatarUrl,
-        });
-
-        return done(null, user);
-      } catch (err) {
-        return done(err as any, false);
-      }
-    },
-  ),
-);
-
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: config.FACEBOOK_CLIENT_ID,
-      clientSecret: config.FACEBOOK_CLIENT_SECRET,
-      callbackURL: `${config.OAUTH_CALLBACK_URL}/facebook/callback`,
-      profileFields: ["id", "displayName", "photos", "email"],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email =
-          profile.emails && profile.emails[0] && profile.emails[0].value;
-
-        if (!email) {
-          return done(
-            new Error(
-              "Facebook email not available. Please make your email public.",
-            ),
-            false,
-          );
-        }
-
-        const name =
-          profile.displayName ||
-          `${profile.name?.givenName ?? ""} ${profile.name?.familyName ?? ""}`.trim();
-        const avatarUrl =
-          profile.photos && profile.photos[0] && profile.photos[0].value;
-
-        const user = await authService.oauthLogin({
-          provider: "FACEBOOK",
           providerAccountId: profile.id,
           email,
           name,

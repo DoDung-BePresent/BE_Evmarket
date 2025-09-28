@@ -28,6 +28,7 @@ import { authValidation } from "@/validations/auth.validation";
  * Middlewares
  */
 import { authenticate } from "@/middlewares/auth.middleware";
+import config from "@/configs/env.config";
 
 const authRouter = Router();
 
@@ -59,38 +60,14 @@ authRouter.get(
   }),
   (req, res) => {
     const user = req.user as any;
-    const { accessToken, refreshToken } = generateTokens(user.id);
+    const { refreshToken } = generateTokens(user.id);
     setTokenCookie(
       res,
       "refreshToken",
       refreshToken,
       "/api/v1/auth/refresh-token",
     );
-    res.json({ message: "OAuth login success", data: { user, accessToken } });
-  },
-);
-
-authRouter.get(
-  "/facebook",
-  passport.authenticate("facebook", { scope: ["email"], session: false }),
-);
-
-authRouter.get(
-  "/facebook/callback",
-  passport.authenticate("facebook", {
-    session: false,
-    failureRedirect: "/auth/login",
-  }),
-  (req, res) => {
-    const user = req.user as any;
-    const { accessToken, refreshToken } = generateTokens(user.id);
-    setTokenCookie(
-      res,
-      "refreshToken",
-      refreshToken,
-      "/api/v1/auth/refresh-token",
-    );
-    res.json({ message: "OAuth login success", data: { user, accessToken } });
+    return res.redirect(`${config.CLIENT_URL}/auth/success`);
   },
 );
 

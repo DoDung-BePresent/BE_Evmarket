@@ -26,7 +26,6 @@ enum AccountType {
 
 enum Provider {
   GOOGLE
-  FACEBOOK
   CREDENTIALS
 }
 

@@ -60,14 +60,16 @@ authRouter.get(
   }),
   (req, res) => {
     const user = req.user as any;
-    const { refreshToken } = generateTokens(user.id);
+    const { refreshToken, accessToken } = generateTokens(user.id);
     setTokenCookie(
       res,
       "refreshToken",
       refreshToken,
       "/api/v1/auth/refresh-token",
     );
-    return res.redirect(`${config.CLIENT_URL}/auth/success`);
+    return res.redirect(
+      `${config.CLIENT_URL}/auth/success?accessToken=${accessToken}`,
+    );
   },
 );
 

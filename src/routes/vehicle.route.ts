@@ -42,4 +42,19 @@ vehicleRouter.get(
   vehicleController.getVehicle,
 );
 
+vehicleRouter.patch(
+  "/:vehicleId",
+  authenticate,
+  uploadImages,
+  validate(vehicleValidation.updateVehicle),
+  vehicleController.updateVehicle,
+);
+
+vehicleRouter.delete(
+  "/:vehicleId",
+  authenticate,
+  validate(vehicleValidation.deleteVehicle),
+  vehicleController.deleteVehicle,
+);
+
 export default vehicleRouter;

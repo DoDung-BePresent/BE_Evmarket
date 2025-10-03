@@ -3,6 +3,7 @@
  */
 import {
   BadRequestError,
+  ForbiddenError,
   InternalServerError,
   NotFoundError,
 } from "@/libs/error";
@@ -91,5 +92,93 @@ export const batteryService = {
       throw new NotFoundError("Battery not found");
     }
     return battery;
+  },
+  updateBatteryById: async (
+    batteryId: string,
+    userId: string,
+    updateBody: Partial<Prisma.BatteryUpdateInput> & {
+      imagesToDelete?: string[];
+    },
+    files?: Express.Multer.File[],
+  ) => {
+    const battery = await prisma.battery.findUnique({
+      where: { id: batteryId },
+    });
+
+    if (!battery) {
+      throw new NotFoundError("Battery not found");
+    }
+    if (battery.sellerId !== userId) {
+      throw new ForbiddenError("You are not the owner of this battery");
+    }
+
+    let newImageUrls: string[] = battery.images || [];
+
+    // 1. Delete images marked for deletion
+    if (updateBody.imagesToDelete && updateBody.imagesToDelete.length > 0) {
+      const filePathsToDelete = updateBody.imagesToDelete
+        .map((url) => {
+          const urlParts = url.split("/batteries/");
+          if (urlParts.length < 2) return ""; // Handle invalid URL format
+          return urlParts.slice(1).join("/batteries/");
+        })
+        .filter(Boolean);
+
+      if (filePathsToDelete.length > 0) {
+        await supabase.storage.from("batteries").remove(filePathsToDelete);
+      }
+
+      newImageUrls = newImageUrls.filter(
+        (url) => !updateBody.imagesToDelete?.includes(url),
+      );
+    }
+
+    // 2. Upload new images
+    if (files && files.length > 0) {
+      const uploadPromises = files.map(async (file) => {
+        const fileName = `${userId}/${Date.now()}-${file.originalname}`;
+        const { error } = await supabase.storage
+          .from("batteries")
+          .upload(fileName, file.buffer, { contentType: file.mimetype });
+        if (error) throw new InternalServerError("Failed to upload new image");
+        return supabase.storage.from("batteries").getPublicUrl(fileName).data
+          .publicUrl;
+      });
+      const uploadedUrls = await Promise.all(uploadPromises);
+      newImageUrls.push(...uploadedUrls);
+    }
+
+    const { imagesToDelete, ...restOfBody } = updateBody;
+
+    return prisma.battery.update({
+      where: { id: batteryId },
+      data: {
+        ...restOfBody,
+        images: newImageUrls,
+      },
+    });
+  },
+  deleteBatteryById: async (batteryId: string, userId: string) => {
+    const battery = await prisma.battery.findUnique({
+      where: { id: batteryId },
+    });
+
+    if (!battery) {
+      throw new NotFoundError("Battery not found");
+    }
+    if (battery.sellerId !== userId) {
+      throw new ForbiddenError("You are not the owner of this battery");
+    }
+
+    // Delete images from Supabase storage
+    if (battery.images && battery.images.length > 0) {
+      const filePaths = battery.images.map((url) => {
+        const parts = url.split("/batteries/");
+        return parts[1];
+      });
+      await supabase.storage.from("batteries").remove(filePaths);
+    }
+
+    await prisma.battery.delete({ where: { id: batteryId } });
   },
 };

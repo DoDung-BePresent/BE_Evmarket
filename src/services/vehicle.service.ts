@@ -14,6 +14,7 @@ import { IQueryOptions } from "@/types/pagination.type";
 import prisma from "@/libs/prisma";
 import {
   BadRequestError,
+  ForbiddenError,
   InternalServerError,
   NotFoundError,
 } from "@/libs/error";
@@ -102,5 +103,93 @@ export const vehicleService = {
       throw new NotFoundError("Vehicle not found");
     }
     return vehicle;
+  },
+  updateVehicleById: async (
+    vehicleId: string,
+    userId: string,
+    updateBody: Partial<Prisma.VehicleUpdateInput> & {
+      imagesToDelete?: string[];
+    },
+    files?: Express.Multer.File[],
+  ) => {
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      throw new NotFoundError("Vehicle not found");
+    }
+    if (vehicle.sellerId !== userId) {
+      throw new ForbiddenError("You are not the owner of this vehicle");
+    }
+
+    let newImageUrls: string[] = vehicle.images || [];
+
+    // 1. Delete images marked for deletion
+    if (updateBody.imagesToDelete && updateBody.imagesToDelete.length > 0) {
+      const filePathsToDelete = updateBody.imagesToDelete
+        .map((url) => {
+          const urlParts = url.split("/vehicles/");
+          if (urlParts.length < 2) return ""; // Handle invalid URL format
+          return urlParts.slice(1).join("/vehicles/");
+        })
+        .filter(Boolean);
+
+      if (filePathsToDelete.length > 0) {
+        await supabase.storage.from("vehicles").remove(filePathsToDelete);
+      }
+
+      newImageUrls = newImageUrls.filter(
+        (url) => !updateBody.imagesToDelete?.includes(url),
+      );
+    }
+
+    // 2. Upload new images
+    if (files && files.length > 0) {
+      const uploadPromises = files.map(async (file) => {
+        const fileName = `${userId}/${Date.now()}-${file.originalname}`;
+        const { error } = await supabase.storage
+          .from("vehicles")
+          .upload(fileName, file.buffer, { contentType: file.mimetype });
+        if (error) throw new InternalServerError("Failed to upload new image");
+        return supabase.storage.from("vehicles").getPublicUrl(fileName).data
+          .publicUrl;
+      });
+      const uploadedUrls = await Promise.all(uploadPromises);
+      newImageUrls.push(...uploadedUrls);
+    }
+
+    const { imagesToDelete, ...restOfBody } = updateBody;
+
+    return prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        ...restOfBody,
+        images: newImageUrls,
+      },
+    });
+  },
+  deleteVehicleById: async (vehicleId: string, userId: string) => {
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+    });
+
+    if (!vehicle) {
+      throw new NotFoundError("Vehicle not found");
+    }
+    if (vehicle.sellerId !== userId) {
+      throw new ForbiddenError("You are not the owner of this vehicle");
+    }
+
+    // Delete images from Supabase storage
+    if (vehicle.images && vehicle.images.length > 0) {
+      const filePaths = vehicle.images.map((url) => {
+        const parts = url.split("/vehicles/");
+        return parts[1];
+      });
+      await supabase.storage.from("vehicles").remove(filePaths);
+    }
+
+    await prisma.vehicle.delete({ where: { id: vehicleId } });
   },
 };

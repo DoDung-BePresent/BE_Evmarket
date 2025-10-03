@@ -42,4 +42,19 @@ batteryRouter.get(
   batteryController.getBattery,
 );
 
+batteryRouter.patch(
+  "/:batteryId",
+  authenticate,
+  uploadImages,
+  validate(batteryValidation.updateBattery),
+  batteryController.updateBattery,
+);
+
+batteryRouter.delete(
+  "/:batteryId",
+  authenticate,
+  validate(batteryValidation.deleteBattery),
+  batteryController.deleteBattery,
+);
+
 export default batteryRouter;

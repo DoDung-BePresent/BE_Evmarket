@@ -41,6 +41,19 @@ enum TransactionStatus {
   CANCELLED
 }
 
+enum FinancialTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  AUCTION_DEPOSIT
+  AUCTION_RELEASE
+}
+
+enum PaymentGateway {
+  WALLET
+  MOMO
+}
+
 // MODELS
 model User {
   id              String        @id @default(cuid())
@@ -58,6 +71,7 @@ model User {
   batteries       Battery[]
   transactions    Transaction[]
   reviews         Review[]
+  wallet          Wallet?
 }
 
 model Account {
@@ -128,25 +142,56 @@ model Battery {
 }
 
 model Transaction {
-  id        String   @id @default(cuid())
-  buyerId   String
-  buyer     User     @relation(fields: [buyerId], references: [id])
-  status    TransactionStatus @default(PENDING)
+  id              String   @id @default(cuid())
+  buyerId         String
+  buyer           User     @relation(fields: [buyerId], references: [id])
+  status          TransactionStatus @default(PENDING)
 
-  vehicleId String?
-  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId       String?
+  vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])
 
-  batteryId String?
-  battery   Battery? @relation(fields: [batteryId], references: [id])
+  batteryId       String?
+  battery         Battery? @relation(fields: [batteryId], references: [id])
 
-  review    Review? // A transaction can have one review
+  paymentGateway  PaymentGateway?
+  paymentDetail   Json?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  review          Review? // A transaction can have one review
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([buyerId])
   @@index([vehicleId])
   @@index([batteryId])
+}
+
+model Wallet {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance        Float     @default(0)
+  lockedBalance           Float     @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  financialTransactions   FinancialTransaction[]
+}
+
+model FinancialTransaction {
+  id              String                    @id @default(cuid())
+  walletId        String
+  wallet          Wallet                    @relation(fields: [walletId], references: [id])
+  type            FinancialTransactionType
+  amount          Float
+  status          TransactionStatus
+  gateway         PaymentGateway
+  gatewayTransId  String?                   @unique // e.g., MoMo's transId
+  description     String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([walletId])
 }
 
 model Review {

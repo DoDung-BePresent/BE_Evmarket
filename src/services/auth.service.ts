@@ -13,6 +13,11 @@ import { comparePassword, hashPassword } from "@/libs/crypto";
 import { BadRequestError, ConflictError } from "@/libs/error";
 
 /**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
+
+/**
  * Constants
  */
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
@@ -56,6 +61,9 @@ export const authService = {
         updatedAt: true,
       },
     });
+
+    await walletService.createWallet(user.id);
+
     return user;
   },
   login: async ({ email, password }: LoginPayload) => {

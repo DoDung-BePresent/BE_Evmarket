@@ -23,17 +23,26 @@ const batteryBrands = [
   "Farasis Energy",
 ];
 
-const generateBatteryImages = (batteryIndex: number): string[] => {
+const batteryImages = [
+  "https://i.ebayimg.com/images/g/LRYAAOSwdWNke4Tb/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/jpYAAOSwci9lzry1/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/R8cAAeSw4zBox89t/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/ANoAAeSwEcVox8-5/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/O2YAAeSwYdJox9AH/s-l1600.webp",
+  "http://i.ebayimg.com/images/g/FK4AAOSwie5ntvct/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/qSAAAeSw-jFoeCjB/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/19sAAeSwsDVooIXg/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/v~IAAeSwQDponF99/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/e0EAAeSwHHFooIXf/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/UMUAAeSwEcJooxPJ/s-l1600.webp",
+  "https://i.ebayimg.com/images/g/3mUAAeSwgpJooxPM/s-l1600.webp",
+];
+
+const generateBatteryImages = (): string[] => {
   const imageCount = faker.number.int({ min: 2, max: 5 });
-  const images = [];
-
-  for (let i = 1; i <= imageCount; i++) {
-    images.push(
-      `https://placehold.co/600x400?text=battery_${batteryIndex}_${i}`,
-    );
-  }
-
-  return images;
+  return faker.helpers.arrayElements(batteryImages, imageCount);
 };
 
 const createBatteries = async (count: number = 15) => {
@@ -61,7 +70,7 @@ const createBatteries = async (count: number = 15) => {
       title: `${brand} ${capacity}kWh EV Battery Pack`,
       description: faker.lorem.paragraphs(2, "\n\n"),
       price: faker.number.float({ min: 8000, max: 50000, multipleOf: 500 }),
-      images: generateBatteryImages(i + 1),
+      images: generateBatteryImages(),
       status: faker.helpers.arrayElement([
         "AVAILABLE",
         "SOLD",

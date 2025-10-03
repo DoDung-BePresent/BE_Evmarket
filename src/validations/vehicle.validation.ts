@@ -66,6 +66,44 @@ export const vehicleValidation = {
         .optional(),
     }),
   }),
+  updateVehicle: z.object({
+    params: z.object({
+      vehicleId: z.string().cuid(),
+    }),
+    body: z
+      .object({
+        title: z.string().min(5).max(100),
+        description: z.string().min(20).max(5000),
+        price: z.coerce.number().positive(),
+        brand: z.string().min(2),
+        model: z.string().min(1),
+        year: z.coerce
+          .number()
+          .int()
+          .min(1990)
+          .max(new Date().getFullYear() + 1),
+        mileage: z.coerce.number().int().min(0),
+        specifications: z.any(), // Simplified for update
+        imagesToDelete: z
+          .preprocess((val) => {
+            if (typeof val === "string") {
+              try {
+                return JSON.parse(val);
+              } catch (e) {
+                return val;
+              }
+            }
+            return val;
+          }, z.array(z.string().url()))
+          .optional(),
+      })
+      .partial(), // Make all fields optional
+  }),
+  deleteVehicle: z.object({
+    params: z.object({
+      vehicleId: z.string().cuid(),
+    }),
+  }),
   getVehicles: z.object({
     query: z.object({
       brand: z.string().optional(),

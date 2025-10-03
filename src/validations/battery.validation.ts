@@ -41,6 +41,11 @@ export const batteryValidation = {
           }),
         )
         .optional(),
+      isAuction: z.coerce.boolean().optional(),
+      auctionEndsAt: z.coerce.date().optional(),
+      startingPrice: z.coerce.number().positive().optional(),
+      bidIncrement: z.coerce.number().positive().optional(),
+      depositAmount: z.coerce.number().positive().optional(),
     }),
   }),
   getBatteries: z.object({

@@ -50,6 +50,7 @@ export const batteryService = {
         seller: {
           connect: { id: userId },
         },
+        isVerified: batteryBody.isAuction ? false : true,
       },
     });
   },

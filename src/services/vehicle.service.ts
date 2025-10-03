@@ -61,6 +61,7 @@ export const vehicleService = {
         seller: {
           connect: { id: userId },
         },
+        isVerified: vehicleBody.isAuction ? false : true,
       },
     });
   },

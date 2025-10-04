@@ -76,6 +76,8 @@ export const batteryController = {
     const { id: userId } = req.user!;
     const { batteryId } = req.validated?.params;
     await batteryService.deleteBatteryById(batteryId, userId);
-    res.status(STATUS_CODE.NO_CONTENT).send();
+    res.status(STATUS_CODE.OK).json({
+      message: "Delete battery successfully",
+    });
   }),
 };

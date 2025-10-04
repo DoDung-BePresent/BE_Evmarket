@@ -104,6 +104,29 @@ export const vehicleService = {
     }
     return vehicle;
   },
+  getVehiclesBySellerId: async (sellerId: string, options: IQueryOptions) => {
+    const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
+    const skip = (page - 1) * limit;
+
+    const filter = { sellerId };
+
+    const vehicles = await prisma.vehicle.findMany({
+      where: filter,
+      skip,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+    });
+
+    const totalResults = await prisma.vehicle.count({ where: filter });
+
+    return {
+      vehicles,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
   updateVehicleById: async (
     vehicleId: string,
     userId: string,

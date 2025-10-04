@@ -19,6 +19,7 @@ import { asyncHandler } from "@/middlewares/error.middleware";
 import { userService } from "@/services/user.service";
 import { batteryService } from "@/services/battery.service";
 import { vehicleService } from "@/services/vehicle.service";
+import { GetVehiclesQuery } from "@/validations/vehicle.validation";
 
 export const userController = {
   getMe: asyncHandler(async (req, res) => {
@@ -33,7 +34,8 @@ export const userController = {
   }),
   getMyVehicles: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
-    const options = pick(req.query, ["sortBy", "limit", "page"]);
+    const query = req.validated?.query as GetVehiclesQuery;
+    const options = pick(query, ["sortBy", "limit", "page"]);
     const result = await vehicleService.getVehiclesBySellerId(userId, options);
     res.status(STATUS_CODE.OK).json({
       message: "My vehicles fetched successfully",
@@ -42,7 +44,8 @@ export const userController = {
   }),
   getMyBatteries: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
-    const options = pick(req.query, ["sortBy", "limit", "page"]);
+    const query = req.validated?.query as GetVehiclesQuery;
+    const options = pick(query, ["sortBy", "limit", "page"]);
     const result = await batteryService.getBatteriesBySellerId(userId, options);
     res.status(STATUS_CODE.OK).json({
       message: "My batteries fetched successfully",

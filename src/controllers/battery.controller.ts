@@ -41,7 +41,6 @@ export const batteryController = {
     const query = req.validated?.query as GetBatteriesQuery;
     const filter = pick(query, ["brand"]);
     const options = pick(query, ["sortBy", "limit", "page"]);
-    console.log(filter, options);
     const result = await batteryService.queryBatteries(filter, options);
     res.status(STATUS_CODE.OK).json({
       message: "Batteries fetched successfully",

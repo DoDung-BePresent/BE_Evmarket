@@ -75,6 +75,29 @@ export const batteryService = {
       totalResults,
     };
   },
+  getBatteriesBySellerId: async (sellerId: string, options: IQueryOptions) => {
+    const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
+    const skip = (page - 1) * limit;
+
+    const filter = { sellerId };
+
+    const batteries = await prisma.battery.findMany({
+      where: filter,
+      skip,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+    });
+
+    const totalResults = await prisma.battery.count({ where: filter });
+
+    return {
+      batteries,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
   getBatteryById: async (id: string) => {
     const battery = await prisma.battery.findUnique({
       where: { id },

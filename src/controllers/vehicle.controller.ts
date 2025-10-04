@@ -76,6 +76,8 @@ export const vehicleController = {
     const { id: userId } = req.user!;
     const { vehicleId } = req.validated?.params;
     await vehicleService.deleteVehicleById(vehicleId, userId);
-    res.status(STATUS_CODE.NO_CONTENT).send();
+    res.status(STATUS_CODE.OK).json({
+      message: "Delete vehicle successfully",
+    });
   }),
 };

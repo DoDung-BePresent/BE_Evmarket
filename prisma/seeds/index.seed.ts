@@ -2,7 +2,7 @@
  * Libs
  */
 import prisma from "../../src/libs/prisma";
-import { createSellers } from "./users.seed";
+import { createSellers, createSpecialUsers } from "./users.seed";
 import { createVehicles } from "./vehicles.seed";
 import { createBatteries } from "./batteries.seed";
 import { createTransactions } from "./transaction.seed";
@@ -24,6 +24,7 @@ const seedAll = async () => {
 
     // Seed users first (they're needed for vehicles and batteries)
     await createSellers(15);
+    await createSpecialUsers();
     console.log("");
 
     // Seed vehicles and batteries

@@ -17,6 +17,7 @@ const config = {
   NODE_ENV: process.env.NODE_ENV,
   CLIENT_URL: process.env.CLIENT_URL,
   DIRECT_URL: process.env.DIRECT_URL,
+  NGROK_URL: process.env.NGROK_URL,
   WHITELIST_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .filter(Boolean),
@@ -40,6 +41,12 @@ const config = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
   OAUTH_CALLBACK_URL: process.env.OAUTH_CALLBACK_URL!,
+
+  // MOMO
+  MOMO_PARTNER_CODE: process.env.MOMO_PARTNER_CODE!,
+  MOMO_ACCESS_KEY: process.env.MOMO_ACCESS_KEY!,
+  MOMO_SECRET_KEY: process.env.MOMO_SECRET_KEY!,
+  MOMO_API_ENDPOINT: process.env.MOMO_API_ENDPOINT!,
 };
 
 export default config;

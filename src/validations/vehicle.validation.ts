@@ -64,6 +64,11 @@ export const vehicleValidation = {
           }),
         )
         .optional(),
+      isAuction: z.coerce.boolean().optional(),
+      auctionEndsAt: z.coerce.date().optional(),
+      startingPrice: z.coerce.number().positive().optional(),
+      bidIncrement: z.coerce.number().positive().optional(),
+      depositAmount: z.coerce.number().positive().optional(),
     }),
   }),
   updateVehicle: z.object({

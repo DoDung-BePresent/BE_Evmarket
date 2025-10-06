@@ -1,7 +1,26 @@
+/**
+ * Constants
+ */
 import { STATUS_CODE } from "@/constants/error.constant";
+
+/**
+ * Middlewares
+ */
 import { asyncHandler } from "@/middlewares/error.middleware";
+
+/**
+ * Services
+ */
 import { batteryService } from "@/services/battery.service";
+
+/**
+ * Utils
+ */
 import { pick } from "@/utils/pick.util";
+
+/**
+ * Validations
+ */
 import { GetBatteriesQuery } from "@/validations/battery.validation";
 
 export const batteryController = {
@@ -22,7 +41,6 @@ export const batteryController = {
     const query = req.validated?.query as GetBatteriesQuery;
     const filter = pick(query, ["brand"]);
     const options = pick(query, ["sortBy", "limit", "page"]);
-    console.log(filter, options);
     const result = await batteryService.queryBatteries(filter, options);
     res.status(STATUS_CODE.OK).json({
       message: "Batteries fetched successfully",
@@ -36,6 +54,29 @@ export const batteryController = {
     res.status(STATUS_CODE.OK).json({
       message: "Battery fetched successfully",
       data: { battery },
+    });
+  }),
+  updateBattery: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { batteryId } = req.validated?.params;
+    const files = req.files as Express.Multer.File[];
+    const battery = await batteryService.updateBatteryById(
+      batteryId,
+      userId,
+      req.validated?.body,
+      files,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message: "Battery updated successfully",
+      data: { battery },
+    });
+  }),
+  deleteBattery: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { batteryId } = req.validated?.params;
+    await batteryService.deleteBatteryById(batteryId, userId);
+    res.status(STATUS_CODE.OK).json({
+      message: "Delete battery successfully",
     });
   }),
 };

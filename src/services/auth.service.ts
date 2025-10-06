@@ -21,6 +21,7 @@ import { walletService } from "@/services/wallet.service";
  * Constants
  */
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
 
 export const authService = {
@@ -150,14 +151,14 @@ export const authService = {
           quality: 80,
         });
 
-        const fileName = `avatars/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+        const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
         const { error } = await supabase.storage
-          .from("avatars")
+          .from(SUPABASE_BUCKETS.AVATARS)
           .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
 
         if (!error) {
           const { data } = supabase.storage
-            .from("avatars")
+            .from(SUPABASE_BUCKETS.AVATARS)
             .getPublicUrl(fileName);
           avatarPublicUrl = data.publicUrl;
         }
@@ -200,14 +201,14 @@ export const authService = {
         quality: 80,
       });
 
-      const fileName = `avatars/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+      const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
       const { error } = await supabase.storage
-        .from("avatars")
+        .from(SUPABASE_BUCKETS.AVATARS)
         .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
 
       if (!error) {
         const { data } = supabase.storage
-          .from("avatars")
+          .from(SUPABASE_BUCKETS.AVATARS)
           .getPublicUrl(fileName);
         await prisma.user.update({
           where: { id: user.id },

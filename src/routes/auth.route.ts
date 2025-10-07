@@ -44,6 +44,12 @@ authRouter.post("/refresh-token", authController.refreshToken);
 
 authRouter.post("/logout", authenticate, authController.logout);
 
+authRouter.post(
+  "/google/mobile",
+  validate(authValidation.googleMobileLogin),
+  authController.googleMobileLogin,
+);
+
 authRouter.get(
   "/google",
   passport.authenticate("google", {

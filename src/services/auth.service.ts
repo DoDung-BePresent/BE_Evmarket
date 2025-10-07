@@ -2,6 +2,12 @@
  * Node modules
  */
 import axios from "axios";
+import { OAuth2Client } from "google-auth-library";
+
+/**
+ * Configs
+ */
+import config from "@/configs/env.config";
 
 /**
  * Libs
@@ -16,7 +22,13 @@ import { BadRequestError, ConflictError } from "@/libs/error";
  * Constants
  */
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
+
+/**
+ * Validations
+ */
 import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
+
+const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 export const authService = {
   // TODO: Apply verify email
@@ -210,5 +222,40 @@ export const authService = {
     }
 
     return user;
+  },
+  verifyGoogleIdToken: async (idToken: string) => {
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: config.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new UnauthorizedError("Invalid Google token");
+      }
+
+      const {
+        sub: providerAccountId,
+        email,
+        name,
+        picture: avatarUrl,
+      } = payload;
+
+      if (!email) {
+        throw new BadRequestError("Google email not available.");
+      }
+
+      const user = await authService.oauthLogin({
+        provider: "GOOGLE",
+        providerAccountId,
+        email,
+        name,
+        avatarUrl,
+      });
+
+      return user;
+    } catch (error) {
+      throw new UnauthorizedError("Failed to verify Google token");
+    }
   },
 };

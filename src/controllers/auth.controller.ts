@@ -115,4 +115,25 @@ export const authController = {
       },
     });
   }),
+  googleMobileLogin: asyncHandler(async (req, res) => {
+    const { idToken } = req.validated?.body;
+    const user = await authService.verifyGoogleIdToken(idToken);
+
+    const { accessToken, refreshToken } = generateTokens(user.id);
+
+    setTokenCookie(
+      res,
+      "refreshToken",
+      refreshToken,
+      "/api/v1/auth/refresh-token",
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Login with Google successfully",
+      data: {
+        user,
+        accessToken,
+      },
+    });
+  }),
 };

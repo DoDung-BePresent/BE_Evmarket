@@ -59,7 +59,7 @@ export const walletService = {
     });
 
     const redirectUrl = `${config.CLIENT_URL}/wallet/`;
-    const ipnUrl = `${config.NODE_ENV === "production" ? config.CLIENT_URL : config.NGROK_URL}/api/v1/payments/momo/ipn`; // URL webhook của bạn
+    const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`; // URL webhook của bạn
 
     const paymentInfo = await momoService.createPayment({
       orderId: financialTransaction.id,

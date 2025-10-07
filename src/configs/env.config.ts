@@ -17,7 +17,7 @@ const config = {
   NODE_ENV: process.env.NODE_ENV,
   CLIENT_URL: process.env.CLIENT_URL,
   DIRECT_URL: process.env.DIRECT_URL,
-  NGROK_URL: process.env.NGROK_URL,
+  SERVER_URL: process.env.SERVER_URL,
   WHITELIST_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .filter(Boolean),

@@ -58,7 +58,7 @@ export const walletService = {
       },
     });
 
-    const redirectUrl = `${config.CLIENT_URL}/wallet/deposit/result`;
+    const redirectUrl = `${config.CLIENT_URL}/wallet/`;
     const ipnUrl = `${config.NGROK_URL}/api/v1/payments/momo/ipn`; // URL webhook của bạn
 
     const paymentInfo = await momoService.createPayment({

@@ -16,7 +16,7 @@ import prisma from "@/libs/prisma";
 import { supabase } from "@/libs/supabase";
 import { compressImage } from "@/libs/compress";
 import { comparePassword, hashPassword } from "@/libs/crypto";
-import { BadRequestError, ConflictError } from "@/libs/error";
+import { BadRequestError, ConflictError, UnauthorizedError } from "@/libs/error";
 
 /**
  * Constants

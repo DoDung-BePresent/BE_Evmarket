@@ -178,6 +178,9 @@ export const authService = {
           },
         },
       });
+
+      await walletService.createWallet(user.id);
+
       return user;
     }
     await prisma.account.create({

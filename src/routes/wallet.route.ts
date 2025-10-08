@@ -29,5 +29,10 @@ walletRouter.post(
   validate(walletValidation.deposit),
   walletController.depositToWallet,
 );
+walletRouter.get(
+  "/history",
+  validate(walletValidation.getHistory),
+  walletController.getHistory,
+);
 
 export default walletRouter;

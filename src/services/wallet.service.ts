@@ -13,12 +13,9 @@ import config from "@/configs/env.config";
  * Services
  */
 import { momoService } from "@/services/momo.service";
+import { IQueryOptions } from "@/types/pagination.type";
 
 export const walletService = {
-  /**
-   * Creates a new wallet for a user.
-   * Should be called upon user registration.
-   */
   createWallet: async (userId: string) => {
     return prisma.wallet.create({
       data: {
@@ -26,10 +23,6 @@ export const walletService = {
       },
     });
   },
-
-  /**
-   * Retrieves the wallet for a given user.
-   */
   getWalletByUserId: async (userId: string) => {
     const wallet = await prisma.wallet.findUnique({
       where: { userId },
@@ -39,14 +32,9 @@ export const walletService = {
     }
     return wallet;
   },
-
-  /**
-   * Creates a deposit request and returns a payment URL.
-   */
   createDepositRequest: async (userId: string, amount: number) => {
     const wallet = await walletService.getWalletByUserId(userId);
 
-    // 1. Create a pending financial transaction
     const financialTransaction = await prisma.financialTransaction.create({
       data: {
         walletId: wallet.id,
@@ -70,6 +58,37 @@ export const walletService = {
     });
 
     return paymentInfo;
+  },
+  getFinancialHistory: async (userId: string, options: IQueryOptions) => {
+    const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
+    const skip = (page - 1) * limit;
+
+    const transactions = await prisma.financialTransaction.findMany({
+      where: {
+        wallet: {
+          userId: userId,
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+    });
+
+    const totalResults = await prisma.financialTransaction.count({
+      where: {
+        wallet: {
+          userId: userId,
+        },
+      },
+    });
+
+    return {
+      transactions,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
   },
   processSuccessfulDeposit: async (
     orderId: string,
@@ -103,7 +122,6 @@ export const walletService = {
       }),
     ]);
   },
-
   processFailedDeposit: async (orderId: string) => {
     await prisma.financialTransaction.updateMany({
       where: { id: orderId, status: "PENDING" },

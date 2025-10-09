@@ -17,53 +17,51 @@ export const vehicleValidation = {
         .min(1990)
         .max(new Date().getFullYear() + 1),
       mileage: z.coerce.number().int().min(0),
-      specifications: z
-        .preprocess(
-          (val) => {
-            if (typeof val === "string") {
-              try {
-                return JSON.parse(val);
-              } catch (error) {
-                return val; // Return original value to fail validation
-              }
+      specifications: z.preprocess(
+        (val) => {
+          if (typeof val === "string") {
+            try {
+              return JSON.parse(val);
+            } catch (error) {
+              return val; // Return original value to fail validation
             }
-            return val;
-          },
-          z.object({
-            performance: z
-              .object({
-                topSpeed: z.string().optional(),
-                acceleration: z.string().optional(),
-                motorType: z.string().optional(),
-                horsepower: z.string().optional(),
-              })
-              .optional(),
-            dimensions: z
-              .object({
-                length: z.string().optional(),
-                width: z.string().optional(),
-                height: z.string().optional(),
-                curbWeight: z.string().optional(),
-              })
-              .optional(),
-            batteryAndCharging: z
-              .object({
-                batteryCapacity: z.string().optional(),
-                range: z.string().optional(),
-                chargingSpeed: z.string().optional(),
-                chargeTime: z.string().optional(),
-              })
-              .optional(),
-            warranty: z
-              .object({
-                basic: z.string().optional(),
-                battery: z.string().optional(),
-                drivetrain: z.string().optional(),
-              })
-              .optional(),
-          }),
-        )
-        .optional(),
+          }
+          return val;
+        },
+        z.object({
+          performance: z
+            .object({
+              topSpeed: z.string(),
+              acceleration: z.string(),
+              motorType: z.string(),
+              horsepower: z.string(),
+            })
+            .partial(),
+          dimensions: z
+            .object({
+              length: z.string(),
+              width: z.string(),
+              height: z.string(),
+              curbWeight: z.string(),
+            })
+            .partial(),
+          batteryAndCharging: z
+            .object({
+              batteryCapacity: z.string(),
+              range: z.string(),
+              chargingSpeed: z.string(),
+              chargeTime: z.string(),
+            })
+            .partial(),
+          warranty: z
+            .object({
+              basic: z.string(),
+              battery: z.string(),
+              drivetrain: z.string(),
+            })
+            .partial(),
+        }),
+      ),
       isAuction: z.coerce.boolean().optional(),
       auctionEndsAt: z.coerce.date().optional(),
       startingPrice: z.coerce.number().positive().optional(),

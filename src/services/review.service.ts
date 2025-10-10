@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Libs
  */
@@ -107,7 +108,7 @@ export const reviewService = {
         },
       });
       return review;
-    } catch (_error) {
+    } catch (error) {
       for (const file of uploadedFiles) {
         await supabase.storage.from(file.bucket).remove([file.path]);
       }
@@ -194,7 +195,7 @@ export const reviewService = {
         },
       });
       return updatedReview;
-    } catch (_error) {
+    } catch (error) {
       for (const file of uploadedFiles) {
         await supabase.storage.from(file.bucket).remove([file.path]);
       }

@@ -1,7 +1,24 @@
-import { STATUS_CODE } from "@/constants/error.constant";
-import { asyncHandler } from "@/middlewares/error.middleware";
-import { auctionService } from "@/services/auction.service";
+/* eslint-disable no-unsafe-optional-chaining */
+
+/**
+ * Node modules
+ */
 import { ListingType } from "@prisma/client";
+
+/**
+ * Constants
+ */
+import { STATUS_CODE } from "@/constants/error.constant";
+
+/**
+ * Middlewares
+ */
+import { asyncHandler } from "@/middlewares/error.middleware";
+
+/**
+ * Services
+ */
+import { auctionService } from "@/services/auction.service";
 
 export const auctionController = {
   placeVehicleBid: asyncHandler(async (req, res) => {

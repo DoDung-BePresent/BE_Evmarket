@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Node modules
  */
@@ -22,7 +23,7 @@ export const vehicleValidation = {
           if (typeof val === "string") {
             try {
               return JSON.parse(val);
-            } catch (error) {
+            } catch (_error) {
               return val; // Return original value to fail validation
             }
           }
@@ -92,7 +93,7 @@ export const vehicleValidation = {
             if (typeof val === "string") {
               try {
                 return JSON.parse(val);
-              } catch (e) {
+              } catch (_e) {
                 return val;
               }
             }

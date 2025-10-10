@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-optional-chaining */
 /**
  * Constants
  */

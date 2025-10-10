@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 /**
  * Node modules
  */
@@ -50,7 +51,7 @@ const prisma: PrismaClient<typeof clientOptions> =
 if (config.NODE_ENV === "development" && config.LOG_TO_FILE === "true") {
   prisma.$on("query", (e: any) => {
     if (e.duration > 1000) {
-      logger.warn(`🐌 Slow Query detected:`, {
+      logger.warn("🐌 Slow Query detected:", {
         query: e.query,
         duration: `${e.duration}ms`,
       });

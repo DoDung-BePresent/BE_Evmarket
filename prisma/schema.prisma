@@ -47,6 +47,7 @@ enum TransactionStatus {
   PENDING
   COMPLETED
   CANCELLED
+  FAILED
 }
 
 enum FinancialTransactionType {
@@ -176,6 +177,7 @@ model Transaction {
   batteryId       String?
   battery         Battery? @relation(fields: [batteryId], references: [id])
 
+  finalPrice      Float?
   paymentGateway  PaymentGateway?
   paymentDetail   Json?
 

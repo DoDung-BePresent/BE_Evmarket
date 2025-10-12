@@ -18,6 +18,8 @@ import logger from "@/libs/logger";
  */
 import { momoService } from "@/services/momo.service";
 import { walletService } from "@/services/wallet.service";
+import { checkoutService } from "@/services/checkout.service";
+import prisma from "@/libs/prisma";
 
 export const paymentController = {
   handleMomoIpn: asyncHandler(async (req, res) => {
@@ -25,27 +27,36 @@ export const paymentController = {
 
     if (!isValid) {
       logger.warn("MoMo IPN: Invalid signature", { body: req.body });
-      // Không trả về lỗi để tránh MoMo gửi lại, chỉ log lại
       return res.status(STATUS_CODE.NO_CONTENT).send();
     }
 
     const { orderId, amount, resultCode, transId } = req.body;
 
     if (resultCode === 0) {
-      // Thanh toán thành công
-      await walletService.processSuccessfulDeposit(orderId, amount, transId.toString());
+      const transaction = await prisma.transaction.findUnique({
+        where: { id: orderId },
+      });
+
+      if (transaction) {
+        await checkoutService.completeMomoPurchase(orderId, amount);
+      } else {
+        await walletService.processSuccessfulDeposit(
+          orderId,
+          amount,
+          transId.toString(),
+        );
+      }
+
       logger.info(
-        `MoMo IPN: Successfully processed deposit for order ${orderId}`,
+        `MoMo IPN: Successfully processed payment for order ${orderId}`,
       );
     } else {
-      // Thanh toán thất bại
       await walletService.processFailedDeposit(orderId);
       logger.warn(`MoMo IPN: Failed payment for order ${orderId}`, {
         resultCode,
       });
     }
 
-    // Phản hồi cho MoMo để không gửi lại IPN
     res.status(STATUS_CODE.NO_CONTENT).send();
   }),
 };

@@ -14,6 +14,7 @@ import vehicleRouter from "@/routes/vehicle.route";
 import batteryRouter from "@/routes/battery.route";
 import paymentRouter from "@/routes/payment.route";
 import auctionRouter from "@/routes/auction.route";
+import checkoutRouter from "@/routes/checkout.route";
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use("/batteries", batteryRouter);
 router.use("/wallet", walletRouter);
 router.use("/payments", paymentRouter);
 router.use("/auctions", auctionRouter); 
+router.use("/checkout", checkoutRouter);
 
 export default router;

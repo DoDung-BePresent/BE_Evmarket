@@ -21,7 +21,8 @@ const config = {
   WHITELIST_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .filter(Boolean),
-
+  // GEMINI
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY!,
   // LOGS
   LOG_TO_FILE: process.env.LOG_TO_FILE || "true",
   LOG_LEVEL: process.env.LOG_LEVEL || "info",

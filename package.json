@@ -16,11 +16,13 @@
     "seed:batteries": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/batteries.seed.ts",
     "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed",
     "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging",
-    "prepare": "husky"
+    "prepare": "husky",
+    "validate-build": "tsc --noEmit"
   },
   "lint-staged": {
     "*.ts": [
-      "npm run lint:fix"
+      "eslint --fix",
+      "npm run validate-build"
     ]
   },
   "keywords": [],

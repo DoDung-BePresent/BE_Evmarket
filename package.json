@@ -17,7 +17,7 @@
     "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed",
     "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging",
     "prepare": "husky",
-    "validate-build": "tsc --noEmit"
+    "validate-build": "tsc --noEmit && tsc-alias"
   },
   "lint-staged": {
     "*.ts": [

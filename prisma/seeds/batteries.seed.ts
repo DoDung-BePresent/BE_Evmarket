@@ -23,30 +23,33 @@ const batteryBrands = [
   "Farasis Energy",
 ];
 
-const batteryImages = [
-  "https://i.ebayimg.com/images/g/LRYAAOSwdWNke4Tb/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/jpYAAOSwci9lzry1/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/R8cAAeSw4zBox89t/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/ANoAAeSwEcVox8-5/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/O2YAAeSwYdJox9AH/s-l1600.webp",
-  "http://i.ebayimg.com/images/g/FK4AAOSwie5ntvct/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/qSAAAeSw-jFoeCjB/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/19sAAeSwsDVooIXg/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/v~IAAeSwQDponF99/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/e0EAAeSwHHFooIXf/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/UMUAAeSwEcJooxPJ/s-l1600.webp",
-  "https://i.ebayimg.com/images/g/3mUAAeSwgpJooxPM/s-l1600.webp",
-];
-
-const generateBatteryImages = (): string[] => {
+const generateBatteryImages = (batteryIndex: number): string[] => {
   const imageCount = faker.number.int({ min: 2, max: 5 });
-  return faker.helpers.arrayElements(batteryImages, imageCount);
+  const images = [];
+
+  for (let i = 1; i <= imageCount; i++) {
+    images.push(
+      `https://placehold.co/600x400?text=battery_${batteryIndex}_${i}`,
+    );
+  }
+
+  return images;
 };
 
-const createBatteries = async (count: number = 15) => {
-  console.log(`🔋 Seeding ${count} batteries...`);
+interface BatterySeedConfig {
+  available?: number;
+  sold?: number;
+  delisted?: number;
+}
+
+const createBatteries = async (config: BatterySeedConfig = {}) => {
+  const { available = 15, sold = 0, delisted = 0 } = config;
+  const totalCount = available + sold + delisted;
+
+  console.log(`🔋 Seeding ${totalCount} batteries...`);
+  console.log(`   📊 AVAILABLE: ${available}`);
+  console.log(`   📊 SOLD: ${sold}`);
+  console.log(`   📊 DELISTED: ${delisted}`);
 
   // Get all existing users to assign as sellers
   const users = await prisma.user.findMany({
@@ -59,42 +62,47 @@ const createBatteries = async (count: number = 15) => {
 
   const batteries = [];
 
-  for (let i = 0; i < count; i++) {
+  // Helper function to create a battery with specific status
+  const createBatteryData = (
+    index: number,
+    status: "AVAILABLE" | "SOLD" | "DELISTED",
+  ) => {
     const brand = faker.helpers.arrayElement(batteryBrands);
-    const year = faker.number.int({ min: 2015, max: 2024 });
     const capacity = faker.number.float({ min: 40, max: 120, multipleOf: 5 });
     const health = faker.number.float({ min: 70, max: 100, multipleOf: 1 });
+    const year = faker.number.int({ min: 2010, max: 2024 }); // <-- Thêm dòng này
     const randomSeller = faker.helpers.arrayElement(users);
 
-    const battery = {
+    return {
       title: `${brand} ${capacity}kWh EV Battery Pack`,
       description: faker.lorem.paragraphs(2, "\n\n"),
       price: faker.number.float({ min: 8000, max: 50000, multipleOf: 500 }),
-      images: generateBatteryImages(),
-      status: faker.helpers.arrayElement([
-        "AVAILABLE",
-        "SOLD",
-        "DELISTED",
-      ]) as any,
+      images: generateBatteryImages(index),
+      status,
       brand,
       capacity,
-      year,
-      health: faker.datatype.boolean(0.8) ? health : null, // 80% chance of having health data
-      specifications: {
-        weight: `${faker.number.int({ min: 400, max: 700 })}kg`,
-        voltage: `${faker.number.int({ min: 300, max: 450 })}V`,
-        warrantyPeriod: `${faker.number.int({ min: 1, max: 5 })} years remaining`,
-        chargingTime: `${faker.number.int({ min: 30, max: 90 })} minutes (0-80%)`,
-        chemistry: faker.helpers.arrayElement(["NCA", "NMC", "LFP"]),
-        temperatureRange: "-20°C to 60°C",
-        degradation: `${100 - health}% (${health}% capacity)`,
-        installation: "Professional required",
-      },
-      isVerified: faker.datatype.boolean(0.6), // 60% chance of being verified
+      year, // <-- Thêm dòng này
+      health: faker.datatype.boolean(0.8) ? health : null,
+      isVerified: faker.datatype.boolean(0.6),
       sellerId: randomSeller.id,
     };
+  };
 
-    batteries.push(battery);
+  let index = 1;
+
+  // Create AVAILABLE batteries
+  for (let i = 0; i < available; i++) {
+    batteries.push(createBatteryData(index++, "AVAILABLE"));
+  }
+
+  // Create SOLD batteries
+  for (let i = 0; i < sold; i++) {
+    batteries.push(createBatteryData(index++, "SOLD"));
+  }
+
+  // Create DELISTED batteries
+  for (let i = 0; i < delisted; i++) {
+    batteries.push(createBatteryData(index++, "DELISTED"));
   }
 
   // Create batteries in batches
@@ -112,6 +120,7 @@ const createBatteries = async (count: number = 15) => {
           brand: true,
           capacity: true,
           price: true,
+          status: true,
         },
       }),
     );
@@ -129,7 +138,7 @@ const createBatteries = async (count: number = 15) => {
 
 const main = async () => {
   try {
-    await createBatteries(20);
+    await createBatteries({ available: 25, sold: 15, delisted: 5 });
   } catch (error) {
     console.error("❌ Error seeding batteries:", error);
     process.exit(1);

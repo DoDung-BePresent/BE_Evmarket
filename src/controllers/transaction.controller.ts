@@ -13,6 +13,16 @@ import { asyncHandler } from "@/middlewares/error.middleware";
  */
 import { transactionService } from "@/services/transaction.service";
 
+/**
+ * Utils
+ */
+import { pick } from "@/utils/pick.util";
+
+/**
+ * Validations
+ */
+import { GetMyTransactionsQuery } from "@/validations/transaction.validation";
+
 export const transactionController = {
   createTransaction: asyncHandler(async (req, res) => {
     const { id: buyerId } = req.user!;
@@ -38,11 +48,16 @@ export const transactionController = {
   }),
   getMyTransactions: asyncHandler(async (req, res) => {
     const { id: buyerId } = req.user!;
-    const transactions =
-      await transactionService.getTransactionsByBuyer(buyerId);
+    const query = req.validated?.query as GetMyTransactionsQuery; // Tái sử dụng type từ wallet validation
+    const options = pick(query, ["sortBy", "sortOrder", "page", "limit"]);
+
+    const result = await transactionService.getTransactionsByBuyer(
+      buyerId,
+      options,
+    );
     res.status(STATUS_CODE.OK).json({
-      message: "Fetched transactions",
-      data: { transactions },
+      message: "Fetched my transactions successfully",
+      data: result,
     });
   }),
 };

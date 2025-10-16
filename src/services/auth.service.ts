@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 /**
  * Node modules
  */
@@ -11,6 +12,11 @@ import { OAuth2Client } from "google-auth-library";
 import config from "@/configs/env.config";
 
 /**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
+
+/**
  * Constants
  */
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
@@ -18,6 +24,7 @@ import { ERROR_CODE_ENUM } from "@/constants/error.constant";
 /**
  * Validations
  */
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
 
 /**
@@ -76,6 +83,9 @@ export const authService = {
         updatedAt: true,
       },
     });
+
+    await walletService.createWallet(user.id);
+
     return user;
   },
   login: async ({ email, password }: LoginPayload) => {
@@ -162,14 +172,14 @@ export const authService = {
           quality: 80,
         });
 
-        const fileName = `avatars/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+        const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
         const { error } = await supabase.storage
-          .from("avatars")
+          .from(SUPABASE_BUCKETS.AVATARS)
           .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
 
         if (!error) {
           const { data } = supabase.storage
-            .from("avatars")
+            .from(SUPABASE_BUCKETS.AVATARS)
             .getPublicUrl(fileName);
           avatarPublicUrl = data.publicUrl;
         }
@@ -189,6 +199,9 @@ export const authService = {
           },
         },
       });
+
+      await walletService.createWallet(user.id);
+
       return user;
     }
     await prisma.account.create({
@@ -212,14 +225,14 @@ export const authService = {
         quality: 80,
       });
 
-      const fileName = `avatars/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+      const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
       const { error } = await supabase.storage
-        .from("avatars")
+        .from(SUPABASE_BUCKETS.AVATARS)
         .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
 
       if (!error) {
         const { data } = supabase.storage
-          .from("avatars")
+          .from(SUPABASE_BUCKETS.AVATARS)
           .getPublicUrl(fileName);
         await prisma.user.update({
           where: { id: user.id },

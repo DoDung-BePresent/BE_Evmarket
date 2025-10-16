@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * Express
+ * Node modules
  */
+import { UserRole } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 
 /**
@@ -8,7 +10,7 @@ import { NextFunction, Request, Response } from "express";
  */
 import prisma from "@/libs/prisma";
 import { verifyToken } from "@/libs/jwt";
-import { UnauthorizedError } from "@/libs/error";
+import { UnauthorizedError, ForbiddenError } from "@/libs/error";
 
 /**
  * Configs
@@ -57,4 +59,18 @@ export const authenticate = async (
 
     next(new UnauthorizedError("Authentication failed"));
   }
+};
+
+export const authorize = (allowedRoles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user || !allowedRoles.includes(user.role)) {
+      return next(
+        new ForbiddenError(
+          "You do not have permission to access this resource",
+        ),
+      );
+    }
+    next();
+  };
 };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Libs
  */
@@ -5,6 +6,11 @@ import prisma from "@/libs/prisma";
 import { supabase } from "@/libs/supabase";
 import { compressImage, compressVideo } from "@/libs/compress";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/libs/error";
+
+/**
+ * Constants
+ */
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 
 export const reviewService = {
   createReview: async (
@@ -45,16 +51,16 @@ export const reviewService = {
             format: "webp",
             quality: 80,
           });
-          const fileName = `reviews/${transactionId}/images/${Date.now()}-${file.originalname}.webp`;
+          const fileName = `${SUPABASE_BUCKETS.REVIEWS}/${transactionId}/images/${Date.now()}-${file.originalname}.webp`;
           const { error } = await supabase.storage
-            .from("reviews")
+            .from(SUPABASE_BUCKETS.REVIEWS)
             .upload(fileName, buffer, {
               contentType: "image/webp",
             });
           if (error) throw new BadRequestError("Failed to upload image");
           uploadedFiles.push({ bucket: "reviews", path: fileName });
           const { data } = supabase.storage
-            .from("reviews")
+            .from(SUPABASE_BUCKETS.REVIEWS)
             .getPublicUrl(fileName);
           mediaUrls.push(data.publicUrl);
         }
@@ -67,16 +73,19 @@ export const reviewService = {
           maxBitrate: 1200,
           maxSizeMB: 20,
         });
-        const fileName = `reviews/${transactionId}/video/${Date.now()}-${file.originalname}.mp4`;
+        const fileName = `${SUPABASE_BUCKETS.REVIEWS}/${transactionId}/video/${Date.now()}-${file.originalname}.mp4`;
         const { error } = await supabase.storage
-          .from("reviews")
+          .from(SUPABASE_BUCKETS.REVIEWS)
           .upload(fileName, buffer, {
             contentType: "video/mp4",
           });
         if (error) throw new BadRequestError("Failed to upload video");
-        uploadedFiles.push({ bucket: "reviews", path: fileName });
+        uploadedFiles.push({
+          bucket: SUPABASE_BUCKETS.REVIEWS,
+          path: fileName,
+        });
         const { data } = supabase.storage
-          .from("reviews")
+          .from(SUPABASE_BUCKETS.REVIEWS)
           .getPublicUrl(fileName);
         mediaUrls.push(data.publicUrl);
       }
@@ -99,7 +108,7 @@ export const reviewService = {
         },
       });
       return review;
-    } catch (_error) {
+    } catch (error) {
       for (const file of uploadedFiles) {
         await supabase.storage.from(file.bucket).remove([file.path]);
       }
@@ -135,16 +144,19 @@ export const reviewService = {
             format: "webp",
             quality: 80,
           });
-          const fileName = `reviews/${review.transactionId}/images/${Date.now()}-${file.originalname}.webp`;
+          const fileName = `${SUPABASE_BUCKETS.REVIEWS}/${review.transactionId}/images/${Date.now()}-${file.originalname}.webp`;
           const { error } = await supabase.storage
-            .from("reviews")
+            .from(SUPABASE_BUCKETS.REVIEWS)
             .upload(fileName, buffer, {
               contentType: "image/webp",
             });
           if (error) throw new BadRequestError("Failed to upload image");
-          uploadedFiles.push({ bucket: "reviews", path: fileName });
+          uploadedFiles.push({
+            bucket: SUPABASE_BUCKETS.REVIEWS,
+            path: fileName,
+          });
           const { data } = supabase.storage
-            .from("reviews")
+            .from(SUPABASE_BUCKETS.REVIEWS)
             .getPublicUrl(fileName);
           mediaUrls.push(data.publicUrl);
         }
@@ -156,16 +168,19 @@ export const reviewService = {
           maxBitrate: 1200,
           maxSizeMB: 20,
         });
-        const fileName = `reviews/${review.transactionId}/video/${Date.now()}-${file.originalname}.mp4`;
+        const fileName = `${SUPABASE_BUCKETS.REVIEWS}/${review.transactionId}/video/${Date.now()}-${file.originalname}.mp4`;
         const { error } = await supabase.storage
-          .from("reviews")
+          .from(SUPABASE_BUCKETS.REVIEWS)
           .upload(fileName, buffer, {
             contentType: "video/mp4",
           });
         if (error) throw new BadRequestError("Failed to upload video");
-        uploadedFiles.push({ bucket: "reviews", path: fileName });
+        uploadedFiles.push({
+          bucket: SUPABASE_BUCKETS.REVIEWS,
+          path: fileName,
+        });
         const { data } = supabase.storage
-          .from("reviews")
+          .from(SUPABASE_BUCKETS.REVIEWS)
           .getPublicUrl(fileName);
         mediaUrls.push(data.publicUrl);
       }
@@ -180,7 +195,7 @@ export const reviewService = {
         },
       });
       return updatedReview;
-    } catch (_error) {
+    } catch (error) {
       for (const file of uploadedFiles) {
         await supabase.storage.from(file.bucket).remove([file.path]);
       }

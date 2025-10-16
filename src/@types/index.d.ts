@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-explicit-any */
 import type { User as PrismaUser } from "@prisma/client";
 
 declare global {

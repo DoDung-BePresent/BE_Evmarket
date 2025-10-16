@@ -3,6 +3,7 @@
  */
 import prisma from "@/libs/prisma";
 import { BadRequestError, NotFoundError } from "@/libs/error";
+import { IQueryOptions } from "@/types/pagination.type";
 
 export const transactionService = {
   createTransaction: async (
@@ -45,15 +46,31 @@ export const transactionService = {
     });
     return transaction;
   },
-  getTransactionsByBuyer: async (buyerId: string) => {
-    return prisma.transaction.findMany({
+  getTransactionsByBuyer: async (buyerId: string, options: IQueryOptions) => {
+    const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
+    const skip = (page - 1) * limit;
+
+    const transactions = await prisma.transaction.findMany({
       where: { buyerId },
       include: {
-        vehicle: true,
-        battery: true,
-        review: true,
+        vehicle: { select: { id: true, title: true, images: true } },
+        battery: { select: { id: true, title: true, images: true } },
+        review: { select: { id: true, rating: true } },
       },
+      skip,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
     });
+
+    const totalResults = await prisma.transaction.count({ where: { buyerId } });
+
+    return {
+      transactions,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
   },
   getCompletedTransactions: async () => {
     return prisma.transaction.findMany({

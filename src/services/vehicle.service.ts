@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Node modules
  */
@@ -20,6 +21,11 @@ import {
 } from "@/libs/error";
 import { supabase } from "@/libs/supabase";
 
+/**
+ * Constants
+ */
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
+
 export const vehicleService = {
   createVehicle: async (
     userId: string,
@@ -36,7 +42,7 @@ export const vehicleService = {
     const uploadPromises = files.map(async (file) => {
       const fileName = `${userId}/${Date.now()}-${file.originalname}`;
       const { error: uploadError } = await supabase.storage
-        .from("vehicles")
+        .from( SUPABASE_BUCKETS.VEHICLES)
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,
         });
@@ -48,7 +54,7 @@ export const vehicleService = {
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from("vehicles")
+        .from( SUPABASE_BUCKETS.VEHICLES)
         .getPublicUrl(fileName);
       imageUrls.push(publicUrlData.publicUrl);
     });
@@ -62,6 +68,7 @@ export const vehicleService = {
         seller: {
           connect: { id: userId },
         },
+        isVerified: vehicleBody.isAuction ? false : true,
       },
     });
   },
@@ -152,14 +159,14 @@ export const vehicleService = {
     if (updateBody.imagesToDelete && updateBody.imagesToDelete.length > 0) {
       const filePathsToDelete = updateBody.imagesToDelete
         .map((url) => {
-          const urlParts = url.split("/vehicles/");
+          const urlParts = url.split(`/${SUPABASE_BUCKETS.VEHICLES}/`);
           if (urlParts.length < 2) return ""; // Handle invalid URL format
-          return urlParts.slice(1).join("/vehicles/");
+          return urlParts.slice(1).join(`/${SUPABASE_BUCKETS.VEHICLES}/`);
         })
         .filter(Boolean);
 
       if (filePathsToDelete.length > 0) {
-        await supabase.storage.from("vehicles").remove(filePathsToDelete);
+        await supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).remove(filePathsToDelete);
       }
 
       newImageUrls = newImageUrls.filter(
@@ -172,10 +179,10 @@ export const vehicleService = {
       const uploadPromises = files.map(async (file) => {
         const fileName = `${userId}/${Date.now()}-${file.originalname}`;
         const { error } = await supabase.storage
-          .from("vehicles")
+          .from( SUPABASE_BUCKETS.VEHICLES)
           .upload(fileName, file.buffer, { contentType: file.mimetype });
         if (error) throw new InternalServerError("Failed to upload new image");
-        return supabase.storage.from("vehicles").getPublicUrl(fileName).data
+        return supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).getPublicUrl(fileName).data
           .publicUrl;
       });
       const uploadedUrls = await Promise.all(uploadPromises);
@@ -207,10 +214,10 @@ export const vehicleService = {
     // Delete images from Supabase storage
     if (vehicle.images && vehicle.images.length > 0) {
       const filePaths = vehicle.images.map((url) => {
-        const parts = url.split("/vehicles/");
+        const parts = url.split(`/${SUPABASE_BUCKETS.VEHICLES}/`);
         return parts[1];
       });
-      await supabase.storage.from("vehicles").remove(filePaths);
+      await supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).remove(filePaths);
     }
 
     await prisma.vehicle.delete({ where: { id: vehicleId } });

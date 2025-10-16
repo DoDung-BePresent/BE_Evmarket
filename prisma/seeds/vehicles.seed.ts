@@ -25,28 +25,33 @@ const vehicleBrands = [
   "Polestar",
 ];
 
-const vehicleImages = [
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/2019_Tesla_Model_3_Performance_AWD_Front.jpg/1200px-2019_Tesla_Model_3_Performance_AWD_Front.jpg", // Tesla Model 3
-  "https://upload.wikimedia.org/wikipedia/commons/5/5c/Tesla_Model_Y_1X7A6211.jpg", // Tesla Model Y
-  "https://i1-vnexpress.vnecdn.net/2024/06/17/BYD-Atto-3-VNEXPRESS-27-JPG.jpg?w=2400&h=0&q=100&dpr=1&fit=crop&s=2BUkZZ_acW3duKCkNWNw8w&t=image", // BYD Atto 3
-  "https://upload.wikimedia.org/wikipedia/commons/d/de/Nissan_Leaf_2018_%2831874639158%29_%28cropped%29.jpg", // Nissan Leaf
-  "https://i1-vnexpress.vnecdn.net/2023/08/01/IMG-4443-JPG.jpg?w=2400&h=0&q=100&dpr=1&fit=crop&s=fYftX0XbAenDxjv3jPXEJg&t=image", // BMW i4
-  "https://upload.wikimedia.org/wikipedia/commons/d/d5/Audi_e-tron_GT_IMG_5689.jpg", // Audi e-tron GT
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Mercedes-Benz_V297_Classic-Days_2022_DSC_0016.jpg/1200px-Mercedes-Benz_V297_Classic-Days_2022_DSC_0016.jpg", // Mercedes-Benz EQS
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Hyundai_Ioniq_5_AWD_Techniq-Paket_%E2%80%93_f_31122024.jpg/1200px-Hyundai_Ioniq_5_AWD_Techniq-Paket_%E2%80%93_f_31122024.jpg", // Hyundai Ioniq 5
-  "https://upload.wikimedia.org/wikipedia/commons/d/d9/2021_Kia_EV6_GT-Line_S.jpg", // Kia EV6
-  "https://upload.wikimedia.org/wikipedia/commons/4/49/2021_Ford_Mustang_Mach-E_Standard_Range_Front.jpg", // Ford Mustang Mach-E
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/2022_Rivian_R1T_%28in_Glacier_White%29%2C_front_6.21.22.jpg/1200px-2022_Rivian_R1T_%28in_Glacier_White%29%2C_front_6.21.22.jpg", // Rivian R1T
-  "https://hips.hearstapps.com/hmg-prod/images/2025-polestar-2-2-672d4eec1edeb.jpg?crop=0.732xw:0.617xh;0.130xw,0.302xh&resize=980:*", // Polestar 2
-];
-
-const generateVehicleImages = (): string[] => {
+const generateVehicleImages = (vehicleIndex: number): string[] => {
   const imageCount = faker.number.int({ min: 3, max: 5 });
-  return faker.helpers.arrayElements(vehicleImages, imageCount);
+  const images = [];
+
+  for (let i = 1; i <= imageCount; i++) {
+    images.push(
+      `https://placehold.co/600x400?text=vehicle_${vehicleIndex}_${i}`,
+    );
+  }
+
+  return images;
 };
 
-const createVehicles = async (count: number = 20) => {
-  console.log(`🚗 Seeding ${count} vehicles...`);
+interface VehicleSeedConfig {
+  available?: number;
+  sold?: number;
+  delisted?: number;
+}
+
+const createVehicles = async (config: VehicleSeedConfig = {}) => {
+  const { available = 20, sold = 0, delisted = 0 } = config;
+  const totalCount = available + sold + delisted;
+
+  console.log(`🚗 Seeding ${totalCount} vehicles...`);
+  console.log(`   📊 AVAILABLE: ${available}`);
+  console.log(`   📊 SOLD: ${sold}`);
+  console.log(`   📊 DELISTED: ${delisted}`);
 
   // Get all existing users to assign as sellers
   const users = await prisma.user.findMany({
@@ -59,23 +64,23 @@ const createVehicles = async (count: number = 20) => {
 
   const vehicles = [];
 
-  for (let i = 0; i < count; i++) {
+  // Helper function to create a vehicle with specific status
+  const createVehicleData = (
+    index: number,
+    status: "AVAILABLE" | "SOLD" | "DELISTED",
+  ) => {
     const brand = faker.helpers.arrayElement(vehicleBrands);
     const model = faker.vehicle.model();
     const year = faker.number.int({ min: 2015, max: 2024 });
     const mileage = faker.number.int({ min: 0, max: 200000 });
     const randomSeller = faker.helpers.arrayElement(users);
 
-    const vehicle = {
+    return {
       title: `${year} ${brand} ${model}`,
       description: faker.lorem.paragraphs(2, "\n\n"),
       price: faker.number.float({ min: 15000, max: 150000, multipleOf: 500 }),
-      images: generateVehicleImages(),
-      status: faker.helpers.arrayElement([
-        "AVAILABLE",
-        "SOLD",
-        "DELISTED",
-      ]) as any,
+      images: generateVehicleImages(index),
+      status,
       brand,
       model,
       year,
@@ -109,11 +114,26 @@ const createVehicles = async (count: number = 20) => {
           drivetrain: "8 years / 120,000 miles",
         },
       },
-      isVerified: faker.datatype.boolean(0.7), // 70% chance of being verified
+      isVerified: faker.datatype.boolean(0.7),
       sellerId: randomSeller.id,
     };
+  };
 
-    vehicles.push(vehicle);
+  let index = 1;
+
+  // Create AVAILABLE vehicles
+  for (let i = 0; i < available; i++) {
+    vehicles.push(createVehicleData(index++, "AVAILABLE"));
+  }
+
+  // Create SOLD vehicles
+  for (let i = 0; i < sold; i++) {
+    vehicles.push(createVehicleData(index++, "SOLD"));
+  }
+
+  // Create DELISTED vehicles
+  for (let i = 0; i < delisted; i++) {
+    vehicles.push(createVehicleData(index++, "DELISTED"));
   }
 
   // Create vehicles in batches
@@ -131,6 +151,7 @@ const createVehicles = async (count: number = 20) => {
           brand: true,
           model: true,
           price: true,
+          status: true,
         },
       }),
     );
@@ -148,7 +169,7 @@ const createVehicles = async (count: number = 20) => {
 
 const main = async () => {
   try {
-    await createVehicles(25);
+    await createVehicles({ available: 30, sold: 20, delisted: 10 });
   } catch (error) {
     console.error("❌ Error seeding vehicles:", error);
     process.exit(1);

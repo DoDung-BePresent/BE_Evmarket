@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Node modules
  */
@@ -17,30 +18,35 @@ export const batteryValidation = {
         .max(new Date().getFullYear() + 1),
       capacity: z.coerce.number().positive(),
       health: z.coerce.number().min(0).max(100).optional(),
-      specifications: z
-        .preprocess(
-          (val) => {
-            if (typeof val === "string") {
-              try {
-                return JSON.parse(val);
-              } catch (error) {
-                return val; // Return original value to fail validation
-              }
+      specifications: z.preprocess(
+        (val) => {
+          if (typeof val === "string") {
+            try {
+              return JSON.parse(val);
+            } catch (error) {
+              return val; // Return original value to fail validation
             }
-            return val;
-          },
-          z.object({
-            weight: z.string().optional(),
-            voltage: z.string().optional(),
-            warrantyPeriod: z.string().optional(),
-            chargingTime: z.string().optional(),
-            chemistry: z.string().optional(),
-            temperatureRange: z.string().optional(),
-            degradation: z.string().optional(),
-            installation: z.string().optional(),
-          }),
-        )
-        .optional(),
+          }
+          return val;
+        },
+        z
+          .object({
+            weight: z.string(),
+            voltage: z.string(),
+            warrantyPeriod: z.string(),
+            chargingTime: z.string(),
+            chemistry: z.string(),
+            temperatureRange: z.string(),
+            degradation: z.string(),
+            installation: z.string(),
+          })
+          .partial(),
+      ),
+      isAuction: z.coerce.boolean().optional(),
+      auctionEndsAt: z.coerce.date().optional(),
+      startingPrice: z.coerce.number().positive().optional(),
+      bidIncrement: z.coerce.number().positive().optional(),
+      depositAmount: z.coerce.number().positive().optional(),
     }),
   }),
   getBatteries: z.object({

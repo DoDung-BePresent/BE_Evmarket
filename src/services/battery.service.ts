@@ -1,5 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Node modules
+ */
+import { Prisma } from "@prisma/client";
+
+/**
+ * Libs
  */
 import {
   BadRequestError,
@@ -9,8 +15,16 @@ import {
 } from "@/libs/error";
 import prisma from "@/libs/prisma";
 import { supabase } from "@/libs/supabase";
+
+/**
+ * Constants
+ */
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
+
+/**
+ * Types
+ */
 import { IQueryOptions } from "@/types/pagination.type";
-import { Prisma } from "@prisma/client";
 
 export const batteryService = {
   createBattery: async (
@@ -26,7 +40,7 @@ export const batteryService = {
     const uploadPromises = files.map(async (file) => {
       const fileName = `${userId}/${Date.now()}-${file.originalname}`;
       const { error: uploadError } = await supabase.storage
-        .from("batteries")
+        .from(SUPABASE_BUCKETS.BATTERIES)
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,
         });
@@ -38,7 +52,7 @@ export const batteryService = {
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from("batteries")
+        .from(SUPABASE_BUCKETS.BATTERIES)
         .getPublicUrl(fileName);
       imageUrls.push(publicUrlData.publicUrl);
     });
@@ -51,6 +65,7 @@ export const batteryService = {
         seller: {
           connect: { id: userId },
         },
+        isVerified: batteryBody.isAuction ? false : true,
       },
     });
   },
@@ -141,14 +156,14 @@ export const batteryService = {
     if (updateBody.imagesToDelete && updateBody.imagesToDelete.length > 0) {
       const filePathsToDelete = updateBody.imagesToDelete
         .map((url) => {
-          const urlParts = url.split("/batteries/");
+          const urlParts = url.split(`/${SUPABASE_BUCKETS.BATTERIES}/`);
           if (urlParts.length < 2) return ""; // Handle invalid URL format
-          return urlParts.slice(1).join("/batteries/");
+          return urlParts.slice(1).join(`/${SUPABASE_BUCKETS.BATTERIES}/`);
         })
         .filter(Boolean);
 
       if (filePathsToDelete.length > 0) {
-        await supabase.storage.from("batteries").remove(filePathsToDelete);
+        await supabase.storage.from(SUPABASE_BUCKETS.BATTERIES).remove(filePathsToDelete);
       }
 
       newImageUrls = newImageUrls.filter(
@@ -161,10 +176,10 @@ export const batteryService = {
       const uploadPromises = files.map(async (file) => {
         const fileName = `${userId}/${Date.now()}-${file.originalname}`;
         const { error } = await supabase.storage
-          .from("batteries")
+          .from(SUPABASE_BUCKETS.BATTERIES)
           .upload(fileName, file.buffer, { contentType: file.mimetype });
         if (error) throw new InternalServerError("Failed to upload new image");
-        return supabase.storage.from("batteries").getPublicUrl(fileName).data
+        return supabase.storage.from(SUPABASE_BUCKETS.BATTERIES).getPublicUrl(fileName).data
           .publicUrl;
       });
       const uploadedUrls = await Promise.all(uploadPromises);
@@ -196,10 +211,10 @@ export const batteryService = {
     // Delete images from Supabase storage
     if (battery.images && battery.images.length > 0) {
       const filePaths = battery.images.map((url) => {
-        const parts = url.split("/batteries/");
+        const parts = url.split(`/${SUPABASE_BUCKETS.BATTERIES}/`);
         return parts[1];
       });
-      await supabase.storage.from("batteries").remove(filePaths);
+      await supabase.storage.from(SUPABASE_BUCKETS.BATTERIES).remove(filePaths);
     }
 
     await prisma.battery.delete({ where: { id: batteryId } });

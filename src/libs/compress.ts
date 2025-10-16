@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import sharp from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 import { tmpdir } from "os";

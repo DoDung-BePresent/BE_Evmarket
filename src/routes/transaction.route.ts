@@ -33,6 +33,7 @@ transactionRouter.patch(
 transactionRouter.get(
   "/me",
   authenticate,
+  validate(transactionValidation.getMyTransactions), // Thêm validate ở đây
   transactionController.getMyTransactions,
 );
 

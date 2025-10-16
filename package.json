@@ -6,21 +6,32 @@
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc && tsc-alias",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
     "seed:staging": "dotenv -e .env.staging -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
     "seed:users": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/users.seed.ts",
     "seed:vehicles": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/vehicles.seed.ts",
     "seed:batteries": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/batteries.seed.ts",
-    "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed",
-    "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging"
+    "db:setup-cron": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/setup_cron.ts",
+    "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed && npm run db:setup-cron",
+    "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging",
+    "prepare": "husky",
+    "validate-build": "tsc --noEmit && tsc-alias"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "npm run validate-build"
+    ]
   },
   "keywords": [],
   "author": "DoQuangDung",
   "license": "MIT",
   "description": "",
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
     "@faker-js/faker": "^9.9.0",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.9",
@@ -35,15 +46,19 @@
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
     "dotenv-cli": "^10.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^9.37.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "prettier": "^3.6.2",
     "prisma-dbml-generator": "^0.12.0",
     "ts-node-dev": "^2.0.0",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.14.0",
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.12.2",

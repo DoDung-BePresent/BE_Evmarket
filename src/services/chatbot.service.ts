@@ -31,15 +31,15 @@ export const chatbotService = {
     const context = searchResults
       .map(
         (item) =>
-          `- Loại: ${item.type}, Tên: ${item.title}, Giá: ${item.price.toLocaleString()} VND, Mô tả: ${item.description.substring(0, 100)}... Link: /${item.type.toLowerCase()}/${item.id}`,
+          `- Loại: ${item.type}, Tên: ${item.title}, Giá: ${item.price.toLocaleString()} VND, Mô tả: ${item.description.substring(0, 100)}... Link: ${config.CLIENT_URL}/${item.type.toLowerCase()}/${item.id}`,
       )
       .join("\n");
 
     const finalPrompt = `
       Bạn là một trợ lý ảo thân thiện của website mua bán xe và pin điện EVmarket.
       Dựa vào thông tin sản phẩm có sẵn dưới đây và câu hỏi của người dùng, hãy đưa ra một câu trả lời tự nhiên, hữu ích và mời họ xem chi tiết sản phẩm.
+      Quan trọng: Phát hiện ngôn ngữ trong "Câu hỏi của người dùng" và trả lời bằng chính ngôn ngữ đó.
       Không được bịa thêm thông tin không có trong danh sách.
-      Luôn trả lời bằng tiếng Việt.
 
       ---
       Thông tin sản phẩm có sẵn:

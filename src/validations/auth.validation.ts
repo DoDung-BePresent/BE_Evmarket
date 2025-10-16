@@ -41,6 +41,16 @@ export const authValidation = {
         .max(50, "Maximum 50 characters"),
     }),
   }),
+  googleMobileLogin: z.object({
+    body: z.object({
+      idToken: z.string().nonempty("idToken is required"),
+    }),
+  }),
+  exchangeCode: z.object({
+    body: z.object({
+      code: z.string().nonempty("Authorization code is required"),
+    }),
+  }),
 };
 
 export type RegisterPayload = z.infer<

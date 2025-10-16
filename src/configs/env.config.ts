@@ -21,6 +21,10 @@ const config = {
   WHITELIST_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS || "")
     .split(",")
     .filter(Boolean),
+
+  // REDIS
+  REDIS_URL: process.env.REDIS_URL!,
+
   // GEMINI
   GEMINI_API_KEY: process.env.GEMINI_API_KEY!,
   // LOGS

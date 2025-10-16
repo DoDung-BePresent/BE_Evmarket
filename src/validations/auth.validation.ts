@@ -46,6 +46,11 @@ export const authValidation = {
       idToken: z.string().nonempty("idToken is required"),
     }),
   }),
+  exchangeCode: z.object({
+    body: z.object({
+      code: z.string().nonempty("Authorization code is required"),
+    }),
+  }),
 };
 
 export type RegisterPayload = z.infer<

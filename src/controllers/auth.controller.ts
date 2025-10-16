@@ -22,7 +22,7 @@ import { authService } from "@/services/auth.service";
  * Libs
  */
 import prisma from "@/libs/prisma";
-import { UnauthorizedError } from "@/libs/error";
+import { BadRequestError, UnauthorizedError } from "@/libs/error";
 import {
   clearTokenCookie,
   generateTokens,
@@ -133,6 +133,31 @@ export const authController = {
       data: {
         user,
         accessToken,
+      },
+    });
+  }),
+  exchangeCodeForTokens: asyncHandler(async (req, res) => {
+    const { code } = req.validated?.body;
+    
+    if (!code) {
+      throw new BadRequestError("Authorization code is required.");
+    }
+
+    const { user, tokens } = await authService.exchangeCodeForTokens(code);
+
+    // FIXME: Set cookie cho refresh token nếu cần (thường không cần cho mobile)
+    setTokenCookie(
+      res,
+      "refreshToken",
+      tokens.refreshToken,
+      "/api/v1/auth/refresh-token",
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Tokens exchanged successfully",
+      data: {
+        user,
+        accessToken: tokens.accessToken,
       },
     });
   }),

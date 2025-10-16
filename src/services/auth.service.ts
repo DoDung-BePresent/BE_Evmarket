@@ -2,21 +2,13 @@
  * Node modules
  */
 import axios from "axios";
+import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
 
 /**
  * Configs
  */
 import config from "@/configs/env.config";
-
-/**
- * Libs
- */
-import prisma from "@/libs/prisma";
-import { supabase } from "@/libs/supabase";
-import { compressImage } from "@/libs/compress";
-import { comparePassword, hashPassword } from "@/libs/crypto";
-import { BadRequestError, ConflictError, UnauthorizedError } from "@/libs/error";
 
 /**
  * Constants
@@ -27,6 +19,22 @@ import { ERROR_CODE_ENUM } from "@/constants/error.constant";
  * Validations
  */
 import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
+
+/**
+ * Libs
+ */
+import prisma from "@/libs/prisma";
+import redisClient from "@/libs/redis";
+import { supabase } from "@/libs/supabase";
+import { generateTokens } from "@/libs/jwt";
+import { compressImage } from "@/libs/compress";
+import { comparePassword, hashPassword } from "@/libs/crypto";
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "@/libs/error";
 
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
@@ -257,5 +265,40 @@ export const authService = {
     } catch (error) {
       throw new UnauthorizedError("Failed to verify Google token");
     }
+  },
+  createOneTimeCode: async (userId: string): Promise<string> => {
+    const code = crypto.randomBytes(32).toString("hex");
+    const key = `oauth-code:${code}`;
+    await redisClient.set(key, userId, {
+      EX: 60,
+    });
+    return code;
+  },
+  exchangeCodeForTokens: async (
+    code: string,
+  ): Promise<{
+    user: any;
+    tokens: { accessToken: string; refreshToken: string };
+  }> => {
+    const key = `oauth-code:${code}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) {
+      throw new UnauthorizedError("Invalid or expired authorization code.");
+    }
+
+    await redisClient.del(key);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError("User not found for this code.");
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user.id);
+
+    return {
+      user,
+      tokens: { accessToken, refreshToken },
+    };
   },
 };

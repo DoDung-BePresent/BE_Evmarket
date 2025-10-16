@@ -21,6 +21,9 @@ const config = {
     .split(",")
     .filter(Boolean),
 
+  // REDIS
+  REDIS_URL: process.env.REDIS_URL!,
+
   // LOGS
   LOG_TO_FILE: process.env.LOG_TO_FILE || "true",
   LOG_LEVEL: process.env.LOG_LEVEL || "info",

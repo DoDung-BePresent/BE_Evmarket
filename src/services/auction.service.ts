@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Node modules
  */
@@ -10,6 +11,43 @@ import prisma from "@/libs/prisma";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/libs/error";
 
 export const auctionService = {
+  requestAuction: async (
+    userId: string,
+    listingType: ListingType,
+    listingId: string,
+    payload: {
+      startingPrice: number;
+      bidIncrement: number;
+      depositAmount?: number;
+      auctionEndsAt: Date;
+    },
+  ) => {
+    const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
+    const listing = await (model as any).findUnique({
+      where: { id: listingId },
+    });
+
+    if (!listing) {
+      throw new NotFoundError(`${listingType} not found.`);
+    }
+    if (listing.sellerId !== userId) {
+      throw new ForbiddenError("You are not the owner of this listing.");
+    }
+    if (listing.status !== "AVAILABLE") {
+      throw new ForbiddenError(
+        "Only available listings can be put up for auction.",
+      );
+    }
+
+    return (model as any).update({
+      where: { id: listingId },
+      data: {
+        ...payload,
+        isAuction: true,
+        status: "AUCTION_PENDING_APPROVAL",
+      },
+    });
+  },
   placeBid: async ({
     listingType,
     listingId,

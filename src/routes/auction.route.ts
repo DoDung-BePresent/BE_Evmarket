@@ -1,7 +1,19 @@
 import { Router } from "express";
+
+/**
+ * Middlewares
+ */
 import { authenticate } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
+
+/**
+ * Controllers
+ */
 import { auctionController } from "@/controllers/auction.controller";
+
+/**
+ * Validations
+ */
 import { auctionValidation } from "@/validations/auction.validation";
 
 const auctionRouter = Router();
@@ -12,6 +24,12 @@ auctionRouter.post(
   "/vehicles/:listingId/bids",
   validate(auctionValidation.placeBid),
   auctionController.placeVehicleBid,
+);
+
+auctionRouter.patch(
+  "/listings/:listingType/:listingId/request-auction",
+  validate(auctionValidation.requestAuction),
+  auctionController.requestAuction,
 );
 
 auctionRouter.post(

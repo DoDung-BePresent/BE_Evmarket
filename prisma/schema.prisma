@@ -39,6 +39,8 @@ enum ListingStatus {
   AVAILABLE
   SOLD
   DELISTED
+  AUCTION_PENDING_APPROVAL
+  AUCTION_REJECTED
   AUCTION_LIVE
   AUCTION_ENDED
 }
@@ -122,7 +124,8 @@ model Vehicle {
   bidIncrement    Float?    // Bước giá
   depositAmount   Float?    // Tiền cọc
 
-  isVerified      Boolean       @default(false) // Verified by Admin
+  isVerified      Boolean       @default(false)
+  auctionRejectionReason String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -154,7 +157,8 @@ model Battery {
   bidIncrement    Float?
   depositAmount   Float?
 
-  isVerified      Boolean       @default(false) // Verified by Admin
+  isVerified      Boolean       @default(false)
+  auctionRejectionReason String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

@@ -21,6 +21,21 @@ import { asyncHandler } from "@/middlewares/error.middleware";
 import { auctionService } from "@/services/auction.service";
 
 export const auctionController = {
+  requestAuction: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { listingType, listingId } = req.validated?.params;
+    const listing = await auctionService.requestAuction(
+      userId,
+      listingType,
+      listingId,
+      req.validated?.body,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message:
+        "Auction request submitted successfully. Please wait for approval.",
+      data: listing,
+    });
+  }),
   placeVehicleBid: asyncHandler(async (req, res) => {
     const { id: bidderId } = req.user!;
     const { listingId } = req.validated?.params;

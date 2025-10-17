@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, no-unsafe-optional-chaining */
 /**
  * Constants
  */
@@ -20,6 +20,18 @@ import { adminService } from "@/services/admin.service";
 import { transactionService } from "@/services/transaction.service";
 
 export const adminController = {
+  reviewAuctionRequest: asyncHandler(async (req, res) => {
+    const { listingType, listingId } = req.validated?.params;
+    const listing = await adminService.reviewAuctionRequest(
+      listingType,
+      listingId,
+      req.validated?.body,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message: `Auction request has been ${req.validated?.body.approved ? "approved" : "rejected"}.`,
+      data: listing,
+    });
+  }),
   getCompletedTransactions: asyncHandler(async (req, res) => {
     const transactions = await transactionService.getCompletedTransactions();
     res.status(STATUS_CODE.OK).json({

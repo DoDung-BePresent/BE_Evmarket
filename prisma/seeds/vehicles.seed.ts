@@ -25,17 +25,24 @@ const vehicleBrands = [
   "Polestar",
 ];
 
-const generateVehicleImages = (vehicleIndex: number): string[] => {
+const vehicleImages = [
+  "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png", // Tesla Model 3
+  "https://w7.pngwing.com/pngs/705/817/png-transparent-white-tesla-model-y-transport-cars-tesla.png", // Tesla Model Y
+  "https://media.licdn.com/dms/image/v2/D5622AQEgP55Qx26WJg/feedshare-shrink_800/feedshare-shrink_800/0/1712310604083?e=2147483647&v=beta&t=g49Radvb_ojPuhpE7eJzdB1YsW5d5049X7NlozAgfXM", // BYD Atto 3
+  "https://www.pngplay.com/wp-content/uploads/13/Nissan-Leaf-PNG-Free-File-Download.png", // Nissan Leaf
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/BMW_Concept_i4.png/1200px-BMW_Concept_i4.png", // BMW i4
+  "https://get-moba.com/app/uploads/2024/05/audi-e-tron-gt-666x375-1.png", // Audi e-tron GT
+  "https://media.oneweb.mercedes-benz.com/images/dynamic/asia/VN/297123/802_052/iris.png?q=COSY-EU-100-1713d0VXq0YFqtyO67PobzIr3eWsrrCsdRRzwQZhkHZbMw3SGtGyMtsd2vtcUfp8cXGEuiRJ0l34AOB2NQnbApj7bI5ux52QC31vTkzNBTnm7jA6IhKV5Kh%25vqCBlyLRznyYax7oxrH1KMun8wvVwoiZUbXM4FG4fTg906O6PDBSqSeWAhItsd5kdcUfKM6XGEvTRJ0lL6qOB2abRbApHYpI5usoJQC3UC1kzNGtNm7j0O3hKVB%25t%25vqA8TyLRiO6Yax4JOroYhfldsbbAp7oMIkb1ECQmIFUOkzNUTum7jscWhKVzsM%25vq7UcyLRKOyYaxvODrH1peen8wiA2oiZ45gM4zuA1YtEWpTuP6CPoZFIT9ZxexrlrKE847dvE5jCDtyAib&BKGND=9&IMGT=P27&cp=U7lLKRUtPa6KAFr8s_ubHw&uni=m&POV=BE040,PZM", // Mercedes-Benz EQS
+  "https://hyundaithainguyenjsc.vn/wp-content/uploads/2023/08/KyOubHOmxibDQusk8_34-1.png", // Hyundai Ioniq 5
+  "https://www.halliwelljones.co.uk/uploads/page-images/kia-ev6-gt_2022-gt-white-pearl_0000.png", // Kia EV6
+  "https://cdn.prod.website-files.com/60ce1b7dd21cd517bb39ff20/61a7aef2dfdf5e75ef5bb4bf_mustang-mache.png", // Ford Mustang Mach-E
+  "https://www.electrifying.com/files/Nb3H3VsqrldjLWDq/rivian-rt1-evchargeplus-00.png", // Rivian R1T
+  "https://file.kelleybluebookimages.com/kbb/base/evox/CP/53890/2024-Polestar-2-front_53890_032_2400x1800_729.png", // Polestar 2
+];
+
+const generateVehicleImages = (): string[] => {
   const imageCount = faker.number.int({ min: 3, max: 5 });
-  const images = [];
-
-  for (let i = 1; i <= imageCount; i++) {
-    images.push(
-      `https://placehold.co/600x400?text=vehicle_${vehicleIndex}_${i}`,
-    );
-  }
-
-  return images;
+  return faker.helpers.shuffle(vehicleImages).slice(0, imageCount);
 };
 
 interface VehicleSeedConfig {
@@ -79,7 +86,7 @@ const createVehicles = async (config: VehicleSeedConfig = {}) => {
       title: `${year} ${brand} ${model}`,
       description: faker.lorem.paragraphs(2, "\n\n"),
       price: faker.number.float({ min: 15000, max: 150000, multipleOf: 500 }),
-      images: generateVehicleImages(index),
+      images: generateVehicleImages(),
       status,
       brand,
       model,

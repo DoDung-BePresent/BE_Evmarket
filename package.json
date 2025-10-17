@@ -17,6 +17,7 @@
     "db:setup-cron": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/setup_cron.ts",
     "db:reset": "dotenv -e .env -- npx prisma migrate reset --force && npm run seed && npm run db:setup-cron",
     "db:reset:staging": "dotenv -e .env.staging -- npx prisma migrate reset --force && npm run seed:staging",
+    "postinstall": "npm rebuild sharp",
     "prepare": "husky",
     "validate-build": "tsc --noEmit && tsc-alias"
   },

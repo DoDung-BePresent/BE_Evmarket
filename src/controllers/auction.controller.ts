@@ -1,11 +1,6 @@
 /* eslint-disable no-unsafe-optional-chaining */
 
 /**
- * Node modules
- */
-import { ListingType } from "@prisma/client";
-
-/**
  * Constants
  */
 import { STATUS_CODE } from "@/constants/error.constant";
@@ -21,6 +16,19 @@ import { asyncHandler } from "@/middlewares/error.middleware";
 import { auctionService } from "@/services/auction.service";
 
 export const auctionController = {
+  payAuctionDeposit: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { listingType, listingId } = req.validated?.params;
+    const deposit = await auctionService.payAuctionDeposit(
+      userId,
+      listingType,
+      listingId,
+    );
+    res.status(STATUS_CODE.CREATED).json({
+      message: "Deposit paid successfully. You can now place bids.",
+      data: deposit,
+    });
+  }),
   requestAuction: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const { listingType, listingId } = req.validated?.params;
@@ -36,31 +44,13 @@ export const auctionController = {
       data: listing,
     });
   }),
-  placeVehicleBid: asyncHandler(async (req, res) => {
+  placeBid: asyncHandler(async (req, res) => {
     const { id: bidderId } = req.user!;
-    const { listingId } = req.validated?.params;
+    const { listingId, listingType } = req.validated?.params;
     const { amount } = req.validated?.body;
 
     const newBid = await auctionService.placeBid({
-      listingType: ListingType.VEHICLE,
-      listingId,
-      bidderId,
-      amount,
-    });
-
-    res.status(STATUS_CODE.CREATED).json({
-      message: "Bid placed successfully",
-      data: newBid,
-    });
-  }),
-
-  placeBatteryBid: asyncHandler(async (req, res) => {
-    const { id: bidderId } = req.user!;
-    const { listingId } = req.validated?.params;
-    const { amount } = req.validated?.body;
-
-    const newBid = await auctionService.placeBid({
-      listingType: ListingType.BATTERY,
+      listingType,
       listingId,
       bidderId,
       amount,

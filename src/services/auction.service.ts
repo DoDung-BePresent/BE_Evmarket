@@ -8,7 +8,13 @@ import { ListingType } from "@prisma/client";
  * Libs
  */
 import prisma from "@/libs/prisma";
-import { BadRequestError, ForbiddenError, NotFoundError } from "@/libs/error";
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "@/libs/error";
+import { walletService } from "./wallet.service"; // Import walletService
 
 export const auctionService = {
   requestAuction: async (
@@ -48,6 +54,54 @@ export const auctionService = {
       },
     });
   },
+  payAuctionDeposit: async (
+    userId: string,
+    listingType: ListingType,
+    listingId: string,
+  ) => {
+    // Dùng transaction để đảm bảo tính toàn vẹn
+    return prisma.$transaction(async (tx) => {
+      const listing = await (tx as any)[listingType.toLowerCase()].findUnique({
+        where: { id: listingId },
+      });
+
+      if (!listing || listing.status !== "AUCTION_LIVE") {
+        throw new BadRequestError("Auction is not available for deposit.");
+      }
+      if (!listing.depositAmount || listing.depositAmount <= 0) {
+        throw new BadRequestError("This auction does not require a deposit.");
+      }
+
+      // Kiểm tra xem đã đặt cọc chưa
+      const existingDeposit = await tx.auctionDeposit.findFirst({
+        where: { userId, [`${listingType.toLowerCase()}Id`]: listingId },
+      });
+      if (existingDeposit) {
+        throw new ConflictError(
+          "You have already paid a deposit for this auction.",
+        );
+      }
+
+      // Trừ tiền từ ví người dùng
+      await walletService.updateBalance(
+        userId,
+        -listing.depositAmount,
+        "AUCTION_DEPOSIT",
+        tx,
+      );
+
+      // Tạo bản ghi đặt cọc
+      const deposit = await tx.auctionDeposit.create({
+        data: {
+          amount: listing.depositAmount,
+          userId,
+          [`${listingType.toLowerCase()}Id`]: listingId,
+        },
+      });
+
+      return deposit;
+    });
+  },
   placeBid: async ({
     listingType,
     listingId,
@@ -59,96 +113,68 @@ export const auctionService = {
     bidderId: string;
     amount: number;
   }) => {
-    return prisma.$transaction(async (tx) => {
-      // 1. Lấy thông tin sản phẩm đấu giá và người đặt giá
-      let listing;
-      if (listingType === "VEHICLE") {
-        listing = await tx.vehicle.findUnique({ where: { id: listingId } });
-      } else {
-        listing = await tx.battery.findUnique({ where: { id: listingId } });
-      }
+    const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
 
-      const bidderWallet = await tx.wallet.findUnique({
-        where: { userId: bidderId },
+    const listing = await (model as any).findUnique({
+      where: { id: listingId },
+      include: {
+        bids: {
+          orderBy: { amount: "desc" },
+          take: 1,
+        },
+      },
+    });
+    if (!listing) {
+      throw new NotFoundError(`${listingType} not found.`);
+    }
+
+    if (listing.depositAmount > 0) {
+      const deposit = await prisma.auctionDeposit.findFirst({
+        where: {
+          userId: bidderId,
+          [`${listingType.toLowerCase()}Id`]: listingId,
+          status: "PAID",
+        },
       });
-
-      if (!listing || !listing.isAuction) {
-        throw new NotFoundError("Auction listing not found.");
-      }
-      if (!bidderWallet) {
-        throw new NotFoundError("Bidder wallet not found.");
-      }
-      if (listing.status !== "AUCTION_LIVE") {
-        throw new ForbiddenError("Auction is not live.");
-      }
-
-      // 2. Lấy giá bid cao nhất hiện tại
-      const highestBid = await tx.bid.findFirst({
-        where:
-          listingType === "VEHICLE"
-            ? { vehicleId: listingId }
-            : { batteryId: listingId },
-        orderBy: { amount: "desc" },
-      });
-
-      const currentHighestAmount =
-        highestBid?.amount || listing.startingPrice || 0;
-      const requiredAmount = currentHighestAmount + (listing.bidIncrement || 0);
-
-      if (amount < requiredAmount) {
-        throw new BadRequestError(
-          `Your bid must be at least ${requiredAmount}`,
+      if (!deposit) {
+        throw new ForbiddenError(
+          "You must pay a deposit before placing a bid on this auction.",
         );
       }
+    }
 
-      // 3. Xử lý tiền cọc nếu đây là lần đầu người dùng bid
-      const depositAmount = listing.depositAmount || 0;
-      const hasAlreadyBid = await tx.bid.findFirst({
-        where: {
-          bidderId,
-          ...(listingType === "VEHICLE"
-            ? { vehicleId: listingId }
-            : { batteryId: listingId }),
-        },
-      });
+    if (listing.sellerId === bidderId) {
+      throw new ForbiddenError("You cannot bid on your own auction.");
+    }
 
-      if (!hasAlreadyBid && depositAmount > 0) {
-        if (bidderWallet.availableBalance < depositAmount) {
-          throw new BadRequestError("Insufficient balance to place a deposit.");
-        }
-        // Khóa tiền cọc
-        await tx.wallet.update({
-          where: { userId: bidderId },
-          data: {
-            availableBalance: { decrement: depositAmount },
-            lockedBalance: { increment: depositAmount },
-          },
-        });
-        // Ghi lại giao dịch tài chính
-        await tx.financialTransaction.create({
-          data: {
-            walletId: bidderWallet.id,
-            type: "AUCTION_DEPOSIT",
-            amount: -depositAmount,
-            status: "COMPLETED",
-            gateway: "WALLET",
-            description: `Deposit for auction of ${listing.title}`,
-          },
-        });
-      }
+    if (listing.status !== "AUCTION_LIVE") {
+      throw new BadRequestError("This auction is not currently active.");
+    }
 
-      // 4. Tạo lượt bid mới
-      const newBid = await tx.bid.create({
-        data: {
-          amount,
-          bidderId,
-          ...(listingType === "VEHICLE"
-            ? { vehicleId: listingId }
-            : { batteryId: listingId }),
-        },
-      });
+    if (new Date() > new Date(listing.auctionEndsAt)) {
+      throw new BadRequestError("This auction has already ended.");
+    }
 
-      return newBid;
+    const highestBid = listing.bids[0]?.amount || 0;
+    const startingPrice = listing.startingPrice || 0;
+    const bidIncrement = listing.bidIncrement || 1;
+    const minimumBid =
+      highestBid > 0 ? highestBid + bidIncrement : startingPrice;
+
+    if (amount < minimumBid) {
+      throw new BadRequestError(
+        `Your bid must be at least ${minimumBid.toLocaleString()} VND.`,
+      );
+    }
+
+    return prisma.bid.create({
+      data: {
+        amount,
+        bidder: { connect: { id: bidderId } },
+        ...(listingType === "VEHICLE"
+          ? { vehicle: { connect: { id: listingId } } }
+          : { battery: { connect: { id: listingId } } }),
+      },
     });
   },
 };

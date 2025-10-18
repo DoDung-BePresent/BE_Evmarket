@@ -43,6 +43,7 @@ enum ListingStatus {
   AUCTION_REJECTED
   AUCTION_LIVE
   AUCTION_ENDED
+  AUCTION_PAYMENT_PENDING // <-- Thêm trạng thái chờ người thắng thanh toán
 }
 
 enum TransactionStatus {
@@ -55,14 +56,24 @@ enum TransactionStatus {
 enum FinancialTransactionType {
   DEPOSIT
   WITHDRAWAL
+  LISTING_FEE
+  SALE_REVENUE
   PURCHASE
-  AUCTION_DEPOSIT
-  AUCTION_RELEASE
+  REFUND
+  AUCTION_DEPOSIT // <-- Thêm loại giao dịch đặt cọc
+  AUCTION_DEPOSIT_REFUND // <-- Thêm loại giao dịch hoàn cọc
+}
+
+enum AuctionDepositStatus {
+  PAID
+  REFUNDED
+  FORFEITED // Bị tịch thu
 }
 
 enum PaymentGateway {
   WALLET
   MOMO
+  INTERNAL
 }
 
 // MODELS
@@ -84,6 +95,7 @@ model User {
   reviews         Review[]
   wallet          Wallet?
   bids            Bid[]
+  auctionDeposits AuctionDeposit[]
 }
 
 model Account {
@@ -134,6 +146,7 @@ model Vehicle {
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   transactions    Transaction[]
   bids            Bid[]
+  deposits        AuctionDeposit[]
 }
 
 model Battery {
@@ -167,6 +180,7 @@ model Battery {
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   transactions    Transaction[]
   bids            Bid[]
+  deposits        AuctionDeposit[]
 }
 
 model Transaction {
@@ -260,4 +274,21 @@ model Review {
   updatedAt     DateTime @updatedAt
 
   @@index([reviewerId])
+}
+
+model AuctionDeposit {
+  id        String               @id @default(cuid())
+  amount    Float
+  status    AuctionDepositStatus @default(PAID)
+  user      User                 @relation(fields: [userId], references: [id])
+  userId    String
+  vehicle   Vehicle?             @relation(fields: [vehicleId], references: [id])
+  vehicleId String?
+  battery   Battery?             @relation(fields: [batteryId], references: [id])
+  batteryId String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@unique([userId, vehicleId])
+  @@unique([userId, batteryId])
 }

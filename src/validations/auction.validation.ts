@@ -24,12 +24,17 @@ export const auctionValidation = {
   }),
   placeBid: z.object({
     body: z.object({
-      amount: z.coerce
-        .number()
-        .positive("Bid amount must be a positive number"),
+      amount: z.coerce.number().positive("Bid amount must be positive"),
     }),
     params: z.object({
       listingId: z.cuid("Invalid listing ID"),
+      listingType: z.enum(["VEHICLE", "BATTERY"]),
+    }),
+  }),
+  depositParams: z.object({
+    params: z.object({
+      listingId: z.cuid("Invalid listing ID"),
+      listingType: z.enum(["VEHICLE", "BATTERY"]),
     }),
   }),
 };

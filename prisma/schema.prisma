@@ -185,7 +185,7 @@ model Battery {
 }
 
 model Transaction {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   buyerId         String
   buyer           User     @relation(fields: [buyerId], references: [id])
   status          TransactionStatus @default(PENDING)

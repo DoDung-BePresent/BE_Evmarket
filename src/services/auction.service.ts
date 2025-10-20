@@ -65,9 +65,16 @@ export const auctionService = {
         where: { id: listingId },
       });
 
+      if (listing.sellerId === userId) {
+        throw new ForbiddenError(
+          "You cannot pay a deposit on your own auction.",
+        );
+      }
+      
       if (!listing || listing.status !== "AUCTION_LIVE") {
         throw new BadRequestError("Auction is not available for deposit.");
       }
+
       if (!listing.depositAmount || listing.depositAmount <= 0) {
         throw new BadRequestError("This auction does not require a deposit.");
       }
@@ -145,6 +152,10 @@ export const auctionService = {
 
     if (listing.sellerId === bidderId) {
       throw new ForbiddenError("You cannot bid on your own auction.");
+    }
+
+    if (new Date() < new Date(listing.auctionStartsAt)) {
+      throw new BadRequestError("This auction has not started yet.");
     }
 
     if (listing.status !== "AUCTION_LIVE") {

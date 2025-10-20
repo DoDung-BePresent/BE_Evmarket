@@ -131,6 +131,7 @@ model Vehicle {
   specifications  Json?
 
   isAuction       Boolean   @default(false)
+  auctionStartsAt DateTime?
   auctionEndsAt   DateTime?
   startingPrice   Float?
   bidIncrement    Float?    // Bước giá

@@ -11,7 +11,7 @@ export const checkoutValidation = {
   }),
   payWithWallet: z.object({
     params: z.object({
-      transactionId: z.string().cuid(),
+      transactionId: z.uuid(),
     }),
   }),
 };

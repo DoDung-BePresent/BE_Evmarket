@@ -12,7 +12,7 @@ export const transactionValidation = {
   }),
   completeTransaction: z.object({
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
   }),
   getMyTransactions: z.object({

@@ -21,21 +21,21 @@ const auctionRouter = Router();
 auctionRouter.use(authenticate);
 
 auctionRouter.post(
-  "/vehicles/:listingId/bids",
+  "/:listingType/:listingId/deposit",
+  validate(auctionValidation.depositParams), // Cần tạo validation này
+  auctionController.payAuctionDeposit,
+);
+
+auctionRouter.post(
+  "/:listingType/:listingId/bids",
   validate(auctionValidation.placeBid),
-  auctionController.placeVehicleBid,
+  auctionController.placeBid,
 );
 
 auctionRouter.patch(
   "/listings/:listingType/:listingId/request-auction",
   validate(auctionValidation.requestAuction),
   auctionController.requestAuction,
-);
-
-auctionRouter.post(
-  "/batteries/:listingId/bids",
-  validate(auctionValidation.placeBid),
-  auctionController.placeBatteryBid,
 );
 
 export default auctionRouter;

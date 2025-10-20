@@ -13,6 +13,7 @@ import config from "@/configs/env.config";
  * Services
  */
 import { momoService } from "@/services/momo.service";
+import { walletService } from "@/services/wallet.service";
 
 /**
  * Libs
@@ -174,23 +175,14 @@ export const checkoutService = {
 
       const price = transaction.finalPrice!;
 
-      const walletUpdateResult = await tx.wallet.updateMany({
-        where: { userId: buyerId, availableBalance: { gte: price } },
-        data: { availableBalance: { decrement: price } },
-      });
-
-      if (walletUpdateResult.count === 0) {
-        throw new BadRequestError("Insufficient wallet balance.");
-      }
-
       const sellerId =
         transaction.vehicle?.sellerId || transaction.battery?.sellerId;
       if (!sellerId)
         throw new InternalServerError("Seller not found for this transaction.");
-      await tx.wallet.update({
-        where: { userId: sellerId },
-        data: { availableBalance: { increment: price } },
-      });
+
+      await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
+
+      await walletService.updateBalance(sellerId, price, "SALE_REVENUE", tx);
 
       const listingType = transaction.vehicleId ? "VEHICLE" : "BATTERY";
       const listingId = transaction.vehicleId || transaction.batteryId;

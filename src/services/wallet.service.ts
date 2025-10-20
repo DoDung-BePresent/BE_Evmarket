@@ -1,3 +1,9 @@
+ 
+/**
+ * Node modules
+ */
+import { FinancialTransactionType, PrismaClient } from "@prisma/client";
+
 /**
  * Libs
  */
@@ -13,7 +19,16 @@ import config from "@/configs/env.config";
  * Services
  */
 import { momoService } from "@/services/momo.service";
+
+/**
+ * Types
+ */
 import { IQueryOptions } from "@/types/pagination.type";
+
+type PrismaTransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 export const walletService = {
   createWallet: async (userId: string) => {
@@ -23,6 +38,48 @@ export const walletService = {
       },
     });
   },
+  updateBalance: async (
+    userId: string,
+    amount: number,
+    type: FinancialTransactionType,
+    tx?: PrismaTransactionClient,
+  ) => {
+    const prismaClient = tx || prisma;
+
+    const wallet = await prismaClient.wallet.findUnique({
+      where: { userId },
+    });
+
+    if (!wallet) {
+      throw new NotFoundError("User wallet not found.");
+    }
+
+    if (wallet.availableBalance + amount < 0) {
+      throw new BadRequestError("Insufficient available balance.");
+    }
+
+    const updatedWallet = await prismaClient.wallet.update({
+      where: { userId },
+      data: {
+        availableBalance: {
+          increment: amount,
+        },
+      },
+    });
+
+    await prismaClient.financialTransaction.create({
+      data: {
+        walletId: wallet.id,
+        amount,
+        type,
+        status: "COMPLETED", // Assume direct balance updates are always completed
+        gateway: "INTERNAL",
+      },
+    });
+
+    return updatedWallet;
+  },
+
   getWalletByUserId: async (userId: string) => {
     const wallet = await prisma.wallet.findUnique({
       where: { userId },
@@ -59,6 +116,7 @@ export const walletService = {
 
     return paymentInfo;
   },
+
   getFinancialHistory: async (userId: string, options: IQueryOptions) => {
     const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
     const skip = (page - 1) * limit;

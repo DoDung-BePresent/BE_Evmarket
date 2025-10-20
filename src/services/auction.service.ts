@@ -70,7 +70,7 @@ export const auctionService = {
           "You cannot pay a deposit on your own auction.",
         );
       }
-      
+
       if (!listing || listing.status !== "AUCTION_LIVE") {
         throw new BadRequestError("Auction is not available for deposit.");
       }
@@ -152,6 +152,13 @@ export const auctionService = {
 
     if (listing.sellerId === bidderId) {
       throw new ForbiddenError("You cannot bid on your own auction.");
+    }
+
+    const highestBidderId = listing.bids[0]?.bidderId;
+    if (highestBidderId && highestBidderId === bidderId) {
+      throw new BadRequestError(
+        "You are already the highest bidder. Please wait for another bid.",
+      );
     }
 
     if (new Date() < new Date(listing.auctionStartsAt)) {

@@ -10,7 +10,57 @@ import { ListingType } from "@prisma/client";
 import prisma from "@/libs/prisma";
 import { NotFoundError, BadRequestError } from "@/libs/error";
 
+/**
+ * Types
+ */
+import { IQueryOptions } from "@/types/pagination.type";
+
 export const adminService = {
+  getPendingAuctionRequests: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const commonWhere = { status: "AUCTION_PENDING_APPROVAL" as const };
+
+    const pendingVehicles = await prisma.vehicle.findMany({
+      where: commonWhere,
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    });
+
+    const pendingBatteries = await prisma.battery.findMany({
+      where: commonWhere,
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    });
+
+    const allPendingRequests = [
+      ...pendingVehicles.map((v) => ({ ...v, listingType: "VEHICLE" })),
+      ...pendingBatteries.map((b) => ({ ...b, listingType: "BATTERY" })),
+    ];
+
+    // Sắp xếp kết quả đã gộp
+    allPendingRequests.sort((a, b) => {
+      const dateA = new Date((a as any)[sortBy] as string).getTime();
+      const dateB = new Date((b as any)[sortBy] as string).getTime();
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    });
+
+    const paginatedResults = allPendingRequests.slice(skip, skip + limit);
+    const totalResults = allPendingRequests.length;
+
+    return {
+      requests: paginatedResults,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
+
   reviewAuctionRequest: async (
     listingType: ListingType,
     listingId: string,
@@ -49,7 +99,6 @@ export const adminService = {
       });
     }
   },
-
   approveListing: async (listingType: ListingType, listingId: string) => {
     if (listingType === "VEHICLE") {
       const vehicle = await prisma.vehicle.findUnique({

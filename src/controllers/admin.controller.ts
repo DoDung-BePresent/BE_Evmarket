@@ -15,11 +15,29 @@ import { asyncHandler } from "@/middlewares/error.middleware";
 import { adminService } from "@/services/admin.service";
 
 /**
+ * Utils
+ */
+import { pick } from "@/utils/pick.util";
+
+/**
  * Services
  */
 import { transactionService } from "@/services/transaction.service";
 
 export const adminController = {
+  getPendingAuctionRequests: asyncHandler(async (req, res) => {
+    const options = pick(req.validated?.query, [
+      "sortBy",
+      "sortOrder",
+      "limit",
+      "page",
+    ]);
+    const result = await adminService.getPendingAuctionRequests(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Pending auction requests fetched successfully",
+      data: result,
+    });
+  }),
   reviewAuctionRequest: asyncHandler(async (req, res) => {
     const { listingType, listingId } = req.validated?.params;
     const listing = await adminService.reviewAuctionRequest(

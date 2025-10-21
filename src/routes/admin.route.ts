@@ -21,10 +21,19 @@ import { authenticate, authorize } from "@/middlewares/auth.middleware";
 
 const adminRouter = Router();
 
+adminRouter.get(
+  "/auction-requests",
+  authenticate,
+  authorize(["STAFF", "ADMIN"]),
+  validate(adminValidation.getPendingAuctionRequests),
+  adminController.getPendingAuctionRequests,
+);
+
 adminRouter.patch(
   "/listings/:listingType/:listingId/approve",
   authenticate,
   authorize(["STAFF", "ADMIN"]),
+  validate(adminValidation.approveListing),
   adminController.approveListing,
 );
 

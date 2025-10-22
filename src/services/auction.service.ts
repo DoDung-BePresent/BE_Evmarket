@@ -18,12 +18,15 @@ import { IQueryOptions } from "@/types/pagination.type";
  * Libs
  */
 import prisma from "@/libs/prisma";
+import redisClient from "@/libs/redis";
 import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
   NotFoundError,
 } from "@/libs/error";
+
+const AUCTION_REJECTION_LIMIT = 3;
 
 export const auctionService = {
   requestAuction: async (
@@ -37,6 +40,18 @@ export const auctionService = {
       auctionEndsAt: Date;
     },
   ) => {
+    const redisKey = `auction-rejection:${listingType}:${listingId}`;
+    const rejectionCountStr = await redisClient.get(redisKey);
+    const rejectionCount = rejectionCountStr
+      ? parseInt(rejectionCountStr, 10)
+      : 0;
+
+    if (rejectionCount >= AUCTION_REJECTION_LIMIT) {
+      throw new ForbiddenError(
+        `This item has been rejected ${AUCTION_REJECTION_LIMIT} times. Please try again later or contact support.`,
+      );
+    }
+
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
     const listing = await (model as any).findUnique({
       where: { id: listingId },

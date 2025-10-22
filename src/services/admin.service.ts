@@ -8,7 +8,10 @@ import { ListingType } from "@prisma/client";
  * Libs
  */
 import prisma from "@/libs/prisma";
+import redisClient from "@/libs/redis"; 
 import { NotFoundError, BadRequestError } from "@/libs/error";
+
+const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
 
 /**
  * Types
@@ -67,6 +70,8 @@ export const adminService = {
     payload: { approved: boolean; rejectionReason?: string },
   ) => {
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
+    const redisKey = `auction-rejection:${listingType}:${listingId}`;
+
     const listing = await (model as any).findUnique({
       where: { id: listingId },
     });
@@ -78,6 +83,8 @@ export const adminService = {
     }
 
     if (payload.approved) {
+      await redisClient.del(redisKey);
+
       return (model as any).update({
         where: { id: listingId },
         data: {
@@ -90,6 +97,12 @@ export const adminService = {
       if (!payload.rejectionReason) {
         throw new BadRequestError("Rejection reason is required.");
       }
+
+      const newCount = await redisClient.incr(redisKey);
+      if (newCount === 1) {
+        await redisClient.expire(redisKey, AUCTION_REJECTION_EXPIRY);
+      }
+
       return (model as any).update({
         where: { id: listingId },
         data: {

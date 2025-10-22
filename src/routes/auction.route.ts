@@ -18,6 +18,12 @@ import { auctionValidation } from "@/validations/auction.validation";
 
 const auctionRouter = Router();
 
+auctionRouter.get(
+  "/live",
+  validate(auctionValidation.getLiveAuctions),
+  auctionController.getLiveAuctions,
+);
+
 auctionRouter.use(authenticate);
 
 auctionRouter.post(

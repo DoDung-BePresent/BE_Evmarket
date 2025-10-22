@@ -1,5 +1,4 @@
 /* eslint-disable no-unsafe-optional-chaining */
-
 /**
  * Constants
  */
@@ -15,6 +14,16 @@ import { asyncHandler } from "@/middlewares/error.middleware";
  */
 import { auctionService } from "@/services/auction.service";
 
+/**
+ * Utils
+ */
+import { pick } from "@/utils/pick.util";
+
+/**
+ * Validations
+ */
+import { GetLiveAuctionsQuery } from "@/validations/auction.validation";
+
 export const auctionController = {
   payAuctionDeposit: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
@@ -27,6 +36,15 @@ export const auctionController = {
     res.status(STATUS_CODE.CREATED).json({
       message: "Deposit paid successfully. You can now place bids.",
       data: deposit,
+    });
+  }),
+  getLiveAuctions: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetLiveAuctionsQuery;
+    const options = pick(query, ["sortBy", "sortOrder", "limit", "page"]);
+    const result = await auctionService.queryLiveAuctions(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Live auctions fetched successfully",
+      data: result,
     });
   }),
   requestAuction: asyncHandler(async (req, res) => {

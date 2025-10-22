@@ -42,7 +42,7 @@ export const vehicleService = {
     const uploadPromises = files.map(async (file) => {
       const fileName = `${userId}/${Date.now()}-${file.originalname}`;
       const { error: uploadError } = await supabase.storage
-        .from( SUPABASE_BUCKETS.VEHICLES)
+        .from(SUPABASE_BUCKETS.VEHICLES)
         .upload(fileName, file.buffer, {
           contentType: file.mimetype,
         });
@@ -54,7 +54,7 @@ export const vehicleService = {
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from( SUPABASE_BUCKETS.VEHICLES)
+        .from(SUPABASE_BUCKETS.VEHICLES)
         .getPublicUrl(fileName);
       imageUrls.push(publicUrlData.publicUrl);
     });
@@ -68,6 +68,9 @@ export const vehicleService = {
         seller: {
           connect: { id: userId },
         },
+        status: vehicleBody.isAuction
+          ? "AUCTION_PENDING_APPROVAL"
+          : "AVAILABLE",
         isVerified: vehicleBody.isAuction ? false : true,
       },
     });
@@ -166,7 +169,9 @@ export const vehicleService = {
         .filter(Boolean);
 
       if (filePathsToDelete.length > 0) {
-        await supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).remove(filePathsToDelete);
+        await supabase.storage
+          .from(SUPABASE_BUCKETS.VEHICLES)
+          .remove(filePathsToDelete);
       }
 
       newImageUrls = newImageUrls.filter(
@@ -179,11 +184,12 @@ export const vehicleService = {
       const uploadPromises = files.map(async (file) => {
         const fileName = `${userId}/${Date.now()}-${file.originalname}`;
         const { error } = await supabase.storage
-          .from( SUPABASE_BUCKETS.VEHICLES)
+          .from(SUPABASE_BUCKETS.VEHICLES)
           .upload(fileName, file.buffer, { contentType: file.mimetype });
         if (error) throw new InternalServerError("Failed to upload new image");
-        return supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).getPublicUrl(fileName).data
-          .publicUrl;
+        return supabase.storage
+          .from(SUPABASE_BUCKETS.VEHICLES)
+          .getPublicUrl(fileName).data.publicUrl;
       });
       const uploadedUrls = await Promise.all(uploadPromises);
       newImageUrls.push(...uploadedUrls);
@@ -217,7 +223,7 @@ export const vehicleService = {
         const parts = url.split(`/${SUPABASE_BUCKETS.VEHICLES}/`);
         return parts[1];
       });
-      await supabase.storage.from( SUPABASE_BUCKETS.VEHICLES).remove(filePaths);
+      await supabase.storage.from(SUPABASE_BUCKETS.VEHICLES).remove(filePaths);
     }
 
     await prisma.vehicle.delete({ where: { id: vehicleId } });

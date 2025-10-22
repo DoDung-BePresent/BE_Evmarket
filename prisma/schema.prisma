@@ -166,6 +166,7 @@ model Battery {
   specifications  Json?
 
   isAuction       Boolean   @default(false)
+  auctionStartsAt DateTime?
   auctionEndsAt   DateTime?
   startingPrice   Float?
   bidIncrement    Float?

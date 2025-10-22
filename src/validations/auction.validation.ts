@@ -30,6 +30,14 @@ export const auctionValidation = {
       message: "Auction end date must be after the start date.",
       path: ["body", "auctionEndsAt"],
     }),
+  getLiveAuctions: z.object({
+    query: z.object({
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(10),
+    }),
+  }),
   placeBid: z.object({
     body: z.object({
       amount: z.coerce.number().positive("Bid amount must be positive"),
@@ -46,3 +54,7 @@ export const auctionValidation = {
     }),
   }),
 };
+
+export type GetLiveAuctionsQuery = z.infer<
+  typeof auctionValidation.getLiveAuctions
+>["query"];

@@ -65,6 +65,9 @@ export const batteryService = {
         seller: {
           connect: { id: userId },
         },
+        status: batteryBody.isAuction
+          ? "AUCTION_PENDING_APPROVAL"
+          : "AVAILABLE",
         isVerified: batteryBody.isAuction ? false : true,
       },
     });
@@ -152,7 +155,6 @@ export const batteryService = {
 
     let newImageUrls: string[] = battery.images || [];
 
-    // 1. Delete images marked for deletion
     if (updateBody.imagesToDelete && updateBody.imagesToDelete.length > 0) {
       const filePathsToDelete = updateBody.imagesToDelete
         .map((url) => {
@@ -163,7 +165,9 @@ export const batteryService = {
         .filter(Boolean);
 
       if (filePathsToDelete.length > 0) {
-        await supabase.storage.from(SUPABASE_BUCKETS.BATTERIES).remove(filePathsToDelete);
+        await supabase.storage
+          .from(SUPABASE_BUCKETS.BATTERIES)
+          .remove(filePathsToDelete);
       }
 
       newImageUrls = newImageUrls.filter(
@@ -171,7 +175,6 @@ export const batteryService = {
       );
     }
 
-    // 2. Upload new images
     if (files && files.length > 0) {
       const uploadPromises = files.map(async (file) => {
         const fileName = `${userId}/${Date.now()}-${file.originalname}`;
@@ -179,8 +182,9 @@ export const batteryService = {
           .from(SUPABASE_BUCKETS.BATTERIES)
           .upload(fileName, file.buffer, { contentType: file.mimetype });
         if (error) throw new InternalServerError("Failed to upload new image");
-        return supabase.storage.from(SUPABASE_BUCKETS.BATTERIES).getPublicUrl(fileName).data
-          .publicUrl;
+        return supabase.storage
+          .from(SUPABASE_BUCKETS.BATTERIES)
+          .getPublicUrl(fileName).data.publicUrl;
       });
       const uploadedUrls = await Promise.all(uploadPromises);
       newImageUrls.push(...uploadedUrls);
@@ -208,7 +212,6 @@ export const batteryService = {
       throw new ForbiddenError("You are not the owner of this battery");
     }
 
-    // Delete images from Supabase storage
     if (battery.images && battery.images.length > 0) {
       const filePaths = battery.images.map((url) => {
         const parts = url.split(`/${SUPABASE_BUCKETS.BATTERIES}/`);

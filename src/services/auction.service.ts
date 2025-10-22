@@ -5,6 +5,16 @@
 import { ListingType } from "@prisma/client";
 
 /**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
+
+/**
+ * Types
+ */
+import { IQueryOptions } from "@/types/pagination.type";
+
+/**
  * Libs
  */
 import prisma from "@/libs/prisma";
@@ -14,7 +24,6 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "@/libs/error";
-import { walletService } from "./wallet.service"; // Import walletService
 
 export const auctionService = {
   requestAuction: async (
@@ -44,7 +53,6 @@ export const auctionService = {
         "Only available listings can be put up for auction.",
       );
     }
-
     return (model as any).update({
       where: { id: listingId },
       data: {
@@ -54,12 +62,59 @@ export const auctionService = {
       },
     });
   },
+  queryLiveAuctions: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "auctionEndsAt",
+      sortOrder = "asc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const commonWhere = { status: "AUCTION_LIVE" as const };
+
+    const liveVehicles = await prisma.vehicle.findMany({
+      where: commonWhere,
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    });
+
+    const liveBatteries = await prisma.battery.findMany({
+      where: commonWhere,
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    });
+
+    const allLiveAuctions = [
+      ...liveVehicles.map((v) => ({ ...v, listingType: "VEHICLE" })),
+      ...liveBatteries.map((b) => ({ ...b, listingType: "BATTERY" })),
+    ];
+    allLiveAuctions.sort((a, b) => {
+      const aValue = a[sortBy as keyof typeof a];
+      const bValue = b[sortBy as keyof typeof b];
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    const paginatedResults = allLiveAuctions.slice(skip, skip + limit);
+    const totalResults = allLiveAuctions.length;
+
+    return {
+      results: paginatedResults,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
   payAuctionDeposit: async (
     userId: string,
     listingType: ListingType,
     listingId: string,
   ) => {
-    // Dùng transaction để đảm bảo tính toàn vẹn
     return prisma.$transaction(async (tx) => {
       const listing = await (tx as any)[listingType.toLowerCase()].findUnique({
         where: { id: listingId },
@@ -79,7 +134,6 @@ export const auctionService = {
         throw new BadRequestError("This auction does not require a deposit.");
       }
 
-      // Kiểm tra xem đã đặt cọc chưa
       const existingDeposit = await tx.auctionDeposit.findFirst({
         where: { userId, [`${listingType.toLowerCase()}Id`]: listingId },
       });
@@ -89,7 +143,6 @@ export const auctionService = {
         );
       }
 
-      // Trừ tiền từ ví người dùng
       await walletService.updateBalance(
         userId,
         -listing.depositAmount,
@@ -97,7 +150,6 @@ export const auctionService = {
         tx,
       );
 
-      // Tạo bản ghi đặt cọc
       const deposit = await tx.auctionDeposit.create({
         data: {
           amount: listing.depositAmount,

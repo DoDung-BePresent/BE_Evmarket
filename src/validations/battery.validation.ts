@@ -5,50 +5,95 @@
 import z from "zod";
 
 export const batteryValidation = {
-  createBattery: z.object({
-    body: z.object({
-      title: z.string().min(5).max(100),
-      description: z.string().min(20).max(5000),
-      price: z.coerce.number().positive(),
-      brand: z.string().min(2),
-      year: z.coerce
-        .number()
-        .int()
-        .min(1990)
-        .max(new Date().getFullYear() + 1),
-      capacity: z.coerce.number().positive(),
-      health: z.coerce.number().min(0).max(100).optional(),
-      specifications: z.preprocess(
-        (val) => {
-          if (typeof val === "string") {
-            try {
-              return JSON.parse(val);
-            } catch (error) {
-              return val; // Return original value to fail validation
+  createBattery: z
+    .object({
+      body: z.object({
+        title: z.string().min(5).max(100),
+        description: z.string().min(20).max(5000),
+        price: z.coerce.number().positive(),
+        brand: z.string().min(2),
+        year: z.coerce
+          .number()
+          .int()
+          .min(1990)
+          .max(new Date().getFullYear() + 1),
+        capacity: z.coerce.number().positive(),
+        health: z.coerce.number().min(0).max(100).optional(),
+        specifications: z.preprocess(
+          (val) => {
+            if (typeof val === "string") {
+              try {
+                return JSON.parse(val);
+              } catch (error) {
+                return val; // Return original value to fail validation
+              }
             }
-          }
-          return val;
-        },
-        z
-          .object({
-            weight: z.string(),
-            voltage: z.string(),
-            warrantyPeriod: z.string(),
-            chargingTime: z.string(),
-            chemistry: z.string(),
-            temperatureRange: z.string(),
-            degradation: z.string(),
-            installation: z.string(),
-          })
-          .partial(),
-      ),
-      isAuction: z.coerce.boolean().optional(),
-      auctionEndsAt: z.coerce.date().optional(),
-      startingPrice: z.coerce.number().positive().optional(),
-      bidIncrement: z.coerce.number().positive().optional(),
-      depositAmount: z.coerce.number().positive().optional(),
+            return val;
+          },
+          z
+            .object({
+              weight: z.string(),
+              voltage: z.string(),
+              warrantyPeriod: z.string(),
+              chargingTime: z.string(),
+              chemistry: z.string(),
+              temperatureRange: z.string(),
+              degradation: z.string(),
+              installation: z.string(),
+            })
+            .partial(),
+        ),
+        isAuction: z.coerce.boolean().optional(),
+        auctionEndsAt: z.coerce.date().optional(),
+        auctionStartsAt: z.coerce.date().optional(),
+        startingPrice: z.coerce.number().positive().optional(),
+        bidIncrement: z.coerce.number().positive().optional(),
+        depositAmount: z.coerce.number().positive().optional(),
+      }),
+    })
+    .superRefine((data, ctx) => {
+      if (data.body.isAuction) {
+        if (!data.body.startingPrice) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Starting price is required for an auction.",
+            path: ["body", "startingPrice"],
+          });
+        }
+        if (!data.body.bidIncrement) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Bid increment is required for an auction.",
+            path: ["body", "bidIncrement"],
+          });
+        }
+        if (!data.body.auctionStartsAt) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Auction start date is required for an auction.",
+            path: ["body", "auctionStartsAt"],
+          });
+        }
+        if (!data.body.auctionEndsAt) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Auction end date is required for an auction.",
+            path: ["body", "auctionEndsAt"],
+          });
+        }
+        if (
+          data.body.auctionStartsAt &&
+          data.body.auctionEndsAt &&
+          data.body.auctionStartsAt >= data.body.auctionEndsAt
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Auction end date must be after the start date.",
+            path: ["body", "auctionEndsAt"],
+          });
+        }
+      }
     }),
-  }),
   getBatteries: z.object({
     query: z.object({
       brand: z.string().optional(),

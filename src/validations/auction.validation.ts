@@ -39,6 +39,12 @@ export const auctionValidation = {
       limit: z.coerce.number().int().min(1).max(100).default(10),
     }),
   }),
+  getAuctionDetails: z.object({
+    params: z.object({
+      listingId: z.cuid("Invalid listing ID"),
+      listingType: z.enum(["VEHICLE", "BATTERY"]),
+    }),
+  }),
   placeBid: z.object({
     body: z.object({
       amount: z.coerce.number().positive("Bid amount must be positive"),

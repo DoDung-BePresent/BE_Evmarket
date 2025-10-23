@@ -77,6 +77,30 @@ export const auctionService = {
       },
     });
   },
+  getAuctionDetails: async (listingType: ListingType, listingId: string) => {
+    const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
+
+    const listing = await (model as any).findUnique({
+      where: { id: listingId, isAuction: true },
+      include: {
+        seller: {
+          select: { id: true, name: true, avatar: true, isVerified: true },
+        },
+        bids: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            bidder: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+      },
+    });
+
+    if (!listing) {
+      throw new NotFoundError("Auction not found.");
+    }
+
+    return listing;
+  },
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,

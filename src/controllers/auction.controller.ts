@@ -25,6 +25,17 @@ import { pick } from "@/utils/pick.util";
 import { GetLiveAuctionsQuery } from "@/validations/auction.validation";
 
 export const auctionController = {
+  getAuctionDetails: asyncHandler(async (req, res) => {
+    const { listingType, listingId } = req.validated?.params;
+    const auction = await auctionService.getAuctionDetails(
+      listingType,
+      listingId,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message: "Auction details fetched successfully",
+      data: auction,
+    });
+  }),
   payAuctionDeposit: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const { listingType, listingId } = req.validated?.params;

@@ -24,6 +24,12 @@ auctionRouter.get(
   auctionController.getLiveAuctions,
 );
 
+auctionRouter.get(
+  "/:listingType/:listingId",
+  validate(auctionValidation.getAuctionDetails),
+  auctionController.getAuctionDetails,
+);
+
 auctionRouter.use(authenticate);
 
 auctionRouter.post(

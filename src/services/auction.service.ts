@@ -77,16 +77,43 @@ export const auctionService = {
       },
     });
   },
-  queryLiveAuctions: async (options: IQueryOptions) => {
+  queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,
       page = 1,
       sortBy = "auctionEndsAt",
       sortOrder = "asc",
+      time = "present",
     } = options;
     const skip = (page - 1) * limit;
 
-    const commonWhere = { status: "AUCTION_LIVE" as const };
+    let commonWhere: any;
+    const now = new Date();
+
+    switch (time) {
+      case "future":
+        commonWhere = {
+          status: "AUCTION_LIVE" as const,
+          auctionStartsAt: { gt: now },
+        };
+        break;
+      case "past":
+        commonWhere = {
+          status: {
+            in: ["AUCTION_ENDED", "SOLD"],
+          },
+          isAuction: true,
+        };
+        break;
+      case "present":
+      default:
+        commonWhere = {
+          status: "AUCTION_LIVE" as const,
+          auctionStartsAt: { lte: now },
+          auctionEndsAt: { gt: now },
+        };
+        break;
+    }
 
     const liveVehicles = await prisma.vehicle.findMany({
       where: commonWhere,

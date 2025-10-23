@@ -21,34 +21,28 @@ import { authenticate, authorize } from "@/middlewares/auth.middleware";
 
 const adminRouter = Router();
 
+adminRouter.use(authenticate, authorize(["STAFF", "ADMIN"]));
+
 adminRouter.get(
   "/auction-requests",
-  authenticate,
-  authorize(["STAFF", "ADMIN"]),
   validate(adminValidation.getPendingAuctionRequests),
   adminController.getPendingAuctionRequests,
 );
 
 adminRouter.patch(
   "/listings/:listingType/:listingId/approve",
-  authenticate,
-  authorize(["STAFF", "ADMIN"]),
   validate(adminValidation.approveListing),
   adminController.approveListing,
 );
 
 adminRouter.patch(
   "/listings/:listingType/:listingId/review-auction",
-  authenticate,
-  authorize(["STAFF", "ADMIN"]),
   validate(adminValidation.reviewAuctionRequest),
   adminController.reviewAuctionRequest,
 );
 
 adminRouter.get(
   "/transactions/completed",
-  authenticate,
-  authorize(["ADMIN"]),
   adminController.getCompletedTransactions,
 );
 

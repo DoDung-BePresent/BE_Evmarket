@@ -8,7 +8,7 @@ import { ListingType } from "@prisma/client";
  * Libs
  */
 import prisma from "@/libs/prisma";
-import redisClient from "@/libs/redis"; 
+import redisClient from "@/libs/redis";
 import { NotFoundError, BadRequestError } from "@/libs/error";
 
 const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
@@ -19,16 +19,32 @@ const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
 import { IQueryOptions } from "@/types/pagination.type";
 
 export const adminService = {
-  getPendingAuctionRequests: async (options: IQueryOptions) => {
+  getPendingAuctionRequests: async (
+    options: IQueryOptions & { status?: string },
+  ) => {
     const {
       limit = 10,
       page = 1,
       sortBy = "createdAt",
       sortOrder = "desc",
+      status,
     } = options;
     const skip = (page - 1) * limit;
 
-    const commonWhere = { status: "AUCTION_PENDING_APPROVAL" as const };
+    const auctionStatuses = [
+      "AUCTION_PENDING_APPROVAL",
+      "AUCTION_REJECTED",
+      "AUCTION_LIVE",
+      "AUCTION_ENDED",
+      "AUCTION_PAYMENT_PENDING",
+    ] as const;
+
+    let commonWhere: any;
+    if (status && status !== "ALL") {
+      commonWhere = { status: status as any };
+    } else {
+      commonWhere = { status: { in: auctionStatuses as any } };
+    }
 
     const pendingVehicles = await prisma.vehicle.findMany({
       where: commonWhere,
@@ -45,7 +61,6 @@ export const adminService = {
       ...pendingBatteries.map((b) => ({ ...b, listingType: "BATTERY" })),
     ];
 
-    // Sắp xếp kết quả đã gộp
     allPendingRequests.sort((a, b) => {
       const dateA = new Date((a as any)[sortBy] as string).getTime();
       const dateB = new Date((b as any)[sortBy] as string).getTime();

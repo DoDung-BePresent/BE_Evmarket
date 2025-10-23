@@ -77,7 +77,11 @@ export const auctionService = {
       },
     });
   },
-  getAuctionDetails: async (listingType: ListingType, listingId: string) => {
+  getAuctionDetails: async (
+    listingType: ListingType,
+    listingId: string,
+    userId?: string,
+  ) => {
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
 
     const listing = await (model as any).findUnique({
@@ -99,7 +103,21 @@ export const auctionService = {
       throw new NotFoundError("Auction not found.");
     }
 
-    return listing;
+    let hasUserDeposit = false;
+    if (userId) {
+      const deposit = await prisma.auctionDeposit.findFirst({
+        where: {
+          userId,
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+          status: "PAID",
+        },
+      });
+      hasUserDeposit = !!deposit;
+    }
+
+    return { ...listing, hasUserDeposit };
   },
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {

@@ -18,6 +18,8 @@ import { auctionValidation } from "@/validations/auction.validation";
 
 const auctionRouter = Router();
 
+auctionRouter.use(authenticate);
+
 auctionRouter.get(
   "/live",
   validate(auctionValidation.getLiveAuctions),
@@ -29,8 +31,6 @@ auctionRouter.get(
   validate(auctionValidation.getAuctionDetails),
   auctionController.getAuctionDetails,
 );
-
-auctionRouter.use(authenticate);
 
 auctionRouter.post(
   "/:listingType/:listingId/deposit",

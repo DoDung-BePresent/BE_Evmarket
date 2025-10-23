@@ -27,9 +27,11 @@ import { GetLiveAuctionsQuery } from "@/validations/auction.validation";
 export const auctionController = {
   getAuctionDetails: asyncHandler(async (req, res) => {
     const { listingType, listingId } = req.validated?.params;
+    const userId = req.user?.id;
     const auction = await auctionService.getAuctionDetails(
       listingType,
       listingId,
+      userId,
     );
     res.status(STATUS_CODE.OK).json({
       message: "Auction details fetched successfully",

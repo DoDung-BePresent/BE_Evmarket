@@ -31,6 +31,7 @@ export const adminController = {
       "sortOrder",
       "limit",
       "page",
+      "status",
     ]);
     const result = await adminService.getPendingAuctionRequests(options);
     res.status(STATUS_CODE.OK).json({

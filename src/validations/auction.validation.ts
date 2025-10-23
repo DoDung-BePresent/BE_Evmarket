@@ -32,6 +32,7 @@ export const auctionValidation = {
     }),
   getLiveAuctions: z.object({
     query: z.object({
+      time: z.enum(["future", "present", "past"]).default("present"),
       sortBy: z.string().optional(),
       sortOrder: z.enum(["asc", "desc"]).optional(),
       page: z.coerce.number().int().min(1).default(1),

@@ -40,7 +40,13 @@ export const auctionController = {
   }),
   getLiveAuctions: asyncHandler(async (req, res) => {
     const query = req.validated?.query as GetLiveAuctionsQuery;
-    const options = pick(query, ["sortBy", "sortOrder", "limit", "page"]);
+    const options = pick(query, [
+      "sortBy",
+      "sortOrder",
+      "limit",
+      "page",
+      "time",
+    ]);
     const result = await auctionService.queryLiveAuctions(options);
     res.status(STATUS_CODE.OK).json({
       message: "Live auctions fetched successfully",

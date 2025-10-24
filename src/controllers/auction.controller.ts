@@ -25,6 +25,25 @@ import { pick } from "@/utils/pick.util";
 import { GetLiveAuctionsQuery } from "@/validations/auction.validation";
 
 export const auctionController = {
+  createAuction: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const files = req.files as Express.Multer.File[];
+    const payload = req.validated?.body;
+
+    const listingType = req.path.includes("/vehicles") ? "VEHICLE" : "BATTERY";
+
+    const auction = await auctionService.createAuction(
+      userId,
+      listingType,
+      payload,
+      files,
+    );
+
+    res.status(STATUS_CODE.CREATED).json({
+      message: "Auction created successfully and is pending approval.",
+      data: auction,
+    });
+  }),
   getAuctionDetails: asyncHandler(async (req, res) => {
     const { listingType, listingId } = req.validated?.params;
     const userId = req.user?.id;

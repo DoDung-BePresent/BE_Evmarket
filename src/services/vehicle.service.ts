@@ -68,10 +68,8 @@ export const vehicleService = {
         seller: {
           connect: { id: userId },
         },
-        status: vehicleBody.isAuction
-          ? "AUCTION_PENDING_APPROVAL"
-          : "AVAILABLE",
-        isVerified: vehicleBody.isAuction ? false : true,
+        status: "AVAILABLE",
+        isVerified: true,
       },
     });
   },

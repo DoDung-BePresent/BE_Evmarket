@@ -19,16 +19,61 @@ import { IQueryOptions } from "@/types/pagination.type";
  */
 import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
+import { supabase } from "@/libs/supabase";
 import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  InternalServerError,
 } from "@/libs/error";
 
 const AUCTION_REJECTION_LIMIT = 3;
 
 export const auctionService = {
+  createAuction: async (
+    userId: string,
+    listingType: "VEHICLE" | "BATTERY",
+    payload: any,
+    files: Express.Multer.File[],
+  ) => {
+    if (!files || files.length === 0) {
+      throw new BadRequestError("At least one image is required");
+    }
+
+    const imageUrls: string[] = [];
+    const uploadPromises = files.map(async (file) => {
+      const folder = listingType === "VEHICLE" ? "vehicles" : "batteries";
+      const fileName = `${userId}/${Date.now()}-${file.originalname}`;
+      const { error: uploadError } = await supabase.storage
+        .from(folder)
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      if (uploadError) {
+        throw new InternalServerError(
+          `Failed to upload image: ${uploadError.message}`,
+        );
+      }
+      const { data: publicUrlData } = supabase.storage
+        .from(folder)
+        .getPublicUrl(fileName);
+      imageUrls.push(publicUrlData.publicUrl);
+    });
+    await Promise.all(uploadPromises);
+
+    const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
+
+    return (model as any).create({
+      data: {
+        ...payload,
+        images: imageUrls,
+        seller: { connect: { id: userId } },
+        isAuction: true,
+        isVerified: false,
+        status: "AUCTION_PENDING_APPROVAL",
+      },
+    });
+  },
   requestAuction: async (
     userId: string,
     listingType: ListingType,

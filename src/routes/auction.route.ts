@@ -5,6 +5,7 @@ import { Router } from "express";
  */
 import { authenticate } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
+import { uploadImages } from "@/middlewares/upload.middleware";
 
 /**
  * Controllers
@@ -19,6 +20,20 @@ import { auctionValidation } from "@/validations/auction.validation";
 const auctionRouter = Router();
 
 auctionRouter.use(authenticate);
+
+auctionRouter.post(
+  "/vehicles",
+  uploadImages,
+  validate(auctionValidation.createVehicleAuction),
+  auctionController.createAuction,
+);
+
+auctionRouter.post(
+  "/batteries",
+  uploadImages,
+  validate(auctionValidation.createBatteryAuction),
+  auctionController.createAuction,
+);
 
 auctionRouter.get(
   "/live",

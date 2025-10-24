@@ -65,10 +65,8 @@ export const batteryService = {
         seller: {
           connect: { id: userId },
         },
-        status: batteryBody.isAuction
-          ? "AUCTION_PENDING_APPROVAL"
-          : "AVAILABLE",
-        isVerified: batteryBody.isAuction ? false : true,
+        status: "AVAILABLE",
+        isVerified: true,
       },
     });
   },

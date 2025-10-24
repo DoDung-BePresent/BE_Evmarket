@@ -82,7 +82,12 @@ export const adminService = {
   reviewAuctionRequest: async (
     listingType: ListingType,
     listingId: string,
-    payload: { approved: boolean; rejectionReason?: string },
+    payload: {
+      approved: boolean;
+      rejectionReason?: string;
+      auctionStartsAt?: Date;
+      auctionEndsAt?: Date;
+    },
   ) => {
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
     const redisKey = `auction-rejection:${listingType}:${listingId}`;
@@ -106,6 +111,8 @@ export const adminService = {
           status: "AUCTION_LIVE",
           isVerified: true,
           auctionRejectionReason: null,
+          auctionStartsAt: payload.auctionStartsAt,
+          auctionEndsAt: payload.auctionEndsAt,
         },
       });
     } else {

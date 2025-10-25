@@ -5,154 +5,129 @@
 import { z } from "zod";
 
 export const auctionValidation = {
-  createVehicleAuction: z
-    .object({
-      body: z.object({
-        title: z.string().min(5).max(100),
-        description: z.string().min(20).max(5000),
-        price: z.coerce.number().positive(),
-        brand: z.string().min(2),
-        model: z.string().min(1),
-        year: z.coerce
-          .number()
-          .int()
-          .min(1990)
-          .max(new Date().getFullYear() + 1),
-        mileage: z.coerce.number().int().min(0),
-        specifications: z.preprocess(
-          (val) => {
-            if (typeof val === "string") {
-              try {
-                return JSON.parse(val);
-              } catch (_error) {
-                return val;
-              }
+  createVehicleAuction: z.object({
+    body: z.object({
+      title: z.string().min(5).max(100),
+      description: z.string().min(20).max(5000),
+      price: z.coerce.number().positive(),
+      brand: z.string().min(2),
+      model: z.string().min(1),
+      year: z.coerce
+        .number()
+        .int()
+        .min(1990)
+        .max(new Date().getFullYear() + 1),
+      mileage: z.coerce.number().int().min(0),
+      specifications: z.preprocess(
+        (val) => {
+          if (typeof val === "string") {
+            try {
+              return JSON.parse(val);
+            } catch (_error) {
+              return val;
             }
-            return val;
-          },
-          z.object({
-            performance: z
-              .object({
-                topSpeed: z.string(),
-                acceleration: z.string(),
-                motorType: z.string(),
-                horsepower: z.string(),
-              })
-              .partial(),
-            dimensions: z
-              .object({
-                length: z.string(),
-                width: z.string(),
-                height: z.string(),
-                curbWeight: z.string(),
-              })
-              .partial(),
-            batteryAndCharging: z
-              .object({
-                batteryCapacity: z.string(),
-                range: z.string(),
-                chargingSpeed: z.string(),
-                chargeTime: z.string(),
-              })
-              .partial(),
-            warranty: z
-              .object({
-                basic: z.string(),
-                battery: z.string(),
-                drivetrain: z.string(),
-              })
-              .partial(),
-          }),
-        ),
-        startingPrice: z.coerce.number().positive(),
-        bidIncrement: z.coerce.number().positive(),
-        depositAmount: z.coerce.number().positive().optional(),
-        auctionStartsAt: z.coerce.date(),
-        auctionEndsAt: z.coerce.date(),
-      }),
-    })
-    .refine((data) => data.body.auctionStartsAt < data.body.auctionEndsAt, {
-      message: "Auction end date must be after the start date.",
-      path: ["body", "auctionEndsAt"],
-    }),
-  createBatteryAuction: z
-    .object({
-      body: z.object({
-        title: z.string().min(5).max(100),
-        description: z.string().min(20).max(5000),
-        price: z.coerce.number().positive(),
-        brand: z.string().min(2),
-        year: z.coerce 
-          .number()
-          .int()
-          .min(1990)
-          .max(new Date().getFullYear() + 1),
-        capacity: z.coerce.number().positive(),
-        health: z.coerce.number().min(0).max(100).optional(),
-        specifications: z.preprocess(
-          (val) => {
-            if (typeof val === "string") {
-              try {
-                return JSON.parse(val);
-              } catch (error) {
-                return val;
-              }
-            }
-            return val;
-          },
-          z
+          }
+          return val;
+        },
+        z.object({
+          performance: z
             .object({
-              weight: z.string(),
-              voltage: z.string(),
-              warrantyPeriod: z.string(),
-              chargingTime: z.string(),
-              chemistry: z.string(),
-              temperatureRange: z.string(),
-              degradation: z.string(),
-              installation: z.string(),
+              topSpeed: z.string(),
+              acceleration: z.string(),
+              motorType: z.string(),
+              horsepower: z.string(),
             })
             .partial(),
-        ),
-        startingPrice: z.coerce.number().positive(),
-        bidIncrement: z.coerce.number().positive(),
-        depositAmount: z.coerce.number().positive().optional(),
-        auctionStartsAt: z.coerce.date(),
-        auctionEndsAt: z.coerce.date(),
-      }),
-    })
-    .refine((data) => data.body.auctionStartsAt < data.body.auctionEndsAt, {
-      message: "Auction end date must be after the start date.",
-      path: ["body", "auctionEndsAt"],
-    }),
-  requestAuction: z
-    .object({
-      body: z.object({
-        startingPrice: z.coerce
-          .number()
-          .positive("Starting price must be positive"),
-        bidIncrement: z.coerce
-          .number()
-          .positive("Bid increment must be positive"),
-        depositAmount: z.coerce
-          .number()
-          .positive("Deposit amount must be positive")
-          .optional(),
-        auctionStartsAt: z.coerce.date().refine((date) => date > new Date(), {
-          message: "Auction start date must be in the future",
+          dimensions: z
+            .object({
+              length: z.string(),
+              width: z.string(),
+              height: z.string(),
+              curbWeight: z.string(),
+            })
+            .partial(),
+          batteryAndCharging: z
+            .object({
+              batteryCapacity: z.string(),
+              range: z.string(),
+              chargingSpeed: z.string(),
+              chargeTime: z.string(),
+            })
+            .partial(),
+          warranty: z
+            .object({
+              basic: z.string(),
+              battery: z.string(),
+              drivetrain: z.string(),
+            })
+            .partial(),
         }),
-        auctionEndsAt: z.coerce.date().refine((date) => date > new Date(), {
-          message: "Auction end date must be in the future",
-        }),
-      }),
-      params: z.object({
-        listingId: z.cuid("Invalid listing ID"),
-        listingType: z.enum(["VEHICLE", "BATTERY"]),
-      }),
-    })
-    .refine((data) => data.body.auctionStartsAt < data.body.auctionEndsAt, {
-      message: "Auction end date must be after the start date.",
-      path: ["body", "auctionEndsAt"],
+      ),
+      startingPrice: z.coerce.number().positive(),
+      bidIncrement: z.coerce.number().positive(),
+      depositAmount: z.coerce.number().positive().optional(),
     }),
+  }),
+  createBatteryAuction: z.object({
+    body: z.object({
+      title: z.string().min(5).max(100),
+      description: z.string().min(20).max(5000),
+      price: z.coerce.number().positive(),
+      brand: z.string().min(2),
+      year: z.coerce
+        .number()
+        .int()
+        .min(1990)
+        .max(new Date().getFullYear() + 1),
+      capacity: z.coerce.number().positive(),
+      health: z.coerce.number().min(0).max(100).optional(),
+      specifications: z.preprocess(
+        (val) => {
+          if (typeof val === "string") {
+            try {
+              return JSON.parse(val);
+            } catch (error) {
+              return val;
+            }
+          }
+          return val;
+        },
+        z
+          .object({
+            weight: z.string(),
+            voltage: z.string(),
+            warrantyPeriod: z.string(),
+            chargingTime: z.string(),
+            chemistry: z.string(),
+            temperatureRange: z.string(),
+            degradation: z.string(),
+            installation: z.string(),
+          })
+          .partial(),
+      ),
+      startingPrice: z.coerce.number().positive(),
+      bidIncrement: z.coerce.number().positive(),
+      depositAmount: z.coerce.number().positive().optional(),
+    }),
+  }),
+  requestAuction: z.object({
+    body: z.object({
+      startingPrice: z.coerce
+        .number()
+        .positive("Starting price must be positive"),
+      bidIncrement: z.coerce
+        .number()
+        .positive("Bid increment must be positive"),
+      depositAmount: z.coerce
+        .number()
+        .positive("Deposit amount must be positive")
+        .optional(),
+    }),
+    params: z.object({
+      listingId: z.cuid("Invalid listing ID"),
+      listingType: z.enum(["VEHICLE", "BATTERY"]),
+    }),
+  }),
   getLiveAuctions: z.object({
     query: z.object({
       time: z.enum(["future", "present", "past"]).default("present"),

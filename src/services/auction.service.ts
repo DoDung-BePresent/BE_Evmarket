@@ -66,6 +66,7 @@ export const auctionService = {
     return (model as any).create({
       data: {
         ...payload,
+        price: payload.startingPrice,
         images: imageUrls,
         seller: { connect: { id: userId } },
         isAuction: true,

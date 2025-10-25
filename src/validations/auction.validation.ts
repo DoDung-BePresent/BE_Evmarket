@@ -9,7 +9,6 @@ export const auctionValidation = {
     body: z.object({
       title: z.string().min(5).max(100),
       description: z.string().min(20).max(5000),
-      price: z.coerce.number().positive(),
       brand: z.string().min(2),
       model: z.string().min(1),
       year: z.coerce
@@ -72,7 +71,6 @@ export const auctionValidation = {
     body: z.object({
       title: z.string().min(5).max(100),
       description: z.string().min(20).max(5000),
-      price: z.coerce.number().positive(),
       brand: z.string().min(2),
       year: z.coerce
         .number()

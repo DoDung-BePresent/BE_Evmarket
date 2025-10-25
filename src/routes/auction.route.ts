@@ -19,6 +19,12 @@ import { auctionValidation } from "@/validations/auction.validation";
 
 const auctionRouter = Router();
 
+auctionRouter.get(
+  "/live",
+  validate(auctionValidation.getLiveAuctions),
+  auctionController.getLiveAuctions,
+);
+
 auctionRouter.use(authenticate);
 
 auctionRouter.post(
@@ -33,12 +39,6 @@ auctionRouter.post(
   uploadImages,
   validate(auctionValidation.createBatteryAuction),
   auctionController.createAuction,
-);
-
-auctionRouter.get(
-  "/live",
-  validate(auctionValidation.getLiveAuctions),
-  auctionController.getLiveAuctions,
 );
 
 auctionRouter.get(

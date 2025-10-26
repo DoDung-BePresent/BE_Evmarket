@@ -2,7 +2,7 @@
 /**
  * Node modules
  */
-import { ListingType, Prisma, UserRole } from "@prisma/client";
+import { Battery, ListingStatus, ListingType, Prisma, User, UserRole, Vehicle } from "@prisma/client";
 
 /**
  * Services
@@ -16,12 +16,12 @@ import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
 import { NotFoundError, BadRequestError, ForbiddenError } from "@/libs/error";
 
-const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
-
 /**
  * Types
- */
+*/
 import { IQueryOptions } from "@/types/pagination.type";
+
+const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
 
 export const adminService = {
   getPendingAuctionRequests: async (
@@ -139,31 +139,6 @@ export const adminService = {
       });
     }
   },
-  approveListing: async (listingType: ListingType, listingId: string) => {
-    if (listingType === "VEHICLE") {
-      const vehicle = await prisma.vehicle.findUnique({
-        where: { id: listingId },
-      });
-      if (!vehicle) throw new NotFoundError("Vehicle not found");
-
-      return prisma.vehicle.update({
-        where: { id: listingId },
-        data: { isVerified: true, status: "AUCTION_LIVE" },
-      });
-    } else if (listingType === "BATTERY") {
-      const battery = await prisma.battery.findUnique({
-        where: { id: listingId },
-      });
-      if (!battery) throw new NotFoundError("Battery not found");
-
-      return prisma.battery.update({
-        where: { id: listingId },
-        data: { isVerified: true, status: "AUCTION_LIVE" },
-      });
-    } else {
-      throw new BadRequestError("Invalid listing type");
-    }
-  },
   getUsers: async (
     filter: { role?: UserRole; isLocked?: boolean; search?: string },
     options: IQueryOptions,
@@ -260,5 +235,106 @@ export const adminService = {
         lockReason: null,
       },
     });
+  },
+
+  getListings: async (
+    filter: {
+      listingType?: "VEHICLE" | "BATTERY" | "ALL";
+      isVerified?: boolean;
+      status?: ListingStatus;
+    },
+    options: IQueryOptions,
+  ) => {
+    const { limit = 10, page = 1 } = options;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.VehicleWhereInput & Prisma.BatteryWhereInput = {};
+    if (filter.isVerified !== undefined) {
+      where.isVerified = filter.isVerified;
+    }
+    if (filter.status) {
+      where.status = filter.status;
+    }
+
+    const getVehicles =
+      filter.listingType === "ALL" || filter.listingType === "VEHICLE";
+    const getBatteries =
+      filter.listingType === "ALL" || filter.listingType === "BATTERY";
+
+    const [vehicleResults, batteryResults, totalVehicles, totalBatteries] =
+      await Promise.all([
+        getVehicles
+          ? prisma.vehicle.findMany({
+              where,
+              skip,
+              take: limit,
+              include: { seller: true },
+            })
+          : Promise.resolve([]),
+        getBatteries
+          ? prisma.battery.findMany({
+              where,
+              skip,
+              take: limit,
+              include: { seller: true },
+            })
+          : Promise.resolve([]),
+        getVehicles ? prisma.vehicle.count({ where }) : Promise.resolve(0),
+        getBatteries ? prisma.battery.count({ where }) : Promise.resolve(0),
+      ]);
+
+    const combinedResults = [
+      ...vehicleResults.map((v: Vehicle & { seller: User }) => ({
+        ...v,
+        type: "VEHICLE" as const,
+      })),
+      ...batteryResults.map((b: Battery & { seller: User }) => ({
+        ...b,
+        type: "BATTERY" as const,
+      })),
+    ];
+    const totalResults = totalVehicles + totalBatteries;
+
+    return {
+      listings: combinedResults,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
+
+  verifyListing: async (
+    listingType: ListingType,
+    listingId: string,
+    payload: { isVerified: boolean },
+  ) => {
+    const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
+
+    const listing = await (model as any).findUnique({
+      where: { id: listingId },
+      include: { seller: true },
+    });
+    if (!listing) {
+      throw new NotFoundError("Listing not found.");
+    }
+
+    const updatedListing = await (model as any).update({
+      where: { id: listingId },
+      data: {
+        isVerified: payload.isVerified,
+      },
+    });
+
+    console.log(listing);
+
+    await emailService.sendListingVerifiedEmail(
+      listing.seller.email,
+      listing.seller.name,
+      listing.title,
+      payload.isVerified,
+    );
+
+    return updatedListing;
   },
 };

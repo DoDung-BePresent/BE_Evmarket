@@ -24,6 +24,24 @@ const adminRouter = Router();
 adminRouter.use(authenticate, authorize(["STAFF", "ADMIN"]));
 
 adminRouter.get(
+  "/users",
+  validate(adminValidation.getUsers),
+  adminController.getUsers,
+);
+
+adminRouter.patch(
+  "/users/:userId/lock",
+  validate(adminValidation.lockUser),
+  adminController.lockUser,
+);
+
+adminRouter.patch(
+  "/users/:userId/unlock",
+  validate(adminValidation.unlockUser),
+  adminController.unlockUser,
+);
+
+adminRouter.get(
   "/auction-requests",
   validate(adminValidation.getPendingAuctionRequests),
   adminController.getPendingAuctionRequests,

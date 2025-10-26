@@ -24,7 +24,43 @@ import { pick } from "@/utils/pick.util";
  */
 import { transactionService } from "@/services/transaction.service";
 
+/**
+ * Validations
+ */
+import { GetUsersQuery } from "@/validations/admin.validation";
+
 export const adminController = {
+  getUsers: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetUsersQuery;
+    const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);
+    const filter = pick(query, ["role", "isLocked", "search"]);
+
+    const result = await adminService.getUsers(filter, options);
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Users fetched successfully",
+      data: result,
+    });
+  }),
+  lockUser: asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { lockReason } = req.body;
+
+    await adminService.lockUser(userId, lockReason);
+
+    res.status(STATUS_CODE.OK).json({
+      message: "User locked successfully",
+    });
+  }),
+
+  unlockUser: asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    await adminService.unlockUser(userId);
+
+    res.status(STATUS_CODE.OK).json({
+      message: "User unlocked successfully",
+    });
+  }),
   getPendingAuctionRequests: asyncHandler(async (req, res) => {
     const options = pick(req.validated?.query, [
       "sortBy",

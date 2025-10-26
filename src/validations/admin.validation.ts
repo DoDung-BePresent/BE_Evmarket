@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserRole } from "@prisma/client";
 
 export const adminValidation = {
   getPendingAuctionRequests: z.object({
@@ -76,4 +77,35 @@ export const adminValidation = {
       listingType: z.enum(["VEHICLE", "BATTERY"]),
     }),
   }),
+  getUsers: z.object({
+    query: z.object({
+      page: z.coerce.number().int().positive().optional(),
+      limit: z.coerce.number().int().positive().optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+      role: z.enum(UserRole).optional(),
+      isLocked: z
+        .string()
+        .transform((val) => val === "true")
+        .optional(),
+      search: z.string().optional(),
+    }),
+  }),
+  lockUser: z.object({
+    params: z.object({
+      userId: z.string().cuid(),
+    }),
+    body: z.object({
+      lockReason: z
+        .string("Lock reason is required")
+        .min(10, "Lock reason must be at least 10 characters long"),
+    }),
+  }),
+  unlockUser: z.object({
+    params: z.object({
+      userId: z.string().cuid(),
+    }),
+  }),
 };
+
+export type GetUsersQuery = z.infer<typeof adminValidation.getUsers>["query"];

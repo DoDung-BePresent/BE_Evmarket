@@ -2,14 +2,19 @@
 /**
  * Node modules
  */
-import { ListingType } from "@prisma/client";
+import { ListingType, Prisma, UserRole } from "@prisma/client";
+
+/**
+ * Services
+ */
+import { emailService } from "@/services/email.service";
 
 /**
  * Libs
  */
 import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
-import { NotFoundError, BadRequestError } from "@/libs/error";
+import { NotFoundError, BadRequestError, ForbiddenError } from "@/libs/error";
 
 const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
 
@@ -158,5 +163,102 @@ export const adminService = {
     } else {
       throw new BadRequestError("Invalid listing type");
     }
+  },
+  getUsers: async (
+    filter: { role?: UserRole; isLocked?: boolean; search?: string },
+    options: IQueryOptions,
+  ) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput = {};
+
+    if (filter.role) {
+      where.role = filter.role;
+    }
+    if (filter.isLocked !== undefined) {
+      where.isLocked = filter.isLocked;
+    }
+    if (filter.search) {
+      where.OR = [
+        { name: { contains: filter.search, mode: "insensitive" } },
+        { email: { contains: filter.search, mode: "insensitive" } },
+      ];
+    }
+
+    const [users, totalResults] = await prisma.$transaction([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatar: true,
+          role: true,
+          isVerified: true,
+          isLocked: true,
+          lockReason: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      users,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
+  lockUser: async (userId: string, lockReason: string) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+    if (user.role === "ADMIN") {
+      throw new ForbiddenError("Cannot lock an admin account.");
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isLocked: true,
+        lockReason,
+      },
+    });
+
+    await emailService.sendAccountLockedEmail(
+      updatedUser.email,
+      updatedUser.name,
+      lockReason,
+    );
+
+    return updatedUser;
+  },
+
+  unlockUser: async (userId: string) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        isLocked: false,
+        lockReason: null,
+      },
+    });
   },
 };

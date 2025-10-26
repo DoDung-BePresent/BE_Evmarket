@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, no-unsafe-optional-chaining */
+/* eslint-disable no-unsafe-optional-chaining */
 /**
  * Constants
  */
@@ -18,11 +18,6 @@ import { adminService } from "@/services/admin.service";
  * Utils
  */
 import { pick } from "@/utils/pick.util";
-
-/**
- * Services
- */
-import { transactionService } from "@/services/transaction.service";
 
 /**
  * Validations
@@ -87,22 +82,27 @@ export const adminController = {
       data: listing,
     });
   }),
-  getCompletedTransactions: asyncHandler(async (req, res) => {
-    const transactions = await transactionService.getCompletedTransactions();
+  getListings: asyncHandler(async (req, res) => {
+    const query = req.validated?.query;
+    const filter = pick(query, ["listingType", "isVerified", "status"]);
+    const options = pick(query, ["limit", "page"]);
+    const result = await adminService.getListings(filter, options);
     res.status(STATUS_CODE.OK).json({
-      message: "Completed transactions fetched",
-      data: { transactions },
+      message: "Listings fetched successfully",
+      data: result,
     });
   }),
-  approveListing: asyncHandler(async (req, res) => {
-    const { listingType, listingId } = req.params;
-    const listing = await adminService.approveListing(
-      listingType as any,
+  verifyListing: asyncHandler(async (req, res) => {
+    const { listingType, listingId } = req.validated?.params;
+    const payload = req.validated?.body;
+    const updatedListing = await adminService.verifyListing(
+      listingType,
       listingId,
+      payload,
     );
     res.status(STATUS_CODE.OK).json({
-      message: `${listingType} approved successfully`,
-      data: listing,
+      message: "Listing verification status updated successfully",
+      data: updatedListing,
     });
   }),
 };

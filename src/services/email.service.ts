@@ -1,11 +1,24 @@
+/**
+ * Node modules
+ */
+import ejs from "ejs";
+import path from "path";
 import nodemailer from "nodemailer";
+
+/**
+ * Configs
+ */
 import config from "@/configs/env.config";
+
+/**
+ * Libs
+ */
 import logger from "@/libs/logger";
 
 const transporter = nodemailer.createTransport({
   host: config.SMTP_HOST,
   port: config.SMTP_PORT,
-  secure: config.SMTP_SECURE, // true for 465, false for other ports
+  secure: config.SMTP_SECURE,
   auth: {
     user: config.SMTP_USER,
     pass: config.SMTP_PASS,
@@ -33,17 +46,44 @@ export const emailService = {
     reason: string,
   ) => {
     const subject = "Your EV-Market Account Has Been Locked";
-    const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>Account Locked</h2>
-        <p>Hello ${name || "user"},</p>
-        <p>We are writing to inform you that your account on EV-Market has been locked by an administrator.</p>
-        <p><strong>Reason:</strong> ${reason}</p>
-        <p>If you believe this is a mistake or wish to appeal this decision, please contact our support team at <a href="mailto:${config.SMTP_USER}">${config.SMTP_USER}</a>.</p>
-        <p>Thank you for your understanding.</p>
-        <p>Best regards,<br/>The EV-Market Team</p>
-      </div>
-    `;
+
+    const templatePath = path.join(
+      process.cwd(),
+      "src",
+      "templates",
+      "emails",
+      "accountLocked.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: name || "user",
+      reason: reason,
+      supportEmail: config.SMTP_USER,
+    });
+
     await sendEmail(to, subject, html);
-  }
+  },
+  sendListingVerifiedEmail: async (
+    to: string,
+    name: string | null,
+    listingTitle: string,
+    isVerified: boolean,
+  ) => {
+    const subject = `Your Listing "${listingTitle}" Has Been ${isVerified ? "Approved" : "Rejected"}`;
+    const templatePath = path.join(
+      process.cwd(),
+      "src",
+      "templates",
+      "emails",
+      "listingVerified.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: name || "user",
+      listingTitle,
+      isVerified,
+    });
+
+    await sendEmail(to, subject, html);
+  },
 };

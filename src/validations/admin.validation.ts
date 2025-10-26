@@ -1,5 +1,9 @@
+/**
+ * Node modules
+ */
 import { z } from "zod";
 import { UserRole } from "@prisma/client";
+import { ListingStatus } from "@prisma/client";
 
 export const adminValidation = {
   getPendingAuctionRequests: z.object({
@@ -71,12 +75,6 @@ export const adminValidation = {
         }
       }
     }),
-  approveListing: z.object({
-    params: z.object({
-      listingId: z.cuid("Invalid listing ID"),
-      listingType: z.enum(["VEHICLE", "BATTERY"]),
-    }),
-  }),
   getUsers: z.object({
     query: z.object({
       page: z.coerce.number().int().positive().optional(),
@@ -89,6 +87,27 @@ export const adminValidation = {
         .transform((val) => val === "true")
         .optional(),
       search: z.string().optional(),
+    }),
+  }),
+  getListings: z.object({
+    query: z.object({
+      listingType: z.enum(["VEHICLE", "BATTERY", "ALL"]).default("ALL"),
+      isVerified: z
+        .string()
+        .transform((val) => val === "true")
+        .optional(),
+      status: z.nativeEnum(ListingStatus).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(10),
+    }),
+  }),
+  verifyListing: z.object({
+    params: z.object({
+      listingType: z.enum(["VEHICLE", "BATTERY"]),
+      listingId: z.string().cuid(),
+    }),
+    body: z.object({
+      isVerified: z.boolean(),
     }),
   }),
   lockUser: z.object({

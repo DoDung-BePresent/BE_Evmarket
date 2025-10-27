@@ -60,8 +60,14 @@ enum FinancialTransactionType {
   SALE_REVENUE
   PURCHASE
   REFUND
-  AUCTION_DEPOSIT // <-- Thêm loại giao dịch đặt cọc
-  AUCTION_DEPOSIT_REFUND // <-- Thêm loại giao dịch hoàn cọc
+  AUCTION_DEPOSIT
+  AUCTION_DEPOSIT_REFUND
+  COMMISSION_FEE
+}
+
+enum FeeType {
+  REGULAR_SALE
+  AUCTION_SALE
 }
 
 enum AuctionDepositStatus {
@@ -295,4 +301,14 @@ model AuctionDeposit {
 
   @@unique([userId, vehicleId])
   @@unique([userId, batteryId])
+}
+
+model Fee {
+  id          String   @id @default(cuid())
+  type        FeeType  @unique
+  percentage  Float    
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -2,15 +2,19 @@
  * Libs
  */
 import prisma from "../../src/libs/prisma";
-import { createSellers, createSpecialUsers } from "./users.seed";
+
+/**
+ * Seeds
+ */
+import { createFees } from "./fees.seed";
 import { createVehicles } from "./vehicles.seed";
 import { createBatteries } from "./batteries.seed";
+import { createSellers, createSpecialUsers } from "./users.seed";
 
 const seedAll = async () => {
   console.log("🌱 Starting database seeding...\n");
 
   try {
-    // Clear existing data (optional, be careful in production!)
     console.log("🧹 Cleaning existing data...");
     await prisma.battery.deleteMany();
     await prisma.vehicle.deleteMany();
@@ -18,12 +22,11 @@ const seedAll = async () => {
     await prisma.user.deleteMany();
     console.log("✅ Cleaned existing data\n");
 
-    // Seed users first (they're needed for vehicles and batteries)
     await createSpecialUsers();
     await createSellers(15);
+    await createFees();
     console.log("");
 
-    // Seed vehicles and batteries with specific status counts
     await Promise.all([
       createVehicles({
         available: 30,
@@ -39,7 +42,6 @@ const seedAll = async () => {
 
     console.log("\n🎉 Database seeding completed successfully!");
 
-    // Show summary
     const summary = await Promise.all([
       prisma.user.count(),
       prisma.vehicle.count(),

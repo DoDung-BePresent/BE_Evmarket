@@ -53,6 +53,14 @@ adminRouter.patch(
   adminController.unlockUser,
 );
 
+adminRouter.get("/fees", adminController.getFees);
+
+adminRouter.patch(
+  "/fees/:feeId",
+  validate(adminValidation.updateFee),
+  adminController.updateFee,
+);
+
 adminRouter.get(
   "/auction-requests",
   validate(adminValidation.getPendingAuctionRequests),

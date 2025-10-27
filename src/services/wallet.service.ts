@@ -1,4 +1,3 @@
- 
 /**
  * Node modules
  */
@@ -8,7 +7,11 @@ import { FinancialTransactionType, PrismaClient } from "@prisma/client";
  * Libs
  */
 import prisma from "@/libs/prisma";
-import { BadRequestError, NotFoundError } from "@/libs/error";
+import {
+  BadRequestError,
+  NotFoundError,
+  InternalServerError,
+} from "@/libs/error";
 
 /**
  * Configs
@@ -79,7 +82,6 @@ export const walletService = {
 
     return updatedWallet;
   },
-
   getWalletByUserId: async (userId: string) => {
     const wallet = await prisma.wallet.findUnique({
       where: { userId },
@@ -89,6 +91,39 @@ export const walletService = {
     }
     return wallet;
   },
+  addCommissionFeeToSystemWallet: async (
+    amount: number,
+    tx?: PrismaTransactionClient,
+  ) => {
+    const prismaClient = tx || prisma;
+    const systemUser = await prismaClient.user.findUnique({
+      where: { email: "system@evmarket.local" },
+      include: { wallet: true },
+    });
+
+    if (!systemUser?.wallet?.id) {
+      throw new InternalServerError(
+        "System wallet not found. Please run database seeds.",
+      );
+    }
+
+    await prismaClient.wallet.update({
+      where: { id: systemUser.wallet.id },
+      data: { availableBalance: { increment: amount } },
+    });
+
+    await prismaClient.financialTransaction.create({
+      data: {
+        walletId: systemUser.wallet.id,
+        type: "COMMISSION_FEE",
+        amount,
+        status: "COMPLETED",
+        gateway: "INTERNAL",
+        description: "System commission fee collected.",
+      },
+    });
+  },
+
   createDepositRequest: async (userId: string, amount: number) => {
     const wallet = await walletService.getWalletByUserId(userId);
 

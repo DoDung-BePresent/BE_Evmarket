@@ -47,8 +47,21 @@ const createSpecialUsers = async () => {
       wallet: { create: {} },
     },
   });
-  console.log("✅ Created special users (admin, staff)");
-  return [admin, staff];
+
+  const systemUser = await prisma.user.upsert({
+    where: { email: "system@evmarket.local" },
+    update: {},
+    create: {
+      email: "system@evmarket.local",
+      name: "System",
+      role: "ADMIN",
+      isVerified: true,
+      wallet: { create: {} },
+    },
+  });
+
+  console.log("✅ Created special users (admin, staff, system)");
+  return [admin, staff, systemUser];
 };
 
 const createSellers = async (count: number = 10) => {

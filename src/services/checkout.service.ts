@@ -2,7 +2,7 @@
 /**
  * Node modules
  */
-import { ListingType, PaymentGateway } from "@prisma/client";
+import { ListingType, PaymentGateway, FeeType } from "@prisma/client";
 
 /**
  * Configs
@@ -101,68 +101,80 @@ export const checkoutService = {
     return prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
-        include: { vehicle: true, battery: true },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+        },
       });
 
       if (!transaction || transaction.status !== "PENDING") {
         logger.warn(
-          `MoMo IPN: Received IPN for an invalid or already processed transaction ${transactionId}.`,
+          `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
         );
         return;
       }
 
-      if (transaction.finalPrice !== paidAmount) {
-        logger.error(
-          `MoMo IPN: Amount mismatch for transaction ${transactionId}. Expected ${transaction.finalPrice}, but received ${paidAmount}.`,
+      const listing = transaction.vehicle || transaction.battery;
+      if (!listing) {
+        throw new NotFoundError(
+          "Associated listing not found for transaction.",
         );
-        await tx.transaction.update({
-          where: { id: transactionId },
-          data: { status: "FAILED" },
-        });
-        return;
       }
 
-      const sellerId =
-        transaction.vehicle?.sellerId || transaction.battery?.sellerId;
-      if (!sellerId) {
-        throw new InternalServerError("Seller not found for this transaction.");
+      if (listing.price !== paidAmount) {
+        throw new BadRequestError("Paid amount does not match listing price.");
       }
-      await tx.wallet.update({
-        where: { userId: sellerId },
-        data: { availableBalance: { increment: paidAmount } },
+
+      const feeType = listing.isAuction
+        ? FeeType.AUCTION_SALE
+        : FeeType.REGULAR_SALE;
+
+      const feeRule = await tx.fee.findUnique({
+        where: { type: feeType },
       });
 
-      const listingType = transaction.vehicleId ? "VEHICLE" : "BATTERY";
-      const listingId = transaction.vehicleId || transaction.batteryId;
-
-      if (listingType === "VEHICLE") {
-        await tx.vehicle.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
-      } else {
-        await tx.battery.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
+      if (!feeRule) {
+        throw new InternalServerError(`Fee rule for ${feeType} not found.`);
       }
 
-      const completedTransaction = await tx.transaction.update({
+      const commissionAmount = (listing.price * feeRule.percentage) / 100;
+      const sellerRevenue = listing.price - commissionAmount;
+
+      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
+      await (model as any).update({
+        where: { id: listing.id },
+        data: { status: "SOLD" },
+      });
+
+      await tx.transaction.update({
         where: { id: transactionId },
         data: { status: "COMPLETED" },
       });
 
-      logger.info(
-        `Successfully completed purchase for transaction ${completedTransaction.id}`,
+      await walletService.updateBalance(
+        listing.seller.id,
+        sellerRevenue,
+        "SALE_REVENUE",
+        tx,
       );
-      return completedTransaction;
+
+      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
+
+      logger.info(
+        `Transaction ${transactionId} completed. Seller ${listing.seller.id} received ${sellerRevenue}. Commission: ${commissionAmount}.`,
+      );
+
+      return transaction;
     });
   },
   payWithWallet: async (transactionId: string, buyerId: string) => {
     return prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
-        include: { vehicle: true, battery: true },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+        },
       });
 
       if (
@@ -174,15 +186,32 @@ export const checkoutService = {
       }
 
       const price = transaction.finalPrice!;
-
-      const sellerId =
-        transaction.vehicle?.sellerId || transaction.battery?.sellerId;
-      if (!sellerId)
-        throw new InternalServerError("Seller not found for this transaction.");
+      const listing = transaction.vehicle || transaction.battery;
+      if (!listing) {
+        throw new InternalServerError("Associated listing not found.");
+      }
 
       await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
 
-      await walletService.updateBalance(sellerId, price, "SALE_REVENUE", tx);
+      const feeType = listing.isAuction
+        ? FeeType.AUCTION_SALE
+        : FeeType.REGULAR_SALE;
+      const feeRule = await tx.fee.findUnique({ where: { type: feeType } });
+      if (!feeRule) {
+        throw new InternalServerError(`Fee rule for ${feeType} not found.`);
+      }
+
+      const commissionAmount = (price * feeRule.percentage) / 100;
+      const sellerRevenue = price - commissionAmount;
+
+      await walletService.updateBalance(
+        listing.seller.id,
+        sellerRevenue,
+        "SALE_REVENUE",
+        tx,
+      );
+
+      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
 
       const listingType = transaction.vehicleId ? "VEHICLE" : "BATTERY";
       const listingId = transaction.vehicleId || transaction.batteryId;

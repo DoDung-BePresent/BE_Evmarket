@@ -105,4 +105,22 @@ export const adminController = {
       data: updatedListing,
     });
   }),
+
+  getFees: asyncHandler(async (_req, res) => {
+    const fees = await adminService.getFees();
+    res.status(STATUS_CODE.OK).json({
+      message: "Fees fetched successfully",
+      data: fees,
+    });
+  }),
+
+  updateFee: asyncHandler(async (req, res) => {
+    const { feeId } = req.validated?.params;
+    const payload = req.validated?.body;
+    const updatedFee = await adminService.updateFee(feeId, payload);
+    res.status(STATUS_CODE.OK).json({
+      message: "Fee updated successfully",
+      data: updatedFee,
+    });
+  }),
 };

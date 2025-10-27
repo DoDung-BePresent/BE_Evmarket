@@ -2,7 +2,15 @@
 /**
  * Node modules
  */
-import { Battery, ListingStatus, ListingType, Prisma, User, UserRole, Vehicle } from "@prisma/client";
+import {
+  Battery,
+  ListingStatus,
+  ListingType,
+  Prisma,
+  User,
+  UserRole,
+  Vehicle,
+} from "@prisma/client";
 
 /**
  * Services
@@ -18,7 +26,7 @@ import { NotFoundError, BadRequestError, ForbiddenError } from "@/libs/error";
 
 /**
  * Types
-*/
+ */
 import { IQueryOptions } from "@/types/pagination.type";
 
 const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
@@ -326,8 +334,6 @@ export const adminService = {
       },
     });
 
-    console.log(listing);
-
     await emailService.sendListingVerifiedEmail(
       listing.seller.email,
       listing.seller.name,
@@ -336,5 +342,32 @@ export const adminService = {
     );
 
     return updatedListing;
+  },
+
+  getFees: async () => {
+    return prisma.fee.findMany({
+      orderBy: {
+        type: "asc",
+      },
+    });
+  },
+
+  updateFee: async (
+    feeId: string,
+    payload: {
+      percentage: number;
+      description?: string;
+      isActive?: boolean;
+    },
+  ) => {
+    const fee = await prisma.fee.findUnique({ where: { id: feeId } });
+    if (!fee) {
+      throw new NotFoundError("Fee configuration not found.");
+    }
+
+    return prisma.fee.update({
+      where: { id: feeId },
+      data: payload,
+    });
   },
 };

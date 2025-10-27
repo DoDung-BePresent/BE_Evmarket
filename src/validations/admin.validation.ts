@@ -125,6 +125,19 @@ export const adminValidation = {
       userId: z.string().cuid(),
     }),
   }),
+  updateFee: z.object({
+    params: z.object({
+      feeId: z.string().cuid(),
+    }),
+    body: z.object({
+      percentage: z.coerce
+        .number()
+        .min(0, "Percentage cannot be negative")
+        .max(100, "Percentage cannot exceed 100"),
+      description: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }),
+  }),
 };
 
 export type GetUsersQuery = z.infer<typeof adminValidation.getUsers>["query"];

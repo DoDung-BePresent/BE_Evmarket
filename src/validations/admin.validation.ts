@@ -32,6 +32,7 @@ export const adminValidation = {
         rejectionReason: z.string().optional(),
         auctionStartsAt: z.coerce.date().optional(),
         auctionEndsAt: z.coerce.date().optional(),
+        bidIncrement: z.coerce.number().positive().optional(),
       }),
       params: z.object({
         listingId: z.cuid("Invalid listing ID"),

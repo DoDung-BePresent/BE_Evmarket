@@ -63,10 +63,14 @@ export const auctionService = {
 
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
 
+    const startingPrice = payload.startingPrice;
+    const bidIncrement = Math.ceil(startingPrice * 0.05);
+
     return (model as any).create({
       data: {
         ...payload,
-        price: payload.startingPrice,
+        bidIncrement,
+        price: startingPrice,
         images: imageUrls,
         seller: { connect: { id: userId } },
         isAuction: true,
@@ -81,9 +85,7 @@ export const auctionService = {
     listingId: string,
     payload: {
       startingPrice: number;
-      bidIncrement: number;
       depositAmount?: number;
-      auctionEndsAt: Date;
     },
   ) => {
     const redisKey = `auction-rejection:${listingType}:${listingId}`;
@@ -114,10 +116,15 @@ export const auctionService = {
         "Only available listings can be put up for auction.",
       );
     }
+
+    const startingPrice = payload.startingPrice;
+    const bidIncrement = Math.ceil(startingPrice * 0.05);
+
     return (model as any).update({
       where: { id: listingId },
       data: {
         ...payload,
+        bidIncrement,
         isAuction: true,
         status: "AUCTION_PENDING_APPROVAL",
       },

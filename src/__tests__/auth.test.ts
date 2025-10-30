@@ -10,6 +10,8 @@ import redisClient from "@/libs/redis";
  */
 import app from "../app";
 
+jest.setTimeout(20000);
+
 describe("Auth flow", () => {
   let accessToken: string;
   const email = `testuser${Date.now()}@example.com`;

@@ -63,7 +63,6 @@ export const auctionValidation = {
         }),
       ),
       startingPrice: z.coerce.number().positive(),
-      bidIncrement: z.coerce.number().positive(),
       depositAmount: z.coerce.number().positive().optional(),
     }),
   }),
@@ -104,7 +103,6 @@ export const auctionValidation = {
           .partial(),
       ),
       startingPrice: z.coerce.number().positive(),
-      bidIncrement: z.coerce.number().positive(),
       depositAmount: z.coerce.number().positive().optional(),
     }),
   }),
@@ -113,9 +111,6 @@ export const auctionValidation = {
       startingPrice: z.coerce
         .number()
         .positive("Starting price must be positive"),
-      bidIncrement: z.coerce
-        .number()
-        .positive("Bid increment must be positive"),
       depositAmount: z.coerce
         .number()
         .positive("Deposit amount must be positive")

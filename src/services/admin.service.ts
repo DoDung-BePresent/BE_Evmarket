@@ -100,6 +100,7 @@ export const adminService = {
       rejectionReason?: string;
       auctionStartsAt?: Date;
       auctionEndsAt?: Date;
+      bidIncrement?: number;
     },
   ) => {
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;
@@ -118,15 +119,20 @@ export const adminService = {
     if (payload.approved) {
       await redisClient.del(redisKey);
 
+      const updateData: any = {
+        status: "AUCTION_LIVE",
+        isVerified: true,
+        auctionRejectionReason: null,
+        auctionStartsAt: payload.auctionStartsAt,
+        auctionEndsAt: payload.auctionEndsAt,
+      };
+      if (payload.bidIncrement) {
+        updateData.bidIncrement = payload.bidIncrement;
+      }
+
       return (model as any).update({
         where: { id: listingId },
-        data: {
-          status: "AUCTION_LIVE",
-          isVerified: true,
-          auctionRejectionReason: null,
-          auctionStartsAt: payload.auctionStartsAt,
-          auctionEndsAt: payload.auctionEndsAt,
-        },
+        data: updateData,
       });
     } else {
       if (!payload.rejectionReason) {

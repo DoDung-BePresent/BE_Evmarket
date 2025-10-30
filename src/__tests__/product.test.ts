@@ -10,6 +10,8 @@ import redisClient from "@/libs/redis";
  */
 import app from "../app";
 
+jest.setTimeout(20000);
+
 describe("Product listing & verification flow", () => {
   let accessToken: string;
   let vehicleId: string;

@@ -8,7 +8,7 @@
     "build": "tsc && tsc-alias",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "dotenv -e .env.test -- jest",
     "seed": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
     "seed:staging": "dotenv -e .env.staging -- ts-node -r tsconfig-paths/register prisma/seeds/index.seed.ts",
     "seed:users": "dotenv -e .env -- ts-node -r tsconfig-paths/register prisma/seeds/users.seed.ts",
@@ -27,6 +27,16 @@
       "npm run validate-build"
     ]
   },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  },
   "keywords": [],
   "author": "DoQuangDung",
   "license": "MIT",
@@ -41,12 +51,14 @@
     "@types/express": "^5.0.3",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/helmet": "^0.0.48",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.3",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
+    "@types/supertest": "^6.0.3",
     "dotenv-cli": "^10.0.0",
     "eslint": "^9.37.0",
     "husky": "^9.1.7",
@@ -84,6 +96,7 @@
     "passport-google-oauth20": "^2.0.0",
     "redis": "^5.8.3",
     "sharp": "^0.34.3",
+    "supertest": "^7.1.4",
     "winston": "^3.17.0",
     "zod": "^4.1.8"
   }

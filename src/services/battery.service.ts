@@ -66,7 +66,7 @@ export const batteryService = {
           connect: { id: userId },
         },
         status: "AVAILABLE",
-        isVerified: true,
+        isVerified: false,
       },
     });
   },
@@ -75,7 +75,10 @@ export const batteryService = {
     const skip = (page - 1) * limit;
 
     const batteries = await prisma.battery.findMany({
-      where: filter,
+      where: {
+        ...filter,
+        isVerified: true,
+      },
       skip,
       take: limit,
       orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },

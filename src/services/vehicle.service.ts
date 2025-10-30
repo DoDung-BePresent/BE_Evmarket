@@ -69,7 +69,7 @@ export const vehicleService = {
           connect: { id: userId },
         },
         status: "AVAILABLE",
-        isVerified: true,
+        isVerified: false,
       },
     });
   },
@@ -78,7 +78,10 @@ export const vehicleService = {
     const skip = (page - 1) * limit;
 
     const vehicles = await prisma.vehicle.findMany({
-      where: filter,
+      where: {
+        ...filter,
+        isVerified: true,
+      },
       skip,
       take: limit,
       orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },

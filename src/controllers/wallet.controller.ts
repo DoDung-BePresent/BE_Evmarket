@@ -34,11 +34,12 @@ export const walletController = {
   }),
   depositToWallet: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
-    const { amount } = req.validated?.body;
+    const { amount, redirectUrl } = req.validated?.body;
 
     const paymentInfo = await walletService.createDepositRequest(
       userId,
       amount,
+      redirectUrl,
     );
 
     res.status(STATUS_CODE.OK).json({

@@ -10,6 +10,7 @@ export const walletValidation = {
         .number()
         .positive("Amount must be a positive number")
         .min(10000, "Minimum deposit amount is 10,000 VND"),
+      redirectUrl: z.url("Invalid redirect URL"),
     }),
   }),
   getHistory: z.object({

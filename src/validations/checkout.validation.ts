@@ -6,7 +6,8 @@ export const checkoutValidation = {
     body: z.object({
       listingId: z.string().cuid(),
       listingType: z.enum(["VEHICLE", "BATTERY"]),
-      paymentMethod: z.nativeEnum(PaymentGateway),
+      paymentMethod: z.enum(PaymentGateway),
+      redirectUrl: z.string().url("Invalid redirect URL"),
     }),
   }),
   payWithWallet: z.object({

@@ -124,7 +124,11 @@ export const walletService = {
     });
   },
 
-  createDepositRequest: async (userId: string, amount: number) => {
+  createDepositRequest: async (
+    userId: string,
+    amount: number,
+    redirectUrl: string,
+  ) => {
     const wallet = await walletService.getWalletByUserId(userId);
 
     const financialTransaction = await prisma.financialTransaction.create({
@@ -138,7 +142,7 @@ export const walletService = {
       },
     });
 
-    const redirectUrl = `${config.CLIENT_URL}/wallet/`;
+    // const redirectUrl = `${config.CLIENT_URL}/wallet/`;
     const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`; // URL webhook của bạn
 
     const paymentInfo = await momoService.createPayment({

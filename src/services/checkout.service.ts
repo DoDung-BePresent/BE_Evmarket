@@ -35,10 +35,12 @@ export const checkoutService = {
       listingId,
       listingType,
       paymentMethod,
+      redirectUrl,
     }: {
       listingId: string;
       listingType: ListingType;
       paymentMethod: PaymentGateway;
+      redirectUrl: string;
     },
   ) => {
     const listing = await (listingType === "VEHICLE"
@@ -76,7 +78,7 @@ export const checkoutService = {
     }
 
     if (paymentMethod === "MOMO") {
-      const redirectUrl = `${config.CLIENT_URL}/checkout/result`;
+      // const redirectUrl = `${config.CLIENT_URL}/checkout/result`;
       const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
 
       const paymentInfo = await momoService.createPayment({

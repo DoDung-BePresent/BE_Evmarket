@@ -23,6 +23,8 @@ const adminRouter = Router();
 
 adminRouter.use(authenticate, authorize(["STAFF", "ADMIN"]));
 
+adminRouter.get("/dashboard/stats", adminController.getDashboardStats);
+
 adminRouter.get(
   "/listings",
   validate(adminValidation.getListings),

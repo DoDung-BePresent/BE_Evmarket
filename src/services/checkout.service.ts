@@ -14,19 +14,14 @@ import config from "@/configs/env.config";
  */
 import { momoService } from "@/services/momo.service";
 import { walletService } from "@/services/wallet.service";
+import { contractService } from "@/services/contract.service";
 
 /**
  * Libs
  */
-import prisma from "@/libs/prisma";
-
-import {
-  BadRequestError,
-  ForbiddenError,
-  InternalServerError,
-  NotFoundError,
-} from "@/libs/error";
 import logger from "@/libs/logger";
+import prisma from "@/libs/prisma";
+import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from "@/libs/error";
 
 export const checkoutService = {
   initiateCheckout: async (
@@ -35,12 +30,12 @@ export const checkoutService = {
       listingId,
       listingType,
       paymentMethod,
-      redirectUrl,
+      redirectUrl: clientRedirectUrl,
     }: {
       listingId: string;
       listingType: ListingType;
       paymentMethod: PaymentGateway;
-      redirectUrl: string;
+      redirectUrl?: string;
     },
   ) => {
     const listing = await (listingType === "VEHICLE"
@@ -78,7 +73,8 @@ export const checkoutService = {
     }
 
     if (paymentMethod === "MOMO") {
-      // const redirectUrl = `${config.CLIENT_URL}/checkout/result`;
+      const redirectUrl =
+        clientRedirectUrl || `${config.CLIENT_URL}/checkout/result`;
       const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
 
       const paymentInfo = await momoService.createPayment({
@@ -100,12 +96,13 @@ export const checkoutService = {
     throw new BadRequestError("Invalid payment method.");
   },
   completeMomoPurchase: async (transactionId: string, paidAmount: number) => {
-    return prisma.$transaction(async (tx) => {
+    const updatedTransaction = await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
         include: {
           vehicle: { include: { seller: true } },
           battery: { include: { seller: true } },
+          buyer: true,
         },
       });
 
@@ -113,7 +110,7 @@ export const checkoutService = {
         logger.warn(
           `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
         );
-        return;
+        return null;
       }
 
       const listing = transaction.vehicle || transaction.battery;
@@ -148,11 +145,6 @@ export const checkoutService = {
         data: { status: "SOLD" },
       });
 
-      await tx.transaction.update({
-        where: { id: transactionId },
-        data: { status: "COMPLETED" },
-      });
-
       await walletService.updateBalance(
         listing.seller.id,
         sellerRevenue,
@@ -162,20 +154,41 @@ export const checkoutService = {
 
       await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
 
-      logger.info(
-        `Transaction ${transactionId} completed. Seller ${listing.seller.id} received ${sellerRevenue}. Commission: ${commissionAmount}.`,
-      );
-
-      return transaction;
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "COMPLETED" },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+          buyer: true,
+        },
+      });
     });
+
+    if (updatedTransaction) {
+      try {
+        await contractService.generateAndSaveContract(updatedTransaction);
+        logger.info(`Contract generated for transaction ${transactionId}`);
+      } catch (error) {
+        logger.error(
+          `Failed to generate contract for transaction ${transactionId}`,
+          error,
+        );
+      }
+    }
+
+    logger.info(`Transaction ${transactionId} processing finished.`);
+    return updatedTransaction;
   },
+
   payWithWallet: async (transactionId: string, buyerId: string) => {
-    return prisma.$transaction(async (tx) => {
+    const completedTransaction = await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
         include: {
           vehicle: { include: { seller: true } },
           battery: { include: { seller: true } },
+          buyer: true,
         },
       });
 
@@ -230,12 +243,29 @@ export const checkoutService = {
         });
       }
 
-      const completedTransaction = await tx.transaction.update({
+      return tx.transaction.update({
         where: { id: transactionId },
         data: { status: "COMPLETED" },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+          buyer: true,
+        },
       });
-
-      return completedTransaction;
     });
+
+    if (completedTransaction) {
+      try {
+        await contractService.generateAndSaveContract(completedTransaction);
+        logger.info(`Contract generated for transaction ${transactionId}`);
+      } catch (error) {
+        logger.error(
+          `Failed to generate contract for transaction ${transactionId}`,
+          error,
+        );
+      }
+    }
+
+    return completedTransaction;
   },
 };

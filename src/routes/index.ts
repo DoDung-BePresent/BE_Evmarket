@@ -17,6 +17,7 @@ import auctionRouter from "@/routes/auction.route";
 import checkoutRouter from "@/routes/checkout.route";
 import transactionRouter from "@/routes/transaction.route";
 import chatbotRouter from "@/routes/chatbot.route";
+import contractRouter from "@/routes/contract.route";
 
 const router = Router();
 
@@ -35,5 +36,6 @@ router.use("/auctions", auctionRouter);
 router.use("/checkout", checkoutRouter);
 router.use("/transactions", transactionRouter);
 router.use("/chatbot", chatbotRouter);
+router.use("/contracts", contractRouter);
 
 export default router;

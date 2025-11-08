@@ -3,4 +3,5 @@ export const SUPABASE_BUCKETS = {
   VEHICLES: "vehicles",
   BATTERIES: "batteries",
   REVIEWS: "reviews",
+  CONTRACTS: "contracts",
 } as const;

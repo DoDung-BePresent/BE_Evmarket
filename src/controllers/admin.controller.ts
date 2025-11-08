@@ -25,6 +25,13 @@ import { pick } from "@/utils/pick.util";
 import { GetUsersQuery } from "@/validations/admin.validation";
 
 export const adminController = {
+  getDashboardStats: asyncHandler(async (req, res) => {
+    const stats = await adminService.getDashboardStats();
+    res.status(STATUS_CODE.OK).json({
+      message: "Dashboard statistics fetched successfully",
+      data: stats,
+    });
+  }),
   getUsers: asyncHandler(async (req, res) => {
     const query = req.validated?.query as GetUsersQuery;
     const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);

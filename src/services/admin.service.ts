@@ -32,6 +32,50 @@ import { IQueryOptions } from "@/types/pagination.type";
 const AUCTION_REJECTION_EXPIRY = 24 * 60 * 60;
 
 export const adminService = {
+  getDashboardStats: async () => {
+    const totalUsers = await prisma.user.count({
+      where: { role: "MEMBER" },
+    });
+
+    const totalVehicles = await prisma.vehicle.count();
+    const totalBatteries = await prisma.battery.count();
+    const totalListings = totalVehicles + totalBatteries;
+
+    const pendingVerificationVehicles = await prisma.vehicle.count({
+      where: { isVerified: false, status: "AVAILABLE" },
+    });
+    const pendingVerificationBatteries = await prisma.battery.count({
+      where: { isVerified: false, status: "AVAILABLE" },
+    });
+    const pendingListings =
+      pendingVerificationVehicles + pendingVerificationBatteries;
+
+    const pendingAuctionVehicles = await prisma.vehicle.count({
+      where: { status: "AUCTION_PENDING_APPROVAL" },
+    });
+    const pendingAuctionBatteries = await prisma.battery.count({
+      where: { status: "AUCTION_PENDING_APPROVAL" },
+    });
+    const pendingAuctions = pendingAuctionVehicles + pendingAuctionBatteries;
+
+    const totalTransactions = await prisma.transaction.count({
+      where: { status: "COMPLETED" },
+    });
+
+    const systemWallet = await prisma.wallet.findFirst({
+      where: { user: { email: "system@evmarket.local" } },
+    });
+    const totalRevenue = systemWallet?.availableBalance || 0;
+
+    return {
+      totalUsers,
+      totalListings,
+      pendingListings,
+      pendingAuctions,
+      totalTransactions,
+      totalRevenue,
+    };
+  },
   getPendingAuctionRequests: async (
     options: IQueryOptions & { status?: string },
   ) => {

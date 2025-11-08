@@ -104,6 +104,8 @@ model User {
   wallet          Wallet?
   bids            Bid[]
   auctionDeposits AuctionDeposit[]
+  buyerContracts  Contract[]  @relation("BuyerContracts")
+  sellerContracts Contract[]  @relation("SellerContracts")
 }
 
 model Account {
@@ -210,6 +212,7 @@ model Transaction {
   paymentDetail   Json?
 
   review          Review? // A transaction can have one review
+  contract        Contract?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -311,4 +314,19 @@ model Fee {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Contract {
+  id            String      @id @default(cuid())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId String      @unique
+  buyer         User        @relation("BuyerContracts", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId       String
+  seller        User        @relation("SellerContracts", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  contractUrl   String
+  createdAt     DateTime    @default(now())
+
+  @@index([buyerId])
+  @@index([sellerId])
 }

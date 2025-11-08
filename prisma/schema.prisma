@@ -47,10 +47,12 @@ enum ListingStatus {
 }
 
 enum TransactionStatus {
-  PENDING
-  COMPLETED
-  CANCELLED
-  FAILED
+  PENDING     // Chờ thanh toán
+  PAID        // Đã thanh toán, chờ người bán giao hàng
+  SHIPPED     // Đã giao hàng, chờ người mua xác nhận
+  COMPLETED   // Giao dịch hoàn tất
+  DISPUTED    // Đang khiếu nại
+  CANCELLED   // Đã hủy
 }
 
 enum FinancialTransactionType {
@@ -200,6 +202,7 @@ model Transaction {
   buyerId         String
   buyer           User     @relation(fields: [buyerId], references: [id])
   status          TransactionStatus @default(PENDING)
+  confirmationDeadline DateTime? 
 
   vehicleId       String?
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])

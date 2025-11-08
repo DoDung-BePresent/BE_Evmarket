@@ -58,6 +58,18 @@ async function setupCronJobs() {
     console.log(
       `✅ Cron job '${overduePaymentsJobName}' setup completed successfully.`,
     );
+
+    
+    const autoCompleteJobName = "auto-complete-shipped-transactions";
+    const autoCompleteSchedule = "*/30 * * * *"; 
+    const autoCompleteCommand = "SELECT auto_complete_shipped_transactions();";
+
+    await prisma.$executeRaw`
+      SELECT schedule_cron_job(${autoCompleteJobName}, ${autoCompleteSchedule}, ${autoCompleteCommand});
+    `;
+    console.log(
+      `✅ Cron job '${autoCompleteJobName}' setup completed successfully.`,
+    );
   } catch (error) {
     console.error("❌ Failed to set up cron jobs:", error);
     process.exit(1);

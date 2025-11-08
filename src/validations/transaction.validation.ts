@@ -4,6 +4,21 @@
 import z from "zod";
 
 export const transactionValidation = {
+  shipTransaction: z.object({
+    params: z.object({
+      transactionId: z.string().cuid(),
+    }),
+  }),
+  confirmReceipt: z.object({
+    params: z.object({
+      transactionId: z.string().cuid(),
+    }),
+  }),
+  disputeTransaction: z.object({
+    params: z.object({
+      transactionId: z.string().cuid(),
+    }),
+  }),
   createTransaction: z.object({
     body: z.object({
       vehicleId: z.cuid().optional(),

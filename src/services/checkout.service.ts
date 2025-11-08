@@ -2,7 +2,7 @@
 /**
  * Node modules
  */
-import { ListingType, PaymentGateway, FeeType } from "@prisma/client";
+import { ListingType, PaymentGateway } from "@prisma/client";
 
 /**
  * Configs
@@ -21,7 +21,12 @@ import { contractService } from "@/services/contract.service";
  */
 import logger from "@/libs/logger";
 import prisma from "@/libs/prisma";
-import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from "@/libs/error";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+} from "@/libs/error";
 
 export const checkoutService = {
   initiateCheckout: async (
@@ -124,47 +129,32 @@ export const checkoutService = {
         throw new BadRequestError("Paid amount does not match listing price.");
       }
 
-      const feeType = listing.isAuction
-        ? FeeType.AUCTION_SALE
-        : FeeType.REGULAR_SALE;
-
-      const feeRule = await tx.fee.findUnique({
-        where: { type: feeType },
-      });
-
-      if (!feeRule) {
-        throw new InternalServerError(`Fee rule for ${feeType} not found.`);
-      }
-
-      const commissionAmount = (listing.price * feeRule.percentage) / 100;
-      const sellerRevenue = listing.price - commissionAmount;
-
-      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
-      await (model as any).update({
-        where: { id: listing.id },
-        data: { status: "SOLD" },
-      });
-
-      await walletService.updateBalance(
-        listing.seller.id,
-        sellerRevenue,
-        "SALE_REVENUE",
-        tx,
-      );
-
-      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
-
-      return tx.transaction.update({
+      // Cập nhật trạng thái giao dịch thành PAID
+      const updatedTx = await tx.transaction.update({
         where: { id: transactionId },
-        data: { status: "COMPLETED" },
+        data: { status: "PAID" },
         include: {
           vehicle: { include: { seller: true } },
           battery: { include: { seller: true } },
           buyer: true,
         },
       });
+
+      // Chuyển tiền vào ví đang khóa của người bán
+      await walletService.addLockedBalance(
+        listing.seller.id,
+        listing.price,
+        tx,
+      );
+
+      logger.info(
+        `Transaction ${transactionId} paid. Funds are locked for seller ${listing.seller.id}.`,
+      );
+
+      return updatedTx;
     });
 
+    // Việc tạo hợp đồng vẫn giữ nguyên
     if (updatedTransaction) {
       try {
         await contractService.generateAndSaveContract(updatedTransaction);
@@ -206,54 +196,31 @@ export const checkoutService = {
         throw new InternalServerError("Associated listing not found.");
       }
 
+      // Trừ tiền từ ví người mua
       await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
 
-      const feeType = listing.isAuction
-        ? FeeType.AUCTION_SALE
-        : FeeType.REGULAR_SALE;
-      const feeRule = await tx.fee.findUnique({ where: { type: feeType } });
-      if (!feeRule) {
-        throw new InternalServerError(`Fee rule for ${feeType} not found.`);
-      }
-
-      const commissionAmount = (price * feeRule.percentage) / 100;
-      const sellerRevenue = price - commissionAmount;
-
-      await walletService.updateBalance(
-        listing.seller.id,
-        sellerRevenue,
-        "SALE_REVENUE",
-        tx,
-      );
-
-      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
-
-      const listingType = transaction.vehicleId ? "VEHICLE" : "BATTERY";
-      const listingId = transaction.vehicleId || transaction.batteryId;
-
-      if (listingType === "VEHICLE") {
-        await tx.vehicle.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
-      } else {
-        await tx.battery.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
-      }
-
-      return tx.transaction.update({
+      // Cập nhật trạng thái giao dịch thành PAID
+      const updatedTx = await tx.transaction.update({
         where: { id: transactionId },
-        data: { status: "COMPLETED" },
+        data: { status: "PAID" },
         include: {
           vehicle: { include: { seller: true } },
           battery: { include: { seller: true } },
           buyer: true,
         },
       });
+
+      // Chuyển tiền vào ví đang khóa của người bán
+      await walletService.addLockedBalance(listing.seller.id, price, tx);
+
+      logger.info(
+        `Transaction ${transactionId} paid with wallet. Funds are locked for seller ${listing.seller.id}.`,
+      );
+
+      return updatedTx;
     });
 
+    // Việc tạo hợp đồng vẫn giữ nguyên
     if (completedTransaction) {
       try {
         await contractService.generateAndSaveContract(completedTransaction);

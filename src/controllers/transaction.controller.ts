@@ -1,3 +1,4 @@
+/* eslint-disable no-unsafe-optional-chaining */
 /**
  * Constants
  */
@@ -34,6 +35,48 @@ export const transactionController = {
     );
     res.status(STATUS_CODE.CREATED).json({
       message: "Transaction created",
+      data: { transaction },
+    });
+  }),
+  shipTransaction: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { id: sellerId } = req.user!;
+
+    const transaction = await transactionService.shipTransaction(
+      transactionId,
+      sellerId,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Transaction marked as shipped.",
+      data: { transaction },
+    });
+  }),
+  confirmReceipt: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { id: buyerId } = req.user!;
+
+    const transaction = await transactionService.confirmReceipt(
+      transactionId,
+      buyerId,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Receipt confirmed. Transaction completed.",
+      data: { transaction },
+    });
+  }),
+  disputeTransaction: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { id: buyerId } = req.user!;
+
+    const transaction = await transactionService.disputeTransaction(
+      transactionId,
+      buyerId,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Transaction has been disputed. Admin will review it.",
       data: { transaction },
     });
   }),

@@ -41,6 +41,7 @@ import {
   ConflictError,
   NotFoundError,
   UnauthorizedError,
+  ForbiddenError,
 } from "@/libs/error";
 
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
@@ -100,6 +101,14 @@ export const authService = {
       throw new BadRequestError(
         "Invalid email or password",
         ERROR_CODE_ENUM.INVALID_CREDENTIALS,
+      );
+    }
+
+    if (existingUser.isLocked) {
+      throw new ForbiddenError(
+        `Your account has been locked. Reason: ${
+          existingUser.lockReason || "No reason provided."
+        }`,
       );
     }
 

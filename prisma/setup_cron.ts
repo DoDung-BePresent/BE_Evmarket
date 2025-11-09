@@ -10,6 +10,11 @@ async function setupCronJobs() {
     await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS pg_cron;");
     console.log("✅ pg_cron extension enabled.");
 
+    // XÓA TẤT CẢ CRON JOBS CŨ ĐỂ TRÁNH TRÙNG LẶP
+    console.log("🧹 Clearing old cron jobs...");
+    await prisma.$executeRawUnsafe("DELETE FROM cron.job;");
+    console.log("✅ Old cron jobs cleared.");
+
     // Job 1: Hủy giao dịch mua hàng thông thường quá hạn
     const cancelTxJobName = "cancel-overdue-txns";
     const cancelTxSchedule = "*/5 * * * *"; // Mỗi 5 phút

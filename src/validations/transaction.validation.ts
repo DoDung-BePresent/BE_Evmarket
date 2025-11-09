@@ -7,22 +7,22 @@ import { PaymentGateway } from "@prisma/client";
 export const transactionValidation = {
   shipTransaction: z.object({
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
   }),
   confirmReceipt: z.object({
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
   }),
   disputeTransaction: z.object({
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
   }),
   payForAuction: z.object({
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
     body: z.object({
       paymentMethod: z.enum(PaymentGateway),

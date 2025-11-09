@@ -10,7 +10,7 @@ export const reviewValidation = {
       comment: z.string().max(500).optional(),
     }),
     params: z.object({
-      transactionId: z.cuid(),
+      transactionId: z.uuid(),
     }),
   }),
   updateReview: z.object({

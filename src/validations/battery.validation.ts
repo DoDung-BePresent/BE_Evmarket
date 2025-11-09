@@ -10,6 +10,7 @@ export const batteryValidation = {
       title: z.string().min(5).max(100),
       description: z.string().min(20).max(5000),
       price: z.coerce.number().positive(),
+      location: z.string().optional(),
       brand: z.string().min(2),
       year: z.coerce
         .number()
@@ -66,6 +67,7 @@ export const batteryValidation = {
         title: z.string().min(5).max(100),
         description: z.string().min(20).max(5000),
         price: z.coerce.number().positive(),
+        location: z.string().optional(),
         brand: z.string().min(2),
         year: z.coerce
           .number()

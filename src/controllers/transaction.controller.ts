@@ -86,11 +86,15 @@ export const transactionController = {
   }),
   disputeTransaction: asyncHandler(async (req, res) => {
     const { transactionId } = req.validated?.params;
+    const { reason } = req.validated?.body;
     const { id: buyerId } = req.user!;
+    const files = req.files as Express.Multer.File[];
 
     const transaction = await transactionService.disputeTransaction(
       transactionId,
       buyerId,
+      reason,
+      files,
     );
 
     res.status(STATUS_CODE.OK).json({

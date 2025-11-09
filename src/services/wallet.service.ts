@@ -144,7 +144,6 @@ export const walletService = {
     tx: Prisma.TransactionClient,
   ) => {
     const sellerRevenue = amount - commission;
-    // Chuyển tiền từ locked -> available và trừ phí
     await tx.wallet.update({
       where: { userId: sellerId },
       data: {
@@ -156,8 +155,66 @@ export const walletService = {
         },
       },
     });
-    // Cộng phí vào ví hệ thống
     await walletService.addCommissionFeeToSystemWallet(commission, tx);
+  },
+  refundToBuyer: async (
+    buyerId: string,
+    sellerId: string,
+    amount: number,
+    tx: PrismaTransactionClient,
+  ) => {
+    await tx.wallet.update({
+      where: { userId: sellerId },
+      data: { lockedBalance: { decrement: amount } },
+    });
+
+    await tx.wallet.update({
+      where: { userId: buyerId },
+      data: { availableBalance: { increment: amount } },
+    });
+
+    await Promise.all([
+      walletService.createFinancialTransaction(
+        sellerId,
+        -amount,
+        "REFUND",
+        tx,
+        "Refund issued to buyer for disputed transaction",
+      ),
+      walletService.createFinancialTransaction(
+        buyerId,
+        amount,
+        "REFUND",
+        tx,
+        "Refund received for disputed transaction",
+      ),
+    ]);
+  },
+  createFinancialTransaction: async (
+    userId: string,
+    amount: number,
+    type: FinancialTransactionType,
+    tx: PrismaTransactionClient,
+    description?: string,
+  ) => {
+    const wallet = await tx.wallet.findUnique({
+      where: { userId },
+    });
+
+    if (!wallet) {
+      throw new NotFoundError(`Wallet not found for user ${userId}`);
+    }
+
+    return tx.financialTransaction.create({
+      data: {
+        walletId: wallet.id,
+        amount,
+        type,
+        status: "COMPLETED",
+        gateway: "INTERNAL",
+        description,
+      },
+    });
   },
   createDepositRequest: async (
     userId: string,

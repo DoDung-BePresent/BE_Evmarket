@@ -53,6 +53,7 @@ enum TransactionStatus {
   COMPLETED   // Giao dịch hoàn tất
   DISPUTED    // Đang khiếu nại
   CANCELLED   // Đã hủy
+  REFUNDED    // Đã hoàn
 }
 
 enum TransactionType {
@@ -137,6 +138,7 @@ model Vehicle {
   title           String
   description     String
   price           Float
+  location        String?
   images          String[]      @default([])
   status          ListingStatus @default(AVAILABLE)
 
@@ -172,6 +174,7 @@ model Battery {
   title           String
   description     String
   price           Float
+  location        String?
   images          String[]      @default([])
   status          ListingStatus @default(AVAILABLE)
 
@@ -211,6 +214,8 @@ model Transaction {
   confirmationDeadline DateTime? 
   paymentDeadline      DateTime?
   type                 TransactionType   @default(SALE)
+  disputeReason        String?
+  disputeImages        String[]          @default([])
 
   vehicleId       String?
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])

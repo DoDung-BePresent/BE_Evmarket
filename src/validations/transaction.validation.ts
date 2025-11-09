@@ -19,6 +19,11 @@ export const transactionValidation = {
     params: z.object({
       transactionId: z.uuid(),
     }),
+    body: z.object({
+      reason: z
+        .string()
+        .min(10, "Dispute reason must be at least 10 characters long."),
+    }),
   }),
   payForAuction: z.object({
     params: z.object({

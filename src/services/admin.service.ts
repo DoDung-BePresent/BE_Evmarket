@@ -15,14 +15,21 @@ import {
 /**
  * Services
  */
+import { walletService } from "@/services/wallet.service";
 import { emailService } from "@/services/email.service";
+import { transactionService } from "@/services/transaction.service";
 
 /**
  * Libs
  */
 import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
-import { NotFoundError, BadRequestError, ForbiddenError } from "@/libs/error";
+import {
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+} from "@/libs/error";
 
 /**
  * Types
@@ -75,6 +82,44 @@ export const adminService = {
       totalTransactions,
       totalRevenue,
     };
+  },
+  resolveDispute: async (transactionId: string, approved: boolean) => {
+    if (approved) {
+      // Admin đồng ý với người mua -> Hoàn tiền
+      return prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: { vehicle: true, battery: true },
+        });
+
+        if (!transaction || transaction.status !== "DISPUTED") {
+          throw new BadRequestError("Transaction cannot be refunded.");
+        }
+        const listing = transaction.vehicle || transaction.battery;
+        if (!listing) throw new InternalServerError("Listing not found");
+
+        if (transaction.finalPrice === null) {
+          throw new InternalServerError(
+            "Cannot resolve dispute: transaction is missing final price.",
+          );
+        }
+
+        await walletService.refundToBuyer(
+          transaction.buyerId,
+          listing.sellerId,
+          transaction.finalPrice,
+          tx,
+        );
+
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: { status: "REFUNDED" },
+        });
+      });
+    } else {
+      // Admin không đồng ý -> Hoàn tất giao dịch cho người bán
+      return transactionService.completeTransaction(transactionId);
+    }
   },
   getPendingAuctionRequests: async (
     options: IQueryOptions & { status?: string },
@@ -135,7 +180,6 @@ export const adminService = {
       totalResults,
     };
   },
-
   reviewAuctionRequest: async (
     listingType: ListingType,
     listingId: string,
@@ -273,7 +317,6 @@ export const adminService = {
 
     return updatedUser;
   },
-
   unlockUser: async (userId: string) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -288,7 +331,6 @@ export const adminService = {
       },
     });
   },
-
   getListings: async (
     filter: {
       listingType?: "VEHICLE" | "BATTERY" | "ALL";
@@ -355,7 +397,6 @@ export const adminService = {
       totalResults,
     };
   },
-
   verifyListing: async (
     listingType: ListingType,
     listingId: string,
@@ -387,7 +428,6 @@ export const adminService = {
 
     return updatedListing;
   },
-
   getFees: async () => {
     return prisma.fee.findMany({
       orderBy: {
@@ -395,7 +435,6 @@ export const adminService = {
       },
     });
   },
-
   updateFee: async (
     feeId: string,
     payload: {
@@ -413,5 +452,49 @@ export const adminService = {
       where: { id: feeId },
       data: payload,
     });
+  },
+  getDisputedTransactions: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "updatedAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const [transactions, totalResults] = await prisma.$transaction([
+      prisma.transaction.findMany({
+        where: { status: "DISPUTED" },
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          vehicle: {
+            select: {
+              id: true,
+              title: true,
+              seller: { select: { id: true, name: true, email: true } },
+            },
+          },
+          battery: {
+            select: {
+              id: true,
+              title: true,
+              seller: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.transaction.count({ where: { status: "DISPUTED" } }),
+    ]);
+
+    return {
+      transactions,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
   },
 };

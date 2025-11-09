@@ -145,6 +145,11 @@ export const transactionService = {
       const listing = transaction.vehicle || transaction.battery;
       if (!listing) throw new InternalServerError("Listing not found");
 
+      const priceToUse = transaction.finalPrice;
+      if (priceToUse === null) {
+        throw new InternalServerError("Transaction is missing final price.");
+      }
+
       const feeRule = await tx.fee.findUnique({
         where: {
           type: listing.isAuction ? "AUCTION_SALE" : "REGULAR_SALE",
@@ -154,7 +159,7 @@ export const transactionService = {
 
       await walletService.releaseFunds(
         listing.sellerId,
-        listing.price,
+        priceToUse,
         commission,
         tx,
       );

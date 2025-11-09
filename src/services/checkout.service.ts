@@ -195,8 +195,11 @@ export const checkoutService = {
         );
       }
 
-      if (listing.price !== paidAmount) {
-        throw new BadRequestError("Paid amount does not match listing price.");
+      // SỬA LỖI: So sánh với finalPrice của giao dịch, không phải giá của sản phẩm
+      if (transaction.finalPrice !== paidAmount) {
+        throw new BadRequestError(
+          "Paid amount does not match transaction price.",
+        );
       }
 
       // Cập nhật trạng thái giao dịch thành PAID

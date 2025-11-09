@@ -2,7 +2,7 @@
 /**
  * Node modules
  */
-import { ListingType } from "@prisma/client";
+import { Bid, ListingStatus, ListingType } from "@prisma/client";
 
 /**
  * Services
@@ -149,6 +149,31 @@ export const auctionService = {
       throw new NotFoundError("Auction not found.");
     }
 
+    let userAuctionResult: "WON" | "LOST" | "NO_BIDS" | null = null;
+    const endedStatuses: ListingStatus[] = [
+      "AUCTION_ENDED",
+      "AUCTION_PAYMENT_PENDING",
+      "SOLD",
+    ];
+
+    if (listing.auction && endedStatuses.includes(listing.status)) {
+      const winnerId = listing.auction.winnerId;
+      if (winnerId) {
+        if (userId && userId === winnerId) {
+          userAuctionResult = "WON";
+        } else if (userId) {
+          const userHasBid = listing.bids.some(
+            (bid: Bid) => bid.bidderId === userId,
+          );
+          if (userHasBid) {
+            userAuctionResult = "LOST";
+          }
+        }
+      } else {
+        userAuctionResult = "NO_BIDS";
+      }
+    }
+
     let hasUserDeposit = false;
     if (userId) {
       const deposit = await prisma.auctionDeposit.findFirst({
@@ -163,7 +188,7 @@ export const auctionService = {
       hasUserDeposit = !!deposit;
     }
 
-    return { ...listing, hasUserDeposit };
+    return { ...listing, hasUserDeposit, userAuctionResult };
   },
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {

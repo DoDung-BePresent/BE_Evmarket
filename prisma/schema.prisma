@@ -137,6 +137,7 @@ model Vehicle {
   title           String
   description     String
   price           Float
+  location        String?
   images          String[]      @default([])
   status          ListingStatus @default(AVAILABLE)
 
@@ -172,6 +173,7 @@ model Battery {
   title           String
   description     String
   price           Float
+  location        String?
   images          String[]      @default([])
   status          ListingStatus @default(AVAILABLE)
 

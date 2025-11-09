@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Listing Status Update</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+      <% if (isVerified) { %>
+        <h2 style="color: #5cb85c;">Congratulations! Your Listing is Approved</h2>
+        <p>Hello <%= name %>,</p>
+        <p>Your listing "<strong><%= listingTitle %></strong>" has been reviewed and approved by our team. It is now visible to all users on EV-Market.</p>
+      <% } else { %>
+        <h2 style="color: #d9534f;">Action Required: Your Listing Needs Changes</h2>
+        <p>Hello <%= name %>,</p>
+        <p>Your listing "<strong><%= listingTitle %></strong>" has been reviewed, but it did not meet our guidelines and has been rejected.</p>
+        <p>Please review your listing and make the necessary changes. If you have questions, please contact our support team.</p>
+      <% } %>
+      <p>Best regards,<br/>The EV-Market Team</p>
+    </div>
+  </body>
+</html>

@@ -9,6 +9,61 @@ import { faker } from "@faker-js/faker";
 import prisma from "../../src/libs/prisma";
 import { hashPassword } from "../../src/libs/crypto";
 
+const createSpecialUsers = async () => {
+  const hashedPassword = await hashPassword("password123");
+  const admin = await prisma.user.create({
+    data: {
+      email: "admin@evmarket.com",
+      name: "Admin User",
+      avatar: faker.image.avatar(),
+      role: "ADMIN",
+      isVerified: true,
+      accounts: {
+        create: {
+          type: "CREDENTIALS",
+          provider: "CREDENTIALS",
+          providerAccountId: "admin@evmarket.com",
+          password: hashedPassword,
+        },
+      },
+      wallet: { create: {} },
+    },
+  });
+  const staff = await prisma.user.create({
+    data: {
+      email: "staff@evmarket.com",
+      name: "Staff User",
+      avatar: faker.image.avatar(),
+      role: "STAFF",
+      isVerified: true,
+      accounts: {
+        create: {
+          type: "CREDENTIALS",
+          provider: "CREDENTIALS",
+          providerAccountId: "staff@evmarket.com",
+          password: hashedPassword,
+        },
+      },
+      wallet: { create: {} },
+    },
+  });
+
+  const systemUser = await prisma.user.upsert({
+    where: { email: "system@evmarket.local" },
+    update: {},
+    create: {
+      email: "system@evmarket.local",
+      name: "System",
+      role: "ADMIN",
+      isVerified: true,
+      wallet: { create: {} },
+    },
+  });
+
+  console.log("✅ Created special users (admin, staff, system)");
+  return [admin, staff, systemUser];
+};
+
 const createSellers = async (count: number = 10) => {
   console.log(`🌱 Seeding ${count} sellers...`);
 
@@ -32,6 +87,9 @@ const createSellers = async (count: number = 10) => {
           providerAccountId: email,
           password: hashedPassword,
         },
+      },
+      wallet: {
+        create: {},
       },
     };
 
@@ -68,6 +126,7 @@ const createSellers = async (count: number = 10) => {
 
 const main = async () => {
   try {
+    await createSpecialUsers();
     await createSellers(15);
   } catch (error) {
     console.error("❌ Error seeding sellers:", error);
@@ -81,4 +140,4 @@ if (require.main === module) {
   main();
 }
 
-export { createSellers };
+export { createSellers, createSpecialUsers };

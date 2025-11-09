@@ -1,33 +1,34 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 /**
  * Node modules
  */
-import { z, ZodError } from 'zod';
-import { Response, NextFunction, Request } from 'express';
+import { z, ZodError } from "zod";
+import { Response, NextFunction, Request } from "express";
 
 /**
  * Libs
  */
-import logger from '@/libs/logger';
-import { ApiError } from '@/libs/error';
+import logger from "@/libs/logger";
+import { ApiError } from "@/libs/error";
 
 /**
  * Constants
  */
-import { ERROR_CODE_ENUM, STATUS_CODE } from '@/constants/error.constant';
+import { ERROR_CODE_ENUM, STATUS_CODE } from "@/constants/error.constant";
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const errors = error?.issues?.map((err) => ({
-    field: err.path.join('.'),
+    field: err.path.join("."),
     message: err.message,
   }));
 
-  logger.warn('Validation error occurred', {
+  logger.warn("Validation error occurred", {
     path: res.req?.path,
     errors: errors,
   });
 
   return res.status(STATUS_CODE.BAD_REQUEST).json({
-    message: 'Validation failed',
+    message: "Validation failed",
     errors: errors,
     errorCode: ERROR_CODE_ENUM.VALIDATION_ERROR,
   });
@@ -55,7 +56,7 @@ export const errorHandler = (
 
   if (error instanceof SyntaxError) {
     return res.status(STATUS_CODE.BAD_REQUEST).json({
-      message: 'Invalid JSON format. Please check your request body.',
+      message: "Invalid JSON format. Please check your request body.",
       errorCode: ERROR_CODE_ENUM.VALIDATION_ERROR,
     });
   }
@@ -71,17 +72,17 @@ export const errorHandler = (
     });
   }
 
-  logger.error('Unexpected error occurred', {
+  logger.error("Unexpected error occurred", {
     error: error.message,
     stack: error.stack,
     path: req.path,
   });
 
   return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-    message: 'Internal Server Error',
+    message: "Internal Server Error",
     errorCode: ERROR_CODE_ENUM.INTERNAL_SERVER_ERROR,
-    ...(process.env.NODE_ENV === 'development' && {
-      error: error?.message || 'Unknown error occurred',
+    ...(process.env.NODE_ENV === "development" && {
+      error: error?.message || "Unknown error occurred",
     }),
   });
 };

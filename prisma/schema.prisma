@@ -16,6 +16,7 @@ datasource db {
 // ENUMS
 enum UserRole {
   MEMBER
+  STAFF
   ADMIN
 }
 
@@ -29,10 +30,56 @@ enum Provider {
   CREDENTIALS
 }
 
+enum ListingType {
+  VEHICLE
+  BATTERY
+}
+
 enum ListingStatus {
   AVAILABLE
   SOLD
   DELISTED
+  AUCTION_PENDING_APPROVAL
+  AUCTION_REJECTED
+  AUCTION_LIVE
+  AUCTION_ENDED
+  AUCTION_PAYMENT_PENDING // <-- Thêm trạng thái chờ người thắng thanh toán
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum FinancialTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  LISTING_FEE
+  SALE_REVENUE
+  PURCHASE
+  REFUND
+  AUCTION_DEPOSIT
+  AUCTION_DEPOSIT_REFUND
+  COMMISSION_FEE
+}
+
+enum FeeType {
+  REGULAR_SALE
+  AUCTION_SALE
+}
+
+enum AuctionDepositStatus {
+  PAID
+  REFUNDED
+  FORFEITED // Bị tịch thu
+}
+
+enum PaymentGateway {
+  WALLET
+  MOMO
+  INTERNAL
 }
 
 // MODELS
@@ -43,6 +90,8 @@ model User {
   avatar          String?
   role            UserRole      @default(MEMBER)
   isVerified      Boolean       @default(false)
+  isLocked        Boolean       @default(false) 
+  lockReason      String?                
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -50,6 +99,13 @@ model User {
   accounts        Account[]
   vehicles        Vehicle[]
   batteries       Battery[]
+  transactions    Transaction[]
+  reviews         Review[]
+  wallet          Wallet?
+  bids            Bid[]
+  auctionDeposits AuctionDeposit[]
+  buyerContracts  Contract[]  @relation("BuyerContracts")
+  sellerContracts Contract[]  @relation("SellerContracts")
 }
 
 model Account {
@@ -59,7 +115,7 @@ model Account {
   provider          Provider
   providerAccountId String
 
-  password          String
+  password          String?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -82,14 +138,26 @@ model Vehicle {
   model           String
   year            Int
   mileage         Int // in kilometers
+  specifications  Json?
 
-  isVerified      Boolean       @default(false) // Verified by Admin
+  isAuction       Boolean   @default(false)
+  auctionStartsAt DateTime?
+  auctionEndsAt   DateTime?
+  startingPrice   Float?
+  bidIncrement    Float?    // Bước giá
+  depositAmount   Float?    // Tiền cọc
+
+  isVerified      Boolean       @default(false)
+  auctionRejectionReason String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   // Relations
   sellerId        String
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  bids            Bid[]
+  deposits        AuctionDeposit[]
 }
 
 model Battery {
@@ -103,13 +171,162 @@ model Battery {
   // Battery specific details
   brand           String
   capacity        Float // in kWh
+  year            Int
   health          Float? // in percentage
+  specifications  Json?
 
-  isVerified      Boolean       @default(false) // Verified by Admin
+  isAuction       Boolean   @default(false)
+  auctionStartsAt DateTime?
+  auctionEndsAt   DateTime?
+  startingPrice   Float?
+  bidIncrement    Float?
+  depositAmount   Float?
+
+  isVerified      Boolean       @default(false)
+  auctionRejectionReason String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   // Relations
   sellerId        String
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  bids            Bid[]
+  deposits        AuctionDeposit[]
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  buyerId         String
+  buyer           User     @relation(fields: [buyerId], references: [id])
+  status          TransactionStatus @default(PENDING)
+
+  vehicleId       String?
+  vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  batteryId       String?
+  battery         Battery? @relation(fields: [batteryId], references: [id])
+
+  finalPrice      Float?
+  paymentGateway  PaymentGateway?
+  paymentDetail   Json?
+
+  review          Review? // A transaction can have one review
+  contract        Contract?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([vehicleId])
+  @@index([batteryId])
+}
+
+model Bid {
+  id          String      @id @default(cuid())
+  amount      Float
+  createdAt   DateTime    @default(now())
+
+  bidderId    String
+  bidder      User        @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  // Relations (polymorphic)
+  vehicleId String?
+  vehicle   Vehicle?      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  batteryId String?
+  battery   Battery?      @relation(fields: [batteryId], references: [id], onDelete: Cascade)
+
+  @@index([bidderId])
+  @@index([vehicleId])
+  @@index([batteryId])
+}
+
+model Wallet {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance        Float     @default(0)
+  lockedBalance           Float     @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  financialTransactions   FinancialTransaction[]
+}
+
+model FinancialTransaction {
+  id              String                    @id @default(cuid())
+  walletId        String
+  wallet          Wallet                    @relation(fields: [walletId], references: [id])
+  type            FinancialTransactionType
+  amount          Float
+  status          TransactionStatus
+  gateway         PaymentGateway
+  gatewayTransId  String?                   @unique // e.g., MoMo's transId
+  description     String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([walletId])
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  rating        Int // 1 to 5
+  comment       String?
+  mediaUrls     String[] @default([])
+  hasBeenEdited Boolean  @default(false)
+
+  transactionId String   @unique // Each transaction can only have one review
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  reviewerId    String
+  reviewer      User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([reviewerId])
+}
+
+model AuctionDeposit {
+  id        String               @id @default(cuid())
+  amount    Float
+  status    AuctionDepositStatus @default(PAID)
+  user      User                 @relation(fields: [userId], references: [id])
+  userId    String
+  vehicle   Vehicle?             @relation(fields: [vehicleId], references: [id])
+  vehicleId String?
+  battery   Battery?             @relation(fields: [batteryId], references: [id])
+  batteryId String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@unique([userId, vehicleId])
+  @@unique([userId, batteryId])
+}
+
+model Fee {
+  id          String   @id @default(cuid())
+  type        FeeType  @unique
+  percentage  Float    
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Contract {
+  id            String      @id @default(cuid())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId String      @unique
+  buyer         User        @relation("BuyerContracts", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId       String
+  seller        User        @relation("SellerContracts", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  contractUrl   String
+  createdAt     DateTime    @default(now())
+
+  @@index([buyerId])
+  @@index([sellerId])
 }

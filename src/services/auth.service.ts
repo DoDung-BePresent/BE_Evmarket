@@ -1,9 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 /**
- * Libs
+ * Node modules
  */
-import prisma from "@/libs/prisma";
-import { comparePassword, hashPassword } from "@/libs/crypto";
-import { BadRequestError, ConflictError } from "@/libs/error";
+import axios from "axios";
+import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
+
+/**
+ * Configs
+ */
+import config from "@/configs/env.config";
+
+/**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
 
 /**
  * Constants
@@ -11,12 +22,32 @@ import { BadRequestError, ConflictError } from "@/libs/error";
 import { ERROR_CODE_ENUM } from "@/constants/error.constant";
 
 /**
- * Types
+ * Validations
  */
-type CredentialPayload = { email: string; password: string };
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
+import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
+
+/**
+ * Libs
+ */
+import prisma from "@/libs/prisma";
+import redisClient from "@/libs/redis";
+import { supabase } from "@/libs/supabase";
+import { generateTokens } from "@/libs/jwt";
+import { compressImage } from "@/libs/compress";
+import { comparePassword, hashPassword } from "@/libs/crypto";
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "@/libs/error";
+
+const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 export const authService = {
-  register: async ({ email, password }: CredentialPayload) => {
+  // TODO: Apply verify email
+  register: async ({ email, password, name }: RegisterPayload) => {
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -29,7 +60,6 @@ export const authService = {
     }
 
     const hashedPassword = await hashPassword(password);
-    const name = email.split("@")[0];
 
     const user = await prisma.user.create({
       data: {
@@ -53,9 +83,12 @@ export const authService = {
         updatedAt: true,
       },
     });
+
+    await walletService.createWallet(user.id);
+
     return user;
   },
-  login: async ({ email, password }: CredentialPayload) => {
+  login: async ({ email, password }: LoginPayload) => {
     const existingUser = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -96,5 +129,189 @@ export const authService = {
     const { accounts, ...user } = existingUser;
 
     return user;
+  },
+  oauthLogin: async ({
+    provider,
+    providerAccountId,
+    email,
+    name,
+    avatarUrl,
+  }: {
+    provider: "GOOGLE";
+    providerAccountId: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+  }) => {
+    const existingAccount = await prisma.account.findUnique({
+      where: {
+        provider_providerAccountId: { provider, providerAccountId } as any,
+      },
+      include: { user: true },
+    });
+
+    if (existingAccount?.user) {
+      return existingAccount.user;
+    }
+
+    let user = email
+      ? await prisma.user.findUnique({ where: { email } })
+      : null;
+
+    if (!user) {
+      let avatarPublicUrl: string | undefined;
+      if (avatarUrl) {
+        const resp = await axios.get(avatarUrl, {
+          responseType: "arraybuffer",
+        });
+        const rawBuffer: Buffer = Buffer.from(resp.data, "binary");
+
+        const compressedBuffer = await compressImage(rawBuffer, {
+          width: 512,
+          format: "jpeg",
+          quality: 80,
+        });
+
+        const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+        const { error } = await supabase.storage
+          .from(SUPABASE_BUCKETS.AVATARS)
+          .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
+
+        if (!error) {
+          const { data } = supabase.storage
+            .from(SUPABASE_BUCKETS.AVATARS)
+            .getPublicUrl(fileName);
+          avatarPublicUrl = data.publicUrl;
+        }
+      }
+
+      user = await prisma.user.create({
+        data: {
+          email: email,
+          name: name ?? undefined,
+          avatar: avatarPublicUrl ?? undefined,
+          accounts: {
+            create: {
+              type: "OAUTH",
+              provider: provider as any,
+              providerAccountId,
+            },
+          },
+        },
+      });
+
+      await walletService.createWallet(user.id);
+
+      return user;
+    }
+    await prisma.account.create({
+      data: {
+        userId: user.id,
+        type: "OAUTH",
+        provider: provider as any,
+        providerAccountId,
+      },
+    });
+
+    if (!user.avatar && avatarUrl) {
+      const resp = await axios.get(avatarUrl, {
+        responseType: "arraybuffer",
+      });
+      const rawBuffer: Buffer = Buffer.from(resp.data, "binary");
+
+      const compressedBuffer = await compressImage(rawBuffer, {
+        width: 512,
+        format: "jpeg",
+        quality: 80,
+      });
+
+      const fileName = `${SUPABASE_BUCKETS.AVATARS}/${Date.now()}-${provider}-${providerAccountId}.jpg`;
+      const { error } = await supabase.storage
+        .from(SUPABASE_BUCKETS.AVATARS)
+        .upload(fileName, compressedBuffer, { contentType: "image/jpeg" });
+
+      if (!error) {
+        const { data } = supabase.storage
+          .from(SUPABASE_BUCKETS.AVATARS)
+          .getPublicUrl(fileName);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { avatar: data.publicUrl },
+        });
+        user.avatar = data.publicUrl;
+      }
+    }
+
+    return user;
+  },
+  verifyGoogleIdToken: async (idToken: string) => {
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: config.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new UnauthorizedError("Invalid Google token");
+      }
+
+      const {
+        sub: providerAccountId,
+        email,
+        name,
+        picture: avatarUrl,
+      } = payload;
+
+      if (!email) {
+        throw new BadRequestError("Google email not available.");
+      }
+
+      const user = await authService.oauthLogin({
+        provider: "GOOGLE",
+        providerAccountId,
+        email,
+        name,
+        avatarUrl,
+      });
+
+      return user;
+    } catch (error) {
+      throw new UnauthorizedError("Failed to verify Google token");
+    }
+  },
+  createOneTimeCode: async (userId: string): Promise<string> => {
+    const code = crypto.randomBytes(32).toString("hex");
+    const key = `oauth-code:${code}`;
+    await redisClient.set(key, userId, {
+      EX: 60,
+    });
+    return code;
+  },
+  exchangeCodeForTokens: async (
+    code: string,
+  ): Promise<{
+    user: any;
+    tokens: { accessToken: string; refreshToken: string };
+  }> => {
+    const key = `oauth-code:${code}`;
+    const userId = await redisClient.get(key);
+
+    if (!userId) {
+      throw new UnauthorizedError("Invalid or expired authorization code.");
+    }
+
+    await redisClient.del(key);
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError("User not found for this code.");
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user.id);
+
+    return {
+      user,
+      tokens: { accessToken, refreshToken },
+    };
   },
 };

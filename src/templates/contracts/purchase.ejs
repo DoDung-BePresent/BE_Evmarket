@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hợp Đồng Mua Bán Điện Tử</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
+      body {
+        font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+        font-size: 12pt;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        --webkit-print-color-adjust: exact;
+      }
+      .container {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 25mm;
+        margin: 10mm auto;
+        border: 1px solid #d3d3d3;
+        background: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header .republic {
+        font-weight: 700;
+        font-size: 13pt;
+        margin: 0;
+      }
+      .header .motto {
+        font-size: 13pt;
+        margin: 5px 0;
+      }
+      .header .title {
+        font-size: 16pt;
+        font-weight: 700;
+        margin: 20px 0 5px 0;
+      }
+      .header .subtitle {
+        font-size: 12pt;
+        margin: 5px 0;
+      }
+      .info-section {
+        margin-bottom: 25px;
+      }
+      .info-section h3 {
+        font-size: 13pt;
+        font-weight: 700;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+      }
+      .info-section p {
+        margin: 4px 0 4px 15px;
+      }
+      strong {
+        font-weight: 500;
+      }
+      .terms ol {
+        padding-left: 35px;
+      }
+      .terms li {
+        margin-bottom: 10px;
+      }
+      .signatures {
+        margin-top: 70px;
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+      }
+      .signature-block {
+        width: 45%;
+      }
+      .signature-block .role {
+        font-weight: 700;
+        font-size: 13pt;
+      }
+      .signature-block .confirmation {
+        font-style: italic;
+        font-size: 11pt;
+        margin-top: 5px;
+      }
+      .signature-block .name {
+        margin-top: 60px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <p class="republic">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+        <p class="motto">Độc lập - Tự do - Hạnh phúc</p>
+        <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0" />
+        <h1 class="title">HỢP ĐỒNG MUA BÁN ĐIỆN TỬ</h1>
+        <p class="subtitle">Số: <%= transactionId %></p>
+        <p class="subtitle">Hôm nay, ngày <%= date %>, chúng tôi gồm:</p>
+      </div>
+
+      <div class="info-section">
+        <h3>BÊN BÁN (BÊN A):</h3>
+        <p><strong>Họ và tên:</strong> <%= sellerName %></p>
+        <p><strong>Email:</strong> <%= sellerEmail %></p>
+      </div>
+
+      <div class="info-section">
+        <h3>BÊN MUA (BÊN B):</h3>
+        <p><strong>Họ và tên:</strong> <%= buyerName %></p>
+        <p><strong>Email:</strong> <%= buyerEmail %></p>
+      </div>
+
+      <div class="info-section">
+        <h3>ĐỐI TƯỢNG CỦA HỢP ĐỒNG:</h3>
+        <p><strong>Tên sản phẩm:</strong> <%= productTitle %></p>
+        <p><strong>Loại sản phẩm:</strong> <%= productType %></p>
+        <p>
+          <strong>Giá trị hợp đồng:</strong> <%= price.toLocaleString('vi-VN')
+          %> VNĐ
+        </p>
+      </div>
+
+      <div class="info-section terms">
+        <h3>ĐIỀU KHOẢN VÀ THỎA THUẬN:</h3>
+        <ol>
+          <li>
+            Bên A đồng ý bán và Bên B đồng ý mua sản phẩm nêu trên với giá trị
+            đã thỏa thuận.
+          </li>
+          <li>
+            Hợp đồng này được tạo tự động bởi hệ thống EV-Market và có giá trị
+            pháp lý như hợp đồng giấy. Việc Bên B nhấn nút "Thanh toán" được xem
+            là hành vi đồng ý với toàn bộ nội dung của hợp đồng này.
+          </li>
+          <li>
+            Mọi tranh chấp phát sinh sẽ được giải quyết dựa trên các điều khoản
+            dịch vụ của EV-Market và pháp luật hiện hành của Việt Nam.
+          </li>
+        </ol>
+      </div>
+
+      <div class="signatures">
+        <div class="signature-block">
+          <p class="role">BÊN A</p>
+          <p class="confirmation">(Đã xác nhận trên hệ thống)</p>
+          <p class="name"><%= sellerName %></p>
+        </div>
+        <div class="signature-block">
+          <p class="role">BÊN B</p>
+          <p class="confirmation">(Đã xác nhận trên hệ thống)</p>
+          <p class="name"><%= buyerName %></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

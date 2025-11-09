@@ -1,7 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Node modules
  */
 import { Router } from "express";
+import passport from "passport";
+
+/**
+ * Configs
+ */
+import config from "@/configs/env.config";
+
+/**
+ * Libs
+ */
+import { generateTokens, setTokenCookie } from "@/libs/jwt";
 
 /**
  * Controllers
@@ -9,101 +21,99 @@ import { Router } from "express";
 import { authController } from "@/controllers/auth.controller";
 
 /**
+ * Services
+ */
+import { authService } from "@/services/auth.service";
+
+/**
  * Middlewares
  */
 import { validate } from "@/middlewares/validate.middleware";
+import { authenticate } from "@/middlewares/auth.middleware";
+import { asyncHandler } from "@/middlewares/error.middleware";
 
 /**
  * Validations
  */
 import { authValidation } from "@/validations/auth.validation";
 
-/**
- * Middlewares
- */
-import { authenticate } from "@/middlewares/auth.middleware";
-
 const authRouter = Router();
 
-/**
- * @openapi
- * /auth/login:
- *   post:
- *     tags:
- *       - Auth
- *     summary: Log in a user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginBody'
- *     responses:
- *       200:
- *         description: Login successfully
- *       400:
- *         description: Invalid email or password
- */
 authRouter.post("/login", validate(authValidation.login), authController.login);
 
-/**
- * @openapi
- * /auth/register:
- *   post:
- *     tags:
- *       - Auth
- *     summary: Register a new user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RegisterBody'
- *     responses:
- *       201:
- *         description: User created successfully
- *       400:
- *         description: Validation error
- *       409:
- *         description: Email already exists
- */
 authRouter.post(
   "/register",
   validate(authValidation.register),
   authController.register,
 );
 
-/**
- * @openapi
- * /auth/refresh-token:
- *   post:
- *     tags:
- *       - Auth
- *     summary: Refresh access token
- *     description: Requires refreshToken to be sent in an httpOnly cookie.
- *     responses:
- *       200:
- *         description: Token refreshed successfully
- *       401:
- *         description: Refresh token not found or invalid
- */
 authRouter.post("/refresh-token", authController.refreshToken);
 
-/**
- * @openapi
- * /auth/logout:
- *   post:
- *     tags:
- *       - Auth
- *     summary: Log out a user
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Logged out successfully
- *       401:
- *         description: Unauthorized
- */
 authRouter.post("/logout", authenticate, authController.logout);
+
+authRouter.post(
+  "/google/mobile",
+  validate(authValidation.googleMobileLogin),
+  authController.googleMobileLogin,
+);
+
+authRouter.get("/google", (req, res, next) => {
+  const clientType = req.query.client_type === "mobile" ? "mobile" : "web";
+  const state = Buffer.from(JSON.stringify({ clientType })).toString("base64");
+
+  const authenticator = passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    state: state,
+  });
+
+  authenticator(req, res, next);
+});
+
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/auth/login",
+  }),
+  asyncHandler(async (req, res) => {
+    const user = req.user as any;
+    let clientType = "web";
+
+    if (req.query.state) {
+      try {
+        const state = JSON.parse(
+          Buffer.from(req.query.state as string, "base64").toString("utf-8"),
+        );
+        clientType = state.clientType === "mobile" ? "mobile" : "web";
+      } catch (error) {
+        console.error("Invalid state parameter:", error);
+      }
+    }
+
+    if (clientType === "mobile") {
+      const code = await authService.createOneTimeCode(user.id);
+      const redirectUrl = `evmarket://auth-callback?code=${code}`;
+      return res.redirect(redirectUrl);
+    } else {
+      const { accessToken, refreshToken } = generateTokens(user.id);
+      setTokenCookie(
+        res,
+        "refreshToken",
+        refreshToken,
+        "/api/v1/auth/refresh-token",
+      );
+      return res.redirect(
+        `${config.CLIENT_URL}/auth/success?accessToken=${accessToken}`,
+      );
+    }
+  }),
+);
+
+authRouter.post(
+  "/exchange-code",
+  validate(authValidation.exchangeCode),
+  authController.exchangeCodeForTokens,
+);
 
 export default authRouter;

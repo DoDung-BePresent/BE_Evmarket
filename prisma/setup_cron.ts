@@ -12,7 +12,7 @@ async function setupCronJobs() {
 
     // XÓA TẤT CẢ CRON JOBS CŨ ĐỂ TRÁNH TRÙNG LẶP
     console.log("🧹 Clearing old cron jobs...");
-    await prisma.$executeRawUnsafe("DELETE FROM cron.job;");
+    await prisma.$executeRawUnsafe("SELECT cron.unschedule(jobid) FROM cron.job;");
     console.log("✅ Old cron jobs cleared.");
 
     // Job 1: Hủy giao dịch mua hàng thông thường quá hạn

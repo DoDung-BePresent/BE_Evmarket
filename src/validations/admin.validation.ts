@@ -75,6 +75,14 @@ export const adminValidation = {
         }
       }
     }),
+  resolveDispute: z.object({
+    params: z.object({
+      transactionId: z.string().uuid(),
+    }),
+    body: z.object({
+      approved: z.boolean(), // true = refund to buyer, false = complete for seller
+    }),
+  }),
   getUsers: z.object({
     query: z.object({
       page: z.coerce.number().int().positive().optional(),
@@ -149,4 +157,6 @@ export const adminValidation = {
 };
 
 export type GetUsersQuery = z.infer<typeof adminValidation.getUsers>["query"];
-export type GetDisputedTransactionsQuery = z.infer<typeof adminValidation.getDisputedTransactions>["query"];
+export type GetDisputedTransactionsQuery = z.infer<
+  typeof adminValidation.getDisputedTransactions
+>["query"];

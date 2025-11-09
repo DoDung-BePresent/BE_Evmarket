@@ -44,6 +44,20 @@ export const adminController = {
       data: result,
     });
   }),
+  resolveDispute: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { approved } = req.validated?.body;
+
+    const transaction = await adminService.resolveDispute(
+      transactionId,
+      approved,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: `Dispute resolved. Transaction has been ${approved ? "refunded" : "completed"}.`,
+      data: { transaction },
+    });
+  }),
   getUsers: asyncHandler(async (req, res) => {
     const query = req.validated?.query as GetUsersQuery;
     const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);

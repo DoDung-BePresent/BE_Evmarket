@@ -15,14 +15,21 @@ import {
 /**
  * Services
  */
+import { walletService } from "@/services/wallet.service";
 import { emailService } from "@/services/email.service";
+import { transactionService } from "@/services/transaction.service";
 
 /**
  * Libs
  */
 import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
-import { NotFoundError, BadRequestError, ForbiddenError } from "@/libs/error";
+import {
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+} from "@/libs/error";
 
 /**
  * Types
@@ -75,6 +82,44 @@ export const adminService = {
       totalTransactions,
       totalRevenue,
     };
+  },
+  resolveDispute: async (transactionId: string, approved: boolean) => {
+    if (approved) {
+      // Admin đồng ý với người mua -> Hoàn tiền
+      return prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: { vehicle: true, battery: true },
+        });
+
+        if (!transaction || transaction.status !== "DISPUTED") {
+          throw new BadRequestError("Transaction cannot be refunded.");
+        }
+        const listing = transaction.vehicle || transaction.battery;
+        if (!listing) throw new InternalServerError("Listing not found");
+
+        if (transaction.finalPrice === null) {
+          throw new InternalServerError(
+            "Cannot resolve dispute: transaction is missing final price.",
+          );
+        }
+
+        await walletService.refundToBuyer(
+          transaction.buyerId,
+          listing.sellerId,
+          transaction.finalPrice,
+          tx,
+        );
+
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: { status: "REFUNDED" },
+        });
+      });
+    } else {
+      // Admin không đồng ý -> Hoàn tất giao dịch cho người bán
+      return transactionService.completeTransaction(transactionId);
+    }
   },
   getPendingAuctionRequests: async (
     options: IQueryOptions & { status?: string },

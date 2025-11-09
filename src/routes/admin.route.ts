@@ -81,4 +81,10 @@ adminRouter.get(
   adminController.getDisputedTransactions,
 );
 
+adminRouter.patch(
+  "/transactions/:transactionId/resolve-dispute",
+  validate(adminValidation.resolveDispute),
+  adminController.resolveDispute,
+);
+
 export default adminRouter;

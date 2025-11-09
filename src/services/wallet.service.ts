@@ -1,7 +1,7 @@
 /**
  * Node modules
  */
-import { FinancialTransactionType, PrismaClient } from "@prisma/client";
+import { FinancialTransactionType, PrismaClient, Prisma } from "@prisma/client";
 
 /**
  * Libs
@@ -123,7 +123,42 @@ export const walletService = {
       },
     });
   },
-
+  addLockedBalance: async (
+    userId: string,
+    amount: number,
+    tx: Prisma.TransactionClient,
+  ) => {
+    return tx.wallet.update({
+      where: { userId },
+      data: {
+        lockedBalance: {
+          increment: amount,
+        },
+      },
+    });
+  },
+  releaseFunds: async (
+    sellerId: string,
+    amount: number,
+    commission: number,
+    tx: Prisma.TransactionClient,
+  ) => {
+    const sellerRevenue = amount - commission;
+    // Chuyển tiền từ locked -> available và trừ phí
+    await tx.wallet.update({
+      where: { userId: sellerId },
+      data: {
+        lockedBalance: {
+          decrement: amount,
+        },
+        availableBalance: {
+          increment: sellerRevenue,
+        },
+      },
+    });
+    // Cộng phí vào ví hệ thống
+    await walletService.addCommissionFeeToSystemWallet(commission, tx);
+  },
   createDepositRequest: async (
     userId: string,
     amount: number,

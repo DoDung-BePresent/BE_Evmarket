@@ -10,19 +10,6 @@ async function setupCronJobs() {
     await prisma.$executeRawUnsafe("CREATE EXTENSION IF NOT EXISTS pg_cron;");
     console.log("✅ pg_cron extension enabled.");
 
-    // Các thông số cho cron job
-    const jobName = "cancel-overdue-txns";
-    const schedule = "*/5 * * * *"; // Mỗi 5 phút
-    const command = "SELECT cancel_overdue_transactions();";
-
-    // Gọi function `schedule_cron_job` để thực hiện việc lên lịch
-    // Đây là cách an toàn để vượt qua các giới hạn về quyền
-    await prisma.$executeRaw`
-      SELECT schedule_cron_job(${jobName}, ${schedule}, ${command});
-    `;
-
-    console.log(`✅ Cron job '${jobName}' setup completed successfully.`);
-
     // Job 1: Hủy giao dịch mua hàng thông thường quá hạn
     const cancelTxJobName = "cancel-overdue-txns";
     const cancelTxSchedule = "*/5 * * * *"; // Mỗi 5 phút
@@ -47,16 +34,39 @@ async function setupCronJobs() {
       `✅ Cron job '${processAuctionsJobName}' setup completed successfully.`,
     );
 
-    // Job 3: Xử lý các thanh toán đấu giá quá hạn
-    const overduePaymentsJobName = "process-overdue-auction-payments";
-    const overduePaymentsSchedule = "*/15 * * * *"; // Mỗi 15 phút
-    const overduePaymentsCommand = "SELECT process_overdue_auction_payments();";
+    // Job 3: Xử lý các thanh toán đấu giá quá hạn (đã được thay thế bằng Job 5)
+    // const overduePaymentsJobName = "process-overdue-auction-payments";
+    // const overduePaymentsSchedule = "*/15 * * * *"; // Mỗi 15 phút
+    // const overduePaymentsCommand = "SELECT process_overdue_auction_payments();";
+    // await prisma.$executeRaw`
+    //   SELECT schedule_cron_job(${overduePaymentsJobName}, ${overduePaymentsSchedule}, ${overduePaymentsCommand});
+    // `;
+    // console.log(
+    //   `✅ Cron job '${overduePaymentsJobName}' setup completed successfully.`,
+    // );
+
+    // Job 4: Tự động hoàn tất các giao dịch đã giao hàng
+    const autoCompleteJobName = "auto-complete-shipped-transactions";
+    const autoCompleteSchedule = "*/30 * * * *";
+    const autoCompleteCommand = "SELECT auto_complete_shipped_transactions();";
 
     await prisma.$executeRaw`
-      SELECT schedule_cron_job(${overduePaymentsJobName}, ${overduePaymentsSchedule}, ${overduePaymentsCommand});
+      SELECT schedule_cron_job(${autoCompleteJobName}, ${autoCompleteSchedule}, ${autoCompleteCommand});
     `;
     console.log(
-      `✅ Cron job '${overduePaymentsJobName}' setup completed successfully.`,
+      `✅ Cron job '${autoCompleteJobName}' setup completed successfully.`,
+    );
+
+    // Job 5: Xử lý các giao dịch đấu giá quá hạn thanh toán
+    const expiredAuctionJobName = "handle-expired-auction-payments";
+    const expiredAuctionSchedule = "0 * * * *"; // Chạy mỗi giờ
+    const expiredAuctionCommand = "SELECT handle_expired_auction_payments();";
+
+    await prisma.$executeRaw`
+      SELECT schedule_cron_job(${expiredAuctionJobName}, ${expiredAuctionSchedule}, ${expiredAuctionCommand});
+    `;
+    console.log(
+      `✅ Cron job '${expiredAuctionJobName}' setup completed successfully.`,
     );
   } catch (error) {
     console.error("❌ Failed to set up cron jobs:", error);

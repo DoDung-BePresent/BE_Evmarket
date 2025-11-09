@@ -2,8 +2,33 @@
  * Node modules
  */
 import z from "zod";
+import { PaymentGateway } from "@prisma/client";
 
 export const transactionValidation = {
+  shipTransaction: z.object({
+    params: z.object({
+      transactionId: z.cuid(),
+    }),
+  }),
+  confirmReceipt: z.object({
+    params: z.object({
+      transactionId: z.cuid(),
+    }),
+  }),
+  disputeTransaction: z.object({
+    params: z.object({
+      transactionId: z.cuid(),
+    }),
+  }),
+  payForAuction: z.object({
+    params: z.object({
+      transactionId: z.cuid(),
+    }),
+    body: z.object({
+      paymentMethod: z.enum(PaymentGateway),
+      redirectUrl: z.url().optional(),
+    }),
+  }),
   createTransaction: z.object({
     body: z.object({
       vehicleId: z.cuid().optional(),

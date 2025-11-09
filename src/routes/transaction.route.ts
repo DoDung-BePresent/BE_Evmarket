@@ -8,6 +8,7 @@ import { Router } from "express";
  */
 import { authenticate } from "@/middlewares/auth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
+import { uploadDisputeImages } from "@/middlewares/upload.middleware";
 
 /**
  * Controllers
@@ -39,6 +40,7 @@ transactionRouter.post(
 
 transactionRouter.post(
   "/:transactionId/dispute",
+  uploadDisputeImages,
   validate(transactionValidation.disputeTransaction),
   transactionController.disputeTransaction,
 );

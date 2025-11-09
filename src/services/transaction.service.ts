@@ -11,6 +11,8 @@ import {
 } from "@/libs/error";
 import { walletService } from "./wallet.service";
 import { IQueryOptions } from "@/types/pagination.type";
+import { supabase } from "@/libs/supabase";
+import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 
 export const transactionService = {
   createTransaction: async (
@@ -103,6 +105,7 @@ export const transactionService = {
     transactionId: string,
     buyerId: string,
     reason: string,
+    files: Express.Multer.File[] = [],
   ) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
@@ -124,11 +127,36 @@ export const transactionService = {
       throw new BadRequestError("The confirmation period has expired.");
     }
 
+    // Tải ảnh lên Supabase
+    const imageUrls: string[] = [];
+    if (files.length > 0) {
+      const uploadPromises = files.map(async (file) => {
+        const fileName = `${transactionId}/${Date.now()}-${file.originalname}`;
+        const { data, error } = await supabase.storage
+          .from(SUPABASE_BUCKETS.DISPUTES)
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+          });
+
+        if (error) {
+          throw new InternalServerError(
+            `Failed to upload dispute image: ${error.message}`,
+          );
+        }
+        const { data: urlData } = supabase.storage
+          .from(SUPABASE_BUCKETS.DISPUTES)
+          .getPublicUrl(data.path);
+        imageUrls.push(urlData.publicUrl);
+      });
+      await Promise.all(uploadPromises);
+    }
+
     return prisma.transaction.update({
       where: { id: transactionId },
       data: {
         status: "DISPUTED",
         disputeReason: reason,
+        disputeImages: imageUrls, // Lưu lại mảng URL ảnh
       },
     });
   },

@@ -215,6 +215,7 @@ model Transaction {
   paymentDeadline      DateTime?
   type                 TransactionType   @default(SALE)
   disputeReason        String?
+  disputeImages        String[]          @default([])
 
   vehicleId       String?
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])

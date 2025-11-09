@@ -13,6 +13,7 @@ import { asyncHandler } from "@/middlewares/error.middleware";
  * Services
  */
 import { transactionService } from "@/services/transaction.service";
+import { checkoutService } from "@/services/checkout.service";
 
 /**
  * Utils
@@ -36,6 +37,23 @@ export const transactionController = {
     res.status(STATUS_CODE.CREATED).json({
       message: "Transaction created",
       data: { transaction },
+    });
+  }),
+  payForAuctionTransaction: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { paymentMethod, redirectUrl } = req.validated?.body;
+    const { id: buyerId } = req.user!;
+
+    const result = await checkoutService.payForAuctionTransaction(
+      buyerId,
+      transactionId,
+      paymentMethod,
+      redirectUrl,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Payment initiated successfully.",
+      data: result,
     });
   }),
   shipTransaction: asyncHandler(async (req, res) => {

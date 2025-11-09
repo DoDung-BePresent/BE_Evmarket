@@ -55,6 +55,11 @@ enum TransactionStatus {
   CANCELLED   // Đã hủy
 }
 
+enum TransactionType {
+  SALE
+  AUCTION
+}
+
 enum FinancialTransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -202,7 +207,10 @@ model Transaction {
   buyerId         String
   buyer           User     @relation(fields: [buyerId], references: [id])
   status          TransactionStatus @default(PENDING)
+
   confirmationDeadline DateTime? 
+  paymentDeadline      DateTime?
+  type                 TransactionType   @default(SALE)
 
   vehicleId       String?
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])

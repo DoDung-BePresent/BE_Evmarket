@@ -20,6 +20,12 @@ const transactionRouter = Router();
 transactionRouter.use(authenticate);
 
 transactionRouter.post(
+  "/:transactionId/pay",
+  validate(transactionValidation.payForAuction),
+  transactionController.payForAuctionTransaction,
+);
+
+transactionRouter.post(
   "/:transactionId/ship",
   validate(transactionValidation.shipTransaction),
   transactionController.shipTransaction,

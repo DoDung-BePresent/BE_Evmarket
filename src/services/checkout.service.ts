@@ -100,6 +100,76 @@ export const checkoutService = {
 
     throw new BadRequestError("Invalid payment method.");
   },
+
+  payForAuctionTransaction: async (
+    buyerId: string,
+    transactionId: string,
+    paymentMethod: PaymentGateway,
+    clientRedirectUrl?: string,
+  ) => {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+    });
+
+    if (!transaction) {
+      throw new NotFoundError("Transaction not found.");
+    }
+    if (transaction.buyerId !== buyerId) {
+      throw new ForbiddenError(
+        "You are not authorized to pay for this transaction.",
+      );
+    }
+    if (transaction.type !== "AUCTION") {
+      throw new BadRequestError("This is not an auction transaction.");
+    }
+    if (transaction.status !== "PENDING") {
+      throw new BadRequestError("This transaction is not pending payment.");
+    }
+    if (
+      transaction.paymentDeadline &&
+      new Date() > transaction.paymentDeadline
+    ) {
+      throw new BadRequestError(
+        "The payment deadline for this auction has passed.",
+      );
+    }
+
+    if (paymentMethod === "WALLET") {
+      // Nếu dùng ví, gọi thẳng hàm payWithWallet đã có
+      return checkoutService.payWithWallet(transactionId, buyerId);
+    }
+
+    if (paymentMethod === "MOMO") {
+      // Nếu dùng MoMo, tạo yêu cầu thanh toán mới
+      const redirectUrl =
+        clientRedirectUrl || `${config.CLIENT_URL}/checkout/result`;
+      const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
+
+      if (transaction.finalPrice === null) {
+        throw new InternalServerError(
+          "Transaction is missing final price for payment.",
+        );
+      }
+
+      const paymentInfo = await momoService.createPayment({
+        orderId: transaction.id,
+        amount: transaction.finalPrice,
+        orderInfo: `Thanh toan cho san pham dau gia`,
+        redirectUrl,
+        ipnUrl,
+      });
+
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { paymentDetail: paymentInfo as any, paymentGateway: "MOMO" },
+      });
+
+      return { transactionId: transaction.id, paymentInfo };
+    }
+
+    throw new BadRequestError("Invalid payment method.");
+  },
+
   completeMomoPurchase: async (transactionId: string, paidAmount: number) => {
     const updatedTransaction = await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({

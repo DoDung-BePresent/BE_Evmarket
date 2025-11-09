@@ -53,6 +53,7 @@ enum TransactionStatus {
   COMPLETED   // Giao dịch hoàn tất
   DISPUTED    // Đang khiếu nại
   CANCELLED   // Đã hủy
+  REFUNDED    // Đã hoàn
 }
 
 enum TransactionType {
@@ -213,6 +214,7 @@ model Transaction {
   confirmationDeadline DateTime? 
   paymentDeadline      DateTime?
   type                 TransactionType   @default(SALE)
+  disputeReason        String?
 
   vehicleId       String?
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])

@@ -22,7 +22,10 @@ import { pick } from "@/utils/pick.util";
 /**
  * Validations
  */
-import { GetUsersQuery } from "@/validations/admin.validation";
+import {
+  GetDisputedTransactionsQuery,
+  GetUsersQuery,
+} from "@/validations/admin.validation";
 
 export const adminController = {
   getDashboardStats: asyncHandler(async (req, res) => {
@@ -30,6 +33,15 @@ export const adminController = {
     res.status(STATUS_CODE.OK).json({
       message: "Dashboard statistics fetched successfully",
       data: stats,
+    });
+  }),
+  getDisputedTransactions: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetDisputedTransactionsQuery;
+    const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);
+    const result = await adminService.getDisputedTransactions(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Disputed transactions fetched successfully",
+      data: result,
     });
   }),
   getUsers: asyncHandler(async (req, res) => {

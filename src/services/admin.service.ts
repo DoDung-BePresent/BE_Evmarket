@@ -135,7 +135,6 @@ export const adminService = {
       totalResults,
     };
   },
-
   reviewAuctionRequest: async (
     listingType: ListingType,
     listingId: string,
@@ -273,7 +272,6 @@ export const adminService = {
 
     return updatedUser;
   },
-
   unlockUser: async (userId: string) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -288,7 +286,6 @@ export const adminService = {
       },
     });
   },
-
   getListings: async (
     filter: {
       listingType?: "VEHICLE" | "BATTERY" | "ALL";
@@ -355,7 +352,6 @@ export const adminService = {
       totalResults,
     };
   },
-
   verifyListing: async (
     listingType: ListingType,
     listingId: string,
@@ -387,7 +383,6 @@ export const adminService = {
 
     return updatedListing;
   },
-
   getFees: async () => {
     return prisma.fee.findMany({
       orderBy: {
@@ -395,7 +390,6 @@ export const adminService = {
       },
     });
   },
-
   updateFee: async (
     feeId: string,
     payload: {
@@ -413,5 +407,49 @@ export const adminService = {
       where: { id: feeId },
       data: payload,
     });
+  },
+  getDisputedTransactions: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "updatedAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const [transactions, totalResults] = await prisma.$transaction([
+      prisma.transaction.findMany({
+        where: { status: "DISPUTED" },
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          vehicle: {
+            select: {
+              id: true,
+              title: true,
+              seller: { select: { id: true, name: true, email: true } },
+            },
+          },
+          battery: {
+            select: {
+              id: true,
+              title: true,
+              seller: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.transaction.count({ where: { status: "DISPUTED" } }),
+    ]);
+
+    return {
+      transactions,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
   },
 };

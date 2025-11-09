@@ -99,7 +99,11 @@ export const transactionService = {
     return transactionService.completeTransaction(transactionId);
   },
 
-  disputeTransaction: async (transactionId: string, buyerId: string) => {
+  disputeTransaction: async (
+    transactionId: string,
+    buyerId: string,
+    reason: string,
+  ) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
     });
@@ -124,6 +128,7 @@ export const transactionService = {
       where: { id: transactionId },
       data: {
         status: "DISPUTED",
+        disputeReason: reason,
       },
     });
   },

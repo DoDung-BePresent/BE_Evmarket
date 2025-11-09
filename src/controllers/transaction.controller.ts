@@ -86,11 +86,13 @@ export const transactionController = {
   }),
   disputeTransaction: asyncHandler(async (req, res) => {
     const { transactionId } = req.validated?.params;
+    const { reason } = req.validated?.body;
     const { id: buyerId } = req.user!;
 
     const transaction = await transactionService.disputeTransaction(
       transactionId,
       buyerId,
+      reason,
     );
 
     res.status(STATUS_CODE.OK).json({

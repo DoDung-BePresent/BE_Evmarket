@@ -51,4 +51,10 @@ transactionRouter.get(
   transactionController.getMyTransactions,
 );
 
+transactionRouter.get(
+  "/sales",
+  validate(transactionValidation.getMySales),
+  transactionController.getMySales,
+);
+
 export default transactionRouter;

@@ -204,6 +204,41 @@ export const transactionService = {
     });
   },
 
+  getTransactionsBySeller: async (sellerId: string, options: IQueryOptions) => {
+    const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
+    const skip = (page - 1) * limit;
+
+    const whereClause = {
+      OR: [
+        { vehicle: { sellerId: sellerId } },
+        { battery: { sellerId: sellerId } },
+      ],
+    };
+
+    const [transactions, totalResults] = await prisma.$transaction([
+      prisma.transaction.findMany({
+        where: whereClause,
+        include: {
+          vehicle: { select: { title: true, images: true } },
+          battery: { select: { title: true, images: true } },
+          buyer: { select: { name: true, avatar: true } }, // Người bán cần xem thông tin người mua
+        },
+        skip,
+        take: limit,
+        orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+      }),
+      prisma.transaction.count({ where: whereClause }),
+    ]);
+
+    return {
+      transactions,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
+
   getTransactionsByBuyer: async (buyerId: string, options: IQueryOptions) => {
     const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
     const skip = (page - 1) * limit;

@@ -125,4 +125,18 @@ export const transactionController = {
       data: result,
     });
   }),
+  getMySales: asyncHandler(async (req, res) => {
+    const { id: sellerId } = req.user!;
+    const query = req.validated?.query as GetMyTransactionsQuery;
+    const options = pick(query, ["sortBy", "sortOrder", "page", "limit"]);
+
+    const result = await transactionService.getTransactionsBySeller(
+      sellerId,
+      options,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message: "Fetched my sales successfully",
+      data: result,
+    });
+  }),
 };

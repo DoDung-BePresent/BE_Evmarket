@@ -53,6 +53,14 @@ export const transactionValidation = {
       limit: z.coerce.number().int().min(1).max(100).default(10),
     }),
   }),
+  getMySales: z.object({
+    query: z.object({
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(10),
+    }),
+  }),
 };
 
 export type GetMyTransactionsQuery = z.infer<

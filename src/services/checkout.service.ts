@@ -15,6 +15,7 @@ import config from "@/configs/env.config";
 import { momoService } from "@/services/momo.service";
 import { walletService } from "@/services/wallet.service";
 import { contractService } from "@/services/contract.service";
+import { emailService } from "@/services/email.service";
 
 /**
  * Libs
@@ -230,8 +231,30 @@ export const checkoutService = {
     // Việc tạo hợp đồng vẫn giữ nguyên
     if (updatedTransaction) {
       try {
-        await contractService.generateAndSaveContract(updatedTransaction);
+        const pdfBuffer =
+          await contractService.generateAndSaveContract(updatedTransaction);
         logger.info(`Contract generated for transaction ${transactionId}`);
+
+        // Gửi email cho người mua và người bán
+        const seller =
+          updatedTransaction.vehicle?.seller ||
+          updatedTransaction.battery?.seller;
+        if (seller && pdfBuffer) {
+          await Promise.all([
+            emailService.sendContractEmail(
+              updatedTransaction.buyer.email,
+              updatedTransaction.buyer.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+            emailService.sendContractEmail(
+              seller.email,
+              seller.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+          ]);
+        }
       } catch (error) {
         logger.error(
           `Failed to generate contract for transaction ${transactionId}`,
@@ -296,8 +319,30 @@ export const checkoutService = {
     // Việc tạo hợp đồng vẫn giữ nguyên
     if (completedTransaction) {
       try {
-        await contractService.generateAndSaveContract(completedTransaction);
+        const pdfBuffer =
+          await contractService.generateAndSaveContract(completedTransaction);
         logger.info(`Contract generated for transaction ${transactionId}`);
+
+        // Gửi email cho người mua và người bán
+        const seller =
+          completedTransaction.vehicle?.seller ||
+          completedTransaction.battery?.seller;
+        if (seller && pdfBuffer) {
+          await Promise.all([
+            emailService.sendContractEmail(
+              completedTransaction.buyer.email,
+              completedTransaction.buyer.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+            emailService.sendContractEmail(
+              seller.email,
+              seller.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+          ]);
+        }
       } catch (error) {
         logger.error(
           `Failed to generate contract for transaction ${transactionId}`,

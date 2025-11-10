@@ -25,13 +25,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (to: string, subject: string, html: string) => {
+const sendEmail = async (
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: { filename: string; content: Buffer; contentType: string }[],
+) => {
   try {
     await transporter.sendMail({
       from: `EV-Market <${config.SMTP_USER}>`,
       to,
       subject,
       html,
+      attachments,
     });
     logger.info(`📧 Email sent to ${to} with subject: "${subject}"`);
   } catch (error) {
@@ -85,5 +91,34 @@ export const emailService = {
     });
 
     await sendEmail(to, subject, html);
+  },
+
+  sendContractEmail: async (
+    to: string,
+    name: string | null,
+    transactionId: string,
+    pdfBuffer: Buffer,
+  ) => {
+    const subject = `Your Purchase Contract for Transaction #${transactionId}`;
+    const templatePath = path.join(
+      process.cwd(),
+      "src",
+      "templates",
+      "emails",
+      "contractNotification.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: name || "user",
+      transactionId,
+    });
+
+    await sendEmail(to, subject, html, [
+      {
+        filename: `contract-${transactionId}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      },
+    ]);
   },
 };

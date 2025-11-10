@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Your Purchase Contract</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333">
+    <div
+      style="
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      "
+    >
+      <h2 style="color: #0275d8">Purchase Contract Attached</h2>
+      <p>Hello <%= name %>,</p>
+      <p>
+        Thank you for your transaction on EV-Market. The purchase contract for
+        your transaction #<strong><%= transactionId %></strong> is attached to
+        this email.
+      </p>
+      <p>
+        Please keep this document for your records. You can also access it
+        anytime from your transaction history on our platform.
+      </p>
+      <p>Best regards,<br />The EV-Market Team</p>
+    </div>
+  </body>
+</html>

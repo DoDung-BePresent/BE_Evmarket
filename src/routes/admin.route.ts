@@ -87,4 +87,10 @@ adminRouter.patch(
   adminController.resolveDispute,
 );
 
+adminRouter.get(
+  "/contracts",
+  validate(adminValidation.getContracts),
+  adminController.getContracts,
+);
+
 export default adminRouter;

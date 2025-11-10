@@ -497,4 +497,42 @@ export const adminService = {
       totalResults,
     };
   },
+  getContracts: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const [contracts, totalResults] = await prisma.$transaction([
+      prisma.contract.findMany({
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          seller: { select: { id: true, name: true, email: true } },
+          transaction: {
+            select: {
+              id: true,
+              finalPrice: true,
+              status: true,
+              vehicle: { select: { title: true } },
+              battery: { select: { title: true } },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.contract.count(),
+    ]);
+    return {
+      contracts,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
 };

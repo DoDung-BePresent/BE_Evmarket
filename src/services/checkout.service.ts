@@ -75,6 +75,8 @@ export const checkoutService = {
           "Insufficient wallet balance. Please top up.",
         );
       }
+      // SỬA LỖI: Gọi payWithWallet ngay lập tức để xử lý thanh toán và tạo hợp đồng
+      await checkoutService.payWithWallet(transaction.id, buyerId);
       return { transactionId: transaction.id, paymentInfo: null };
     }
 
@@ -316,18 +318,35 @@ export const checkoutService = {
 
     if (updatedTransaction) {
       try {
-        const pdfBuffer =
-          await contractService.generateAndSaveContract(updatedTransaction);
+        // SỬA LỖI: Truy vấn lại transaction với đầy đủ thông tin chi tiết
+        const fullTransactionDetails = await prisma.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
+          },
+        });
+
+        if (!fullTransactionDetails) {
+          throw new InternalServerError(
+            "Failed to refetch transaction details after payment.",
+          );
+        }
+
+        const pdfBuffer = await contractService.generateAndSaveContract(
+          fullTransactionDetails,
+        );
         logger.info(`Contract generated for transaction ${transactionId}`);
 
         const seller =
-          updatedTransaction.vehicle?.seller ||
-          updatedTransaction.battery?.seller;
+          fullTransactionDetails.vehicle?.seller ||
+          fullTransactionDetails.battery?.seller;
         if (seller && pdfBuffer) {
           await Promise.all([
             emailService.sendContractEmail(
-              updatedTransaction.buyer.email,
-              updatedTransaction.buyer.name,
+              fullTransactionDetails.buyer.email,
+              fullTransactionDetails.buyer.name,
               transactionId,
               Buffer.from(pdfBuffer),
             ),

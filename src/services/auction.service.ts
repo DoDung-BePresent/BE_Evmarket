@@ -194,7 +194,7 @@ export const auctionService = {
     const {
       limit = 10,
       page = 1,
-      sortBy = "auctionEndsAt",
+      sortBy = "auctionStartsAt",
       sortOrder = "asc",
       time = "present",
     } = options;
@@ -213,7 +213,7 @@ export const auctionService = {
       case "past":
         commonWhere = {
           status: {
-            in: ["AUCTION_ENDED", "SOLD"],
+            in: ["AUCTION_ENDED", "AUCTION_PAYMENT_PENDING", "SOLD"],
           },
           isAuction: true,
         };
@@ -222,7 +222,6 @@ export const auctionService = {
       default:
         commonWhere = {
           status: "AUCTION_LIVE" as const,
-          auctionStartsAt: { lte: now },
           auctionEndsAt: { gt: now },
         };
         break;

@@ -14,6 +14,7 @@ import config from "@/configs/env.config";
  * Libs
  */
 import logger from "@/libs/logger";
+import { InternalServerError } from "@/libs/error";
 
 const resend = new Resend(config.RESEND_API_KEY);
 
@@ -24,16 +25,24 @@ const sendEmail = async (
   attachments?: { filename: string; content: Buffer }[],
 ) => {
   try {
-    await resend.emails.send({
+    const data = await resend.emails.send({
       from: "EV-Market <onboarding@resend.dev>",
       to,
       subject,
       html,
       attachments,
     });
+
+    // Kiểm tra xem Resend có trả về lỗi không
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
     logger.info(`📧 Email sent to ${to} with subject: "${subject}"`);
   } catch (error) {
     logger.error(`❌ Failed to send email to ${to}`, error);
+    // Ném lỗi ra ngoài để hàm gọi nó có thể xử lý
+    throw new InternalServerError("Failed to send email.");
   }
 };
 

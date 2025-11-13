@@ -85,9 +85,11 @@ export const contractService = {
         transactionId: transaction.id,
         buyerId: buyer.id,
         sellerId: seller.id,
-        contractUrl: publicUrlData.publicUrl, //TODO: Lưu URL public để dễ truy cập, nhưng bucket nên là private
+        contractUrl: publicUrlData.publicUrl,
       },
     });
+
+    return pdfBuffer; // <-- Trả về buffer
   },
   getContractSignedUrl: async (transactionId: string, userId: string) => {
     const contract = await prisma.contract.findUnique({

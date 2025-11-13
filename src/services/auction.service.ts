@@ -2,7 +2,7 @@
 /**
  * Node modules
  */
-import { ListingType } from "@prisma/client";
+import { Bid, ListingStatus, ListingType } from "@prisma/client";
 
 /**
  * Services
@@ -149,6 +149,31 @@ export const auctionService = {
       throw new NotFoundError("Auction not found.");
     }
 
+    let userAuctionResult: "WON" | "LOST" | "NO_BIDS" | null = null;
+    const endedStatuses: ListingStatus[] = [
+      "AUCTION_ENDED",
+      "AUCTION_PAYMENT_PENDING",
+      "SOLD",
+    ];
+
+    if (listing.auction && endedStatuses.includes(listing.status)) {
+      const winnerId = listing.auction.winnerId;
+      if (winnerId) {
+        if (userId && userId === winnerId) {
+          userAuctionResult = "WON";
+        } else if (userId) {
+          const userHasBid = listing.bids.some(
+            (bid: Bid) => bid.bidderId === userId,
+          );
+          if (userHasBid) {
+            userAuctionResult = "LOST";
+          }
+        }
+      } else {
+        userAuctionResult = "NO_BIDS";
+      }
+    }
+
     let hasUserDeposit = false;
     if (userId) {
       const deposit = await prisma.auctionDeposit.findFirst({
@@ -163,13 +188,13 @@ export const auctionService = {
       hasUserDeposit = !!deposit;
     }
 
-    return { ...listing, hasUserDeposit };
+    return { ...listing, hasUserDeposit, userAuctionResult };
   },
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,
       page = 1,
-      sortBy = "auctionEndsAt",
+      sortBy = "auctionStartsAt",
       sortOrder = "asc",
       time = "present",
     } = options;
@@ -188,7 +213,7 @@ export const auctionService = {
       case "past":
         commonWhere = {
           status: {
-            in: ["AUCTION_ENDED", "SOLD"],
+            in: ["AUCTION_ENDED", "AUCTION_PAYMENT_PENDING", "SOLD"],
           },
           isAuction: true,
         };
@@ -197,7 +222,6 @@ export const auctionService = {
       default:
         commonWhere = {
           status: "AUCTION_LIVE" as const,
-          auctionStartsAt: { lte: now },
           auctionEndsAt: { gt: now },
         };
         break;

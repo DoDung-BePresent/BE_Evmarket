@@ -7,34 +7,54 @@ import { Router } from "express";
  * Middlewares
  */
 import { authenticate } from "@/middlewares/auth.middleware";
+import { validate } from "@/middlewares/validate.middleware";
+import { uploadDisputeImages } from "@/middlewares/upload.middleware";
 
 /**
  * Controllers
  */
-import { validate } from "@/middlewares/validate.middleware";
 import { transactionController } from "@/controllers/transaction.controller";
 import { transactionValidation } from "@/validations/transaction.validation";
 
 const transactionRouter = Router();
 
-// TODO: fail case?
+transactionRouter.use(authenticate);
+
 transactionRouter.post(
-  "/",
-  authenticate,
-  validate(transactionValidation.createTransaction),
-  transactionController.createTransaction,
+  "/:transactionId/pay",
+  validate(transactionValidation.payForAuction),
+  transactionController.payForAuctionTransaction,
 );
-transactionRouter.patch(
-  "/:transactionId/complete",
-  authenticate,
-  validate(transactionValidation.completeTransaction),
-  transactionController.completeTransaction,
+
+transactionRouter.post(
+  "/:transactionId/ship",
+  validate(transactionValidation.shipTransaction),
+  transactionController.shipTransaction,
 );
+
+transactionRouter.post(
+  "/:transactionId/confirm-receipt",
+  validate(transactionValidation.confirmReceipt),
+  transactionController.confirmReceipt,
+);
+
+transactionRouter.post(
+  "/:transactionId/dispute",
+  uploadDisputeImages,
+  validate(transactionValidation.disputeTransaction),
+  transactionController.disputeTransaction,
+);
+
 transactionRouter.get(
   "/me",
-  authenticate,
-  validate(transactionValidation.getMyTransactions), // Thêm validate ở đây
+  validate(transactionValidation.getMyTransactions),
   transactionController.getMyTransactions,
+);
+
+transactionRouter.get(
+  "/sales",
+  validate(transactionValidation.getMySales),
+  transactionController.getMySales,
 );
 
 export default transactionRouter;

@@ -15,13 +15,19 @@ import config from "@/configs/env.config";
 import { momoService } from "@/services/momo.service";
 import { walletService } from "@/services/wallet.service";
 import { contractService } from "@/services/contract.service";
+import { emailService } from "@/services/email.service";
 
 /**
  * Libs
  */
 import logger from "@/libs/logger";
 import prisma from "@/libs/prisma";
-import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from "@/libs/error";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+} from "@/libs/error";
 
 export const checkoutService = {
   initiateCheckout: async (
@@ -69,6 +75,8 @@ export const checkoutService = {
           "Insufficient wallet balance. Please top up.",
         );
       }
+      // SỬA LỖI: Gọi payWithWallet ngay lập tức để xử lý thanh toán và tạo hợp đồng
+      await checkoutService.payWithWallet(transaction.id, buyerId);
       return { transactionId: transaction.id, paymentInfo: null };
     }
 
@@ -95,90 +103,72 @@ export const checkoutService = {
 
     throw new BadRequestError("Invalid payment method.");
   },
-  completeMomoPurchase: async (transactionId: string, paidAmount: number) => {
-    const updatedTransaction = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findUnique({
-        where: { id: transactionId },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-        },
-      });
 
-      if (!transaction || transaction.status !== "PENDING") {
-        logger.warn(
-          `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
-        );
-        return null;
-      }
-
-      const listing = transaction.vehicle || transaction.battery;
-      if (!listing) {
-        throw new NotFoundError(
-          "Associated listing not found for transaction.",
-        );
-      }
-
-      if (listing.price !== paidAmount) {
-        throw new BadRequestError("Paid amount does not match listing price.");
-      }
-
-      const feeType = listing.isAuction
-        ? FeeType.AUCTION_SALE
-        : FeeType.REGULAR_SALE;
-
-      const feeRule = await tx.fee.findUnique({
-        where: { type: feeType },
-      });
-
-      if (!feeRule) {
-        throw new InternalServerError(`Fee rule for ${feeType} not found.`);
-      }
-
-      const commissionAmount = (listing.price * feeRule.percentage) / 100;
-      const sellerRevenue = listing.price - commissionAmount;
-
-      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
-      await (model as any).update({
-        where: { id: listing.id },
-        data: { status: "SOLD" },
-      });
-
-      await walletService.updateBalance(
-        listing.seller.id,
-        sellerRevenue,
-        "SALE_REVENUE",
-        tx,
-      );
-
-      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
-
-      return tx.transaction.update({
-        where: { id: transactionId },
-        data: { status: "COMPLETED" },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-        },
-      });
+  payForAuctionTransaction: async (
+    buyerId: string,
+    transactionId: string,
+    paymentMethod: PaymentGateway,
+    clientRedirectUrl?: string,
+  ) => {
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
     });
 
-    if (updatedTransaction) {
-      try {
-        await contractService.generateAndSaveContract(updatedTransaction);
-        logger.info(`Contract generated for transaction ${transactionId}`);
-      } catch (error) {
-        logger.error(
-          `Failed to generate contract for transaction ${transactionId}`,
-          error,
-        );
-      }
+    if (!transaction) {
+      throw new NotFoundError("Transaction not found.");
+    }
+    if (transaction.buyerId !== buyerId) {
+      throw new ForbiddenError(
+        "You are not authorized to pay for this transaction.",
+      );
+    }
+    if (transaction.type !== "AUCTION") {
+      throw new BadRequestError("This is not an auction transaction.");
+    }
+    if (transaction.status !== "PENDING") {
+      throw new BadRequestError("This transaction is not pending payment.");
+    }
+    if (
+      transaction.paymentDeadline &&
+      new Date() > transaction.paymentDeadline
+    ) {
+      throw new BadRequestError(
+        "The payment deadline for this auction has passed.",
+      );
     }
 
-    logger.info(`Transaction ${transactionId} processing finished.`);
-    return updatedTransaction;
+    if (paymentMethod === "WALLET") {
+      return checkoutService.payWithWallet(transactionId, buyerId);
+    }
+
+    if (paymentMethod === "MOMO") {
+      const redirectUrl =
+        clientRedirectUrl || `${config.CLIENT_URL}/checkout/result`;
+      const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
+
+      if (transaction.finalPrice === null) {
+        throw new InternalServerError(
+          "Transaction is missing final price for payment.",
+        );
+      }
+
+      const paymentInfo = await momoService.createPayment({
+        orderId: transaction.id,
+        amount: transaction.finalPrice,
+        orderInfo: `Thanh toan cho san pham dau gia`,
+        redirectUrl,
+        ipnUrl,
+      });
+
+      await prisma.transaction.update({
+        where: { id: transaction.id },
+        data: { paymentDetail: paymentInfo as any, paymentGateway: "MOMO" },
+      });
+
+      return { transactionId: transaction.id, paymentInfo };
+    }
+
+    throw new BadRequestError("Invalid payment method.");
   },
 
   payWithWallet: async (transactionId: string, buyerId: string) => {
@@ -216,36 +206,17 @@ export const checkoutService = {
         throw new InternalServerError(`Fee rule for ${feeType} not found.`);
       }
 
-      const commissionAmount = (price * feeRule.percentage) / 100;
-      const sellerRevenue = price - commissionAmount;
+      await walletService.addLockedBalance(listing.sellerId, price, tx);
 
-      await walletService.updateBalance(
-        listing.seller.id,
-        sellerRevenue,
-        "SALE_REVENUE",
-        tx,
-      );
-
-      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
-
-      const listingType = transaction.vehicleId ? "VEHICLE" : "BATTERY";
-      const listingId = transaction.vehicleId || transaction.batteryId;
-
-      if (listingType === "VEHICLE") {
-        await tx.vehicle.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
-      } else {
-        await tx.battery.update({
-          where: { id: listingId! },
-          data: { status: "SOLD" },
-        });
-      }
+      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
+      await (model as any).update({
+        where: { id: listing.id },
+        data: { status: "SOLD" },
+      });
 
       return tx.transaction.update({
         where: { id: transactionId },
-        data: { status: "COMPLETED" },
+        data: { status: "PAID" },
         include: {
           vehicle: { include: { seller: true } },
           battery: { include: { seller: true } },
@@ -256,8 +227,28 @@ export const checkoutService = {
 
     if (completedTransaction) {
       try {
-        await contractService.generateAndSaveContract(completedTransaction);
+        const pdfBuffer =
+          await contractService.generateAndSaveContract(completedTransaction);
         logger.info(`Contract generated for transaction ${transactionId}`);
+        const seller =
+          completedTransaction.vehicle?.seller ||
+          completedTransaction.battery?.seller;
+        if (seller && pdfBuffer) {
+          await Promise.all([
+            emailService.sendContractEmail(
+              completedTransaction.buyer.email,
+              completedTransaction.buyer.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+            emailService.sendContractEmail(
+              seller.email,
+              seller.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+          ]);
+        }
       } catch (error) {
         logger.error(
           `Failed to generate contract for transaction ${transactionId}`,
@@ -267,5 +258,115 @@ export const checkoutService = {
     }
 
     return completedTransaction;
+  },
+
+  completeMomoPurchase: async (transactionId: string, paidAmount: number) => {
+    const updatedTransaction = await prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+          buyer: true,
+        },
+      });
+
+      if (!transaction || transaction.status !== "PENDING") {
+        logger.warn(
+          `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
+        );
+        return null;
+      }
+
+      const listing = transaction.vehicle || transaction.battery;
+      if (!listing) {
+        throw new NotFoundError(
+          "Associated listing not found for transaction.",
+        );
+      }
+
+      if (transaction.finalPrice !== paidAmount) {
+        throw new BadRequestError(
+          "Paid amount does not match transaction price.",
+        );
+      }
+
+      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
+      await (model as any).update({
+        where: { id: listing.id },
+        data: { status: "SOLD" },
+      });
+
+      const updatedTx = await tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "PAID" },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+          buyer: true,
+        },
+      });
+
+      await walletService.addLockedBalance(listing.seller.id, paidAmount, tx);
+
+      logger.info(
+        `Transaction ${transactionId} paid. Funds are locked for seller ${listing.seller.id}.`,
+      );
+
+      return updatedTx;
+    });
+
+    if (updatedTransaction) {
+      try {
+        // SỬA LỖI: Truy vấn lại transaction với đầy đủ thông tin chi tiết
+        const fullTransactionDetails = await prisma.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
+          },
+        });
+
+        if (!fullTransactionDetails) {
+          throw new InternalServerError(
+            "Failed to refetch transaction details after payment.",
+          );
+        }
+
+        const pdfBuffer = await contractService.generateAndSaveContract(
+          fullTransactionDetails,
+        );
+        logger.info(`Contract generated for transaction ${transactionId}`);
+
+        const seller =
+          fullTransactionDetails.vehicle?.seller ||
+          fullTransactionDetails.battery?.seller;
+        if (seller && pdfBuffer) {
+          await Promise.all([
+            emailService.sendContractEmail(
+              fullTransactionDetails.buyer.email,
+              fullTransactionDetails.buyer.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+            emailService.sendContractEmail(
+              seller.email,
+              seller.name,
+              transactionId,
+              Buffer.from(pdfBuffer),
+            ),
+          ]);
+        }
+      } catch (error) {
+        logger.error(
+          `Failed to generate contract for transaction ${transactionId}`,
+          error,
+        );
+      }
+    }
+
+    logger.info(`Transaction ${transactionId} processing finished.`);
+    return updatedTransaction;
   },
 };

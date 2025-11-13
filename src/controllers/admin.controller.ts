@@ -22,7 +22,12 @@ import { pick } from "@/utils/pick.util";
 /**
  * Validations
  */
-import { GetUsersQuery } from "@/validations/admin.validation";
+import {
+  GetDisputedTransactionsQuery,
+  GetUsersQuery,
+  GetContractsQuery,
+  GetListingsQuery,
+} from "@/validations/admin.validation";
 
 export const adminController = {
   getDashboardStats: asyncHandler(async (req, res) => {
@@ -30,6 +35,29 @@ export const adminController = {
     res.status(STATUS_CODE.OK).json({
       message: "Dashboard statistics fetched successfully",
       data: stats,
+    });
+  }),
+  getDisputedTransactions: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetDisputedTransactionsQuery;
+    const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);
+    const result = await adminService.getDisputedTransactions(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Disputed transactions fetched successfully",
+      data: result,
+    });
+  }),
+  resolveDispute: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { approved } = req.validated?.body;
+
+    const transaction = await adminService.resolveDispute(
+      transactionId,
+      approved,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: `Dispute resolved. Transaction has been ${approved ? "refunded" : "completed"}.`,
+      data: { transaction },
     });
   }),
   getUsers: asyncHandler(async (req, res) => {
@@ -90,7 +118,7 @@ export const adminController = {
     });
   }),
   getListings: asyncHandler(async (req, res) => {
-    const query = req.validated?.query;
+    const query = req.validated?.query as GetListingsQuery;
     const filter = pick(query, ["listingType", "isVerified", "status"]);
     const options = pick(query, ["limit", "page"]);
     const result = await adminService.getListings(filter, options);
@@ -112,7 +140,6 @@ export const adminController = {
       data: updatedListing,
     });
   }),
-
   getFees: asyncHandler(async (_req, res) => {
     const fees = await adminService.getFees();
     res.status(STATUS_CODE.OK).json({
@@ -120,7 +147,6 @@ export const adminController = {
       data: fees,
     });
   }),
-
   updateFee: asyncHandler(async (req, res) => {
     const { feeId } = req.validated?.params;
     const payload = req.validated?.body;
@@ -128,6 +154,15 @@ export const adminController = {
     res.status(STATUS_CODE.OK).json({
       message: "Fee updated successfully",
       data: updatedFee,
+    });
+  }),
+  getContracts: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetContractsQuery;
+    const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);
+    const result = await adminService.getContracts(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Contracts fetched successfully",
+      data: result,
     });
   }),
 };

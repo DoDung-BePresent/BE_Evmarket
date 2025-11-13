@@ -75,4 +75,22 @@ adminRouter.patch(
   adminController.reviewAuctionRequest,
 );
 
+adminRouter.get(
+  "/transactions/disputed",
+  validate(adminValidation.getDisputedTransactions),
+  adminController.getDisputedTransactions,
+);
+
+adminRouter.patch(
+  "/transactions/:transactionId/resolve-dispute",
+  validate(adminValidation.resolveDispute),
+  adminController.resolveDispute,
+);
+
+adminRouter.get(
+  "/contracts",
+  validate(adminValidation.getContracts),
+  adminController.getContracts,
+);
+
 export default adminRouter;

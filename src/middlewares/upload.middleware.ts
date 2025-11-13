@@ -57,3 +57,24 @@ export const uploadReviewMedia = multer({
   { name: "images", maxCount: 5 },
   { name: "video", maxCount: 1 },
 ]);
+
+/**
+ * Upload images for dispute
+ */
+export const uploadDisputeImages = multer({
+  storage: storage,
+  fileFilter: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback,
+  ) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new BadRequestError("Only image files are allowed for disputes!"));
+    }
+  },
+  limits: {
+    fileSize: 1024 * 1024 * 5, // 5 MB limit per file
+  },
+}).array("images", 5);

@@ -47,6 +47,18 @@ authRouter.post(
   authController.register,
 );
 
+authRouter.post(
+  "/forgot-password",
+  validate(authValidation.forgotPassword),
+  authController.forgotPassword,
+);
+
+authRouter.post(
+  "/reset-password",
+  validate(authValidation.resetPassword),
+  authController.resetPassword,
+);
+
 authRouter.post("/refresh-token", authController.refreshToken);
 
 authRouter.post("/logout", authenticate, authController.logout);

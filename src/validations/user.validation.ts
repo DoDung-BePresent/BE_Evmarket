@@ -26,14 +26,14 @@ export const userValidation = {
   updatePasswordSchema: z.object({
     body: z
       .object({
-        currentPassword: z.string(),
+        currentPassword: z.string().min(1, "Current password is required."),
         newPassword: z
           .string()
-          .min(8, "Password must be at least 8 characters long."),
+          .min(8, "New password must be at least 8 characters long."),
         confirmPassword: z.string(),
       })
       .refine((data) => data.newPassword === data.confirmPassword, {
-        message: "New passwords don't match.",
+        message: "New passwords do not match.",
         path: ["confirmPassword"],
       }),
   }),

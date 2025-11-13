@@ -3,7 +3,7 @@
  */
 import ejs from "ejs";
 import path from "path";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 /**
  * Configs
@@ -15,25 +15,17 @@ import config from "@/configs/env.config";
  */
 import logger from "@/libs/logger";
 
-const transporter = nodemailer.createTransport({
-  host: config.SMTP_HOST,
-  port: config.SMTP_PORT,
-  secure: config.SMTP_SECURE,
-  auth: {
-    user: config.SMTP_USER,
-    pass: config.SMTP_PASS,
-  },
-});
+const resend = new Resend(config.RESEND_API_KEY);
 
 const sendEmail = async (
   to: string,
   subject: string,
   html: string,
-  attachments?: { filename: string; content: Buffer; contentType: string }[],
+  attachments?: { filename: string; content: Buffer }[],
 ) => {
   try {
-    await transporter.sendMail({
-      from: `EV-Market <${config.SMTP_USER}>`,
+    await resend.emails.send({
+      from: "EV-Market <onboarding@resend.dev>",
       to,
       subject,
       html,
@@ -117,7 +109,6 @@ export const emailService = {
       {
         filename: `contract-${transactionId}.pdf`,
         content: pdfBuffer,
-        contentType: "application/pdf",
       },
     ]);
   },

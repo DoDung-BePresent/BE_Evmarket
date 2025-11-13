@@ -51,6 +51,25 @@ export const authValidation = {
       code: z.string().nonempty("Authorization code is required"),
     }),
   }),
+  forgotPassword: z.object({
+    body: z.object({
+      email: z.string().email("Please enter a valid email address."),
+    }),
+  }),
+  resetPassword: z.object({
+    body: z
+      .object({
+        token: z.string().nonempty("Token is required."),
+        newPassword: z
+          .string()
+          .min(8, "New password must be at least 8 characters long."),
+        confirmPassword: z.string(),
+      })
+      .refine((data) => data.newPassword === data.confirmPassword, {
+        message: "Passwords do not match.",
+        path: ["confirmPassword"],
+      }),
+  }),
 };
 
 export type RegisterPayload = z.infer<

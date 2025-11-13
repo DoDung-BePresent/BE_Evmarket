@@ -28,6 +28,11 @@ import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 import { LoginPayload, RegisterPayload } from "@/validations/auth.validation";
 
 /**
+ * Services
+ */
+import { emailService } from "@/services/email.service";
+
+/**
  * Libs
  */
 import prisma from "@/libs/prisma";
@@ -43,6 +48,7 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "@/libs/error";
+import logger from "@/libs/logger";
 
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
@@ -322,5 +328,57 @@ export const authService = {
       user,
       tokens: { accessToken, refreshToken },
     };
+  },
+  forgotPassword: async (email: string) => {
+    const account = await prisma.account.findFirst({
+      where: {
+        provider: "CREDENTIALS",
+        user: { email: email },
+      },
+      include: { user: true },
+    });
+
+    if (!account || !account.user) {
+      logger.warn(`Password reset requested for non-existent email: ${email}`);
+      return;
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const redisKey = `reset-token:${resetToken}`;
+
+    await redisClient.set(redisKey, account.userId, {
+      EX: 900,
+    });
+
+    const resetUrl = `${config.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+    await emailService.sendPasswordResetEmail(
+      account.user.email,
+      account.user.name,
+      resetUrl,
+    );
+  },
+  resetPassword: async (token: string, newPassword_: string) => {
+    const redisKey = `reset-token:${token}`;
+    const userId = await redisClient.get(redisKey);
+
+    if (!userId) {
+      throw new BadRequestError(
+        "Invalid or expired password reset token.",
+        ERROR_CODE_ENUM.INVALID_TOKEN,
+      );
+    }
+
+    const hashedNewPassword = await hashPassword(newPassword_);
+
+    await prisma.account.updateMany({
+      where: {
+        userId: userId,
+        provider: "CREDENTIALS",
+      },
+      data: { password: hashedNewPassword },
+    });
+
+    await redisClient.del(redisKey);
   },
 };

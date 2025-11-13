@@ -121,4 +121,25 @@ export const emailService = {
       },
     ]);
   },
+  sendPasswordResetEmail: async (
+    to: string,
+    name: string | null,
+    resetUrl: string,
+  ) => {
+    const subject = "Reset Your EV-Market Password";
+    const templatePath = path.join(
+      process.cwd(),
+      "src",
+      "templates",
+      "emails",
+      "resetPassword.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: name || "user",
+      resetUrl,
+    });
+
+    await sendEmail(to, subject, html);
+  },
 };

@@ -157,9 +157,11 @@ export const auctionService = {
       "SOLD",
     ];
 
-    if (listing.auction && endedStatuses.includes(listing.status)) {
-      const winnerId = listing.auction.winnerId;
-      if (winnerId) {
+    if (endedStatuses.includes(listing.status)) {
+      const winnerBid = listing.bids[0];
+
+      if (winnerBid) {
+        const winnerId = winnerBid.bidderId;
         if (userId && userId === winnerId) {
           userAuctionResult = "WON";
         } else if (userId) {
@@ -216,16 +218,14 @@ export const auctionService = {
         throw new ForbiddenError("You cannot purchase your own item.");
       }
 
-      // Kết thúc đấu giá và cập nhật người thắng
       await (model as any).update({
         where: { id: listingId },
         data: {
           status: "AUCTION_PAYMENT_PENDING",
-          auctionEndsAt: new Date(), // Kết thúc ngay lập tức
+          auctionEndsAt: new Date(),
         },
       });
 
-      // Tạo transaction cho người mua ngay
       const transaction = await tx.transaction.create({
         data: {
           buyerId: userId,
@@ -239,11 +239,10 @@ export const auctionService = {
         },
       });
 
-      // Hoàn cọc cho tất cả những người đã đặt cọc khác
       await walletService.refundAllDeposits(
         listingId,
         listingType,
-        userId, // Loại trừ người mua ngay khỏi việc hoàn cọc
+        userId, 
         tx,
       );
 

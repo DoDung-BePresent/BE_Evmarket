@@ -1,7 +1,12 @@
 /**
  * Node modules
  */
-import { FinancialTransactionType, PrismaClient, Prisma } from "@prisma/client";
+import {
+  FinancialTransactionType,
+  PrismaClient,
+  Prisma,
+  ListingType,
+} from "@prisma/client";
 
 /**
  * Libs
@@ -12,6 +17,7 @@ import {
   NotFoundError,
   InternalServerError,
 } from "@/libs/error";
+import logger from "@/libs/logger";
 
 /**
  * Configs
@@ -216,6 +222,59 @@ export const walletService = {
       },
     });
   },
+  refundAllDeposits: async (
+    listingId: string,
+    listingType: ListingType,
+    excludeUserId: string | null, // ID của người mua ngay để không hoàn cọc cho họ
+    tx: PrismaTransactionClient,
+  ) => {
+    const whereClause: Prisma.AuctionDepositWhereInput = {
+      status: "PAID",
+      [`${listingType.toLowerCase()}Id`]: listingId,
+    };
+
+    if (excludeUserId) {
+      whereClause.userId = { not: excludeUserId };
+    }
+
+    const depositsToRefund = await tx.auctionDeposit.findMany({
+      where: whereClause,
+    });
+
+    if (depositsToRefund.length === 0) {
+      return; // Không có khoản cọc nào cần hoàn lại
+    }
+
+    const refundPromises = depositsToRefund.map(async (deposit) => {
+      // 1. Hoàn tiền vào ví của người dùng
+      await tx.wallet.update({
+        where: { userId: deposit.userId },
+        data: { availableBalance: { increment: deposit.amount } },
+      });
+
+      // 2. Tạo bản ghi giao dịch tài chính
+      await walletService.createFinancialTransaction(
+        deposit.userId,
+        deposit.amount,
+        "AUCTION_DEPOSIT_REFUND",
+        tx,
+        `Refund deposit for ${listingType.toLowerCase()} #${listingId}`,
+      );
+    });
+
+    await Promise.all(refundPromises);
+
+    // 3. Cập nhật trạng thái của tất cả các khoản cọc thành REFUNDED
+    await tx.auctionDeposit.updateMany({
+      where: whereClause,
+      data: { status: "REFUNDED" },
+    });
+
+    logger.info(
+      `Refunded ${depositsToRefund.length} deposits for ${listingType.toLowerCase()} #${listingId}`,
+    );
+  },
+
   createDepositRequest: async (
     userId: string,
     amount: number,

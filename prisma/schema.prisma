@@ -155,6 +155,7 @@ model Vehicle {
   startingPrice   Float?
   bidIncrement    Float?    // Bước giá
   depositAmount   Float?    // Tiền cọc
+  buyNowPrice     Float?
 
   isVerified      Boolean       @default(false)
   auctionRejectionReason String?
@@ -191,6 +192,7 @@ model Battery {
   startingPrice   Float?
   bidIncrement    Float?
   depositAmount   Float?
+  buyNowPrice     Float?
 
   isVerified      Boolean       @default(false)
   auctionRejectionReason String?

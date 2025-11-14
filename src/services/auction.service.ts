@@ -27,6 +27,7 @@ import {
   NotFoundError,
   InternalServerError,
 } from "@/libs/error";
+import { add } from "date-fns";
 
 const AUCTION_REJECTION_LIMIT = 3;
 
@@ -156,9 +157,11 @@ export const auctionService = {
       "SOLD",
     ];
 
-    if (listing.auction && endedStatuses.includes(listing.status)) {
-      const winnerId = listing.auction.winnerId;
-      if (winnerId) {
+    if (endedStatuses.includes(listing.status)) {
+      const winnerBid = listing.bids[0];
+
+      if (winnerBid) {
+        const winnerId = winnerBid.bidderId;
         if (userId && userId === winnerId) {
           userAuctionResult = "WON";
         } else if (userId) {
@@ -190,6 +193,63 @@ export const auctionService = {
 
     return { ...listing, hasUserDeposit, userAuctionResult };
   },
+
+  buyNow: async (
+    userId: string,
+    listingType: ListingType,
+    listingId: string,
+  ) => {
+    return prisma.$transaction(async (tx) => {
+      const model = listingType === "VEHICLE" ? tx.vehicle : tx.battery;
+
+      const listing = await (model as any).findUnique({
+        where: { id: listingId },
+      });
+
+      if (!listing || !listing.isAuction || listing.status !== "AUCTION_LIVE") {
+        throw new NotFoundError("This auction is not available for purchase.");
+      }
+      if (!listing.buyNowPrice || listing.buyNowPrice <= 0) {
+        throw new BadRequestError(
+          "This item does not have a 'Buy Now' option.",
+        );
+      }
+      if (listing.sellerId === userId) {
+        throw new ForbiddenError("You cannot purchase your own item.");
+      }
+
+      await (model as any).update({
+        where: { id: listingId },
+        data: {
+          status: "AUCTION_PAYMENT_PENDING",
+          auctionEndsAt: new Date(),
+        },
+      });
+
+      const transaction = await tx.transaction.create({
+        data: {
+          buyerId: userId,
+          finalPrice: listing.buyNowPrice,
+          status: "PENDING",
+          type: "AUCTION",
+          paymentDeadline: add(new Date(), { hours: 24 }),
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+        },
+      });
+
+      await walletService.refundAllDeposits(
+        listingId,
+        listingType,
+        userId, 
+        tx,
+      );
+
+      return transaction;
+    });
+  },
+
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,

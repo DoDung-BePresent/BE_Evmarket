@@ -33,6 +33,32 @@ export const userController = {
       },
     });
   }),
+  updateProfile: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const data = req.validated?.body;
+    const avatarFile = req.file;
+
+    const updatedUser = await userService.updateProfile(
+      userId,
+      data,
+      avatarFile,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Profile updated successfully",
+      data: { user: updatedUser },
+    });
+  }),
+  changePassword: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { currentPassword, newPassword } = req.validated?.body;
+
+    await userService.changePassword(userId, currentPassword, newPassword);
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Password changed successfully.",
+    });
+  }),
   getMyVehicles: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const query = req.validated?.query as GetVehiclesQuery;

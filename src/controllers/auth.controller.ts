@@ -116,6 +116,13 @@ export const authController = {
       },
     });
   }),
+  resetPassword: asyncHandler(async (req, res) => {
+    const { token, newPassword } = req.validated?.body;
+    await authService.resetPassword(token, newPassword);
+    res.status(STATUS_CODE.OK).json({
+      message: "Your password has been reset successfully. You can now log in.",
+    });
+  }),
   googleMobileLogin: asyncHandler(async (req, res) => {
     const { idToken } = req.validated?.body;
     const user = await authService.verifyGoogleIdToken(idToken);
@@ -139,7 +146,7 @@ export const authController = {
   }),
   exchangeCodeForTokens: asyncHandler(async (req, res) => {
     const { code } = req.validated?.body;
-    
+
     if (!code) {
       throw new BadRequestError("Authorization code is required.");
     }
@@ -160,6 +167,14 @@ export const authController = {
         user,
         accessToken: tokens.accessToken,
       },
+    });
+  }),
+  forgotPassword: asyncHandler(async (req, res) => {
+    const { email } = req.validated?.body;
+    await authService.forgotPassword(email);
+    res.status(STATUS_CODE.OK).json({
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
     });
   }),
 };

@@ -78,3 +78,24 @@ export const uploadDisputeImages = multer({
     fileSize: 1024 * 1024 * 5, // 5 MB limit per file
   },
 }).array("images", 5);
+
+/**
+ * Upload a single avatar image
+ */
+export const uploadAvatar = multer({
+  storage: storage,
+  fileFilter: (
+    req: Request,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback,
+  ) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new BadRequestError("Only image files are allowed for avatar!"));
+    }
+  },
+  limits: {
+    fileSize: 1024 * 1024 * 2, // 2 MB limit for avatar
+  },
+}).single("avatar");

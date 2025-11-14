@@ -186,8 +186,8 @@ export const adminService = {
     payload: {
       approved: boolean;
       rejectionReason?: string;
-      auctionStartsAt?: Date;
-      auctionEndsAt?: Date;
+      auctionStartsAt?: string;
+      auctionEndsAt?: string;
     },
   ) => {
     const model = listingType === "VEHICLE" ? prisma.vehicle : prisma.battery;

@@ -158,10 +158,18 @@ export const auctionService = {
     ];
 
     if (endedStatuses.includes(listing.status)) {
-      const winnerBid = listing.bids[0];
+      const transaction = await prisma.transaction.findFirst({
+        where: {
+          type: "AUCTION",
+          status: { notIn: ["CANCELLED", "CANCELLED"] },
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+        },
+      });
 
-      if (winnerBid) {
-        const winnerId = winnerBid.bidderId;
+      if (transaction) {
+        const winnerId = transaction.buyerId;
         if (userId && userId === winnerId) {
           userAuctionResult = "WON";
         } else if (userId) {
@@ -218,6 +226,21 @@ export const auctionService = {
         throw new ForbiddenError("You cannot purchase your own item.");
       }
 
+      if (listing.depositAmount && listing.depositAmount > 0) {
+        const deposit = await tx.auctionDeposit.findFirst({
+          where: {
+            userId,
+            [`${listingType.toLowerCase()}Id`]: listingId,
+            status: "PAID",
+          },
+        });
+        if (!deposit) {
+          throw new ForbiddenError(
+            "You must pay a deposit before you can 'Buy Now' on this item.",
+          );
+        }
+      }
+
       await (model as any).update({
         where: { id: listingId },
         data: {
@@ -239,12 +262,7 @@ export const auctionService = {
         },
       });
 
-      await walletService.refundAllDeposits(
-        listingId,
-        listingType,
-        userId, 
-        tx,
-      );
+      await walletService.refundAllDeposits(listingId, listingType, userId, tx);
 
       return transaction;
     });

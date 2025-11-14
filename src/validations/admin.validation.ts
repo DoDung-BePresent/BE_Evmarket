@@ -30,8 +30,8 @@ export const adminValidation = {
       body: z.object({
         approved: z.boolean(),
         rejectionReason: z.string().optional(),
-        auctionStartsAt: z.coerce.date().optional(),
-        auctionEndsAt: z.coerce.date().optional(),
+        auctionStartsAt: z.string().datetime({ offset: true }).optional(), 
+        auctionEndsAt: z.string().datetime({ offset: true }).optional(),
       }),
       params: z.object({
         listingId: z.cuid("Invalid listing ID"),

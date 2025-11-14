@@ -27,6 +27,7 @@ import {
   NotFoundError,
   InternalServerError,
 } from "@/libs/error";
+import { add } from "date-fns";
 
 const AUCTION_REJECTION_LIMIT = 3;
 
@@ -190,6 +191,66 @@ export const auctionService = {
 
     return { ...listing, hasUserDeposit, userAuctionResult };
   },
+
+  buyNow: async (
+    userId: string,
+    listingType: ListingType,
+    listingId: string,
+  ) => {
+    return prisma.$transaction(async (tx) => {
+      const model = listingType === "VEHICLE" ? tx.vehicle : tx.battery;
+
+      const listing = await (model as any).findUnique({
+        where: { id: listingId },
+      });
+
+      if (!listing || !listing.isAuction || listing.status !== "AUCTION_LIVE") {
+        throw new NotFoundError("This auction is not available for purchase.");
+      }
+      if (!listing.buyNowPrice || listing.buyNowPrice <= 0) {
+        throw new BadRequestError(
+          "This item does not have a 'Buy Now' option.",
+        );
+      }
+      if (listing.sellerId === userId) {
+        throw new ForbiddenError("You cannot purchase your own item.");
+      }
+
+      // Kết thúc đấu giá và cập nhật người thắng
+      await (model as any).update({
+        where: { id: listingId },
+        data: {
+          status: "AUCTION_PAYMENT_PENDING",
+          auctionEndsAt: new Date(), // Kết thúc ngay lập tức
+        },
+      });
+
+      // Tạo transaction cho người mua ngay
+      const transaction = await tx.transaction.create({
+        data: {
+          buyerId: userId,
+          finalPrice: listing.buyNowPrice,
+          status: "PENDING",
+          type: "AUCTION",
+          paymentDeadline: add(new Date(), { hours: 24 }),
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+        },
+      });
+
+      // Hoàn cọc cho tất cả những người đã đặt cọc khác
+      await walletService.refundAllDeposits(
+        listingId,
+        listingType,
+        userId, // Loại trừ người mua ngay khỏi việc hoàn cọc
+        tx,
+      );
+
+      return transaction;
+    });
+  },
+
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,

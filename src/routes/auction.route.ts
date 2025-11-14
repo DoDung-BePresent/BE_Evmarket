@@ -48,6 +48,12 @@ auctionRouter.get(
 );
 
 auctionRouter.post(
+  "/:listingType/:listingId/buy-now",
+  validate(auctionValidation.getAuctionDetails),
+  auctionController.buyNow,
+);
+
+auctionRouter.post(
   "/:listingType/:listingId/deposit",
   validate(auctionValidation.depositParams), // Cần tạo validation này
   auctionController.payAuctionDeposit,

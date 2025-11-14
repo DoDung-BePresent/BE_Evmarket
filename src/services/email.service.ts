@@ -3,7 +3,7 @@
  */
 import ejs from "ejs";
 import path from "path";
-import { Resend } from "resend";
+import * as Brevo from "@getbrevo/brevo";
 
 /**
  * Configs
@@ -16,7 +16,11 @@ import config from "@/configs/env.config";
 import logger from "@/libs/logger";
 import { InternalServerError } from "@/libs/error";
 
-const resend = new Resend(config.RESEND_API_KEY);
+const apiInstance = new Brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  Brevo.TransactionalEmailsApiApiKeys.apiKey,
+  config.BREVO_API_KEY,
+);
 
 const sendEmail = async (
   to: string,
@@ -24,24 +28,28 @@ const sendEmail = async (
   html: string,
   attachments?: { filename: string; content: Buffer }[],
 ) => {
+  const sendSmtpEmail = new Brevo.SendSmtpEmail();
+
+  sendSmtpEmail.sender = {
+    name: "EV-Market",
+    email: "doquangdung1782004@gmail.com",
+  };
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = html;
+
+  if (attachments && attachments.length > 0) {
+    sendSmtpEmail.attachment = attachments.map((att) => ({
+      name: att.filename,
+      content: att.content.toString("base64"),
+    }));
+  }
+
   try {
-    const data = await resend.emails.send({
-      from: "EV-Market <onboarding@resend.dev>",
-      to,
-      subject,
-      html,
-      attachments,
-    });
-
-    // Kiểm tra xem Resend có trả về lỗi không
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
-
-    logger.info(`📧 Email sent to ${to} with subject: "${subject}"`);
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+    logger.info(`📧 Email sent to ${to} with subject: "${subject}" via Brevo`);
   } catch (error) {
-    logger.error(`❌ Failed to send email to ${to}`, error);
-    // Ném lỗi ra ngoài để hàm gọi nó có thể xử lý
+    logger.error(`❌ Failed to send email to ${to} via Brevo`, error);
     throw new InternalServerError("Failed to send email.");
   }
 };
@@ -65,7 +73,7 @@ export const emailService = {
     const html = await ejs.renderFile(templatePath, {
       name: name || "user",
       reason: reason,
-      supportEmail: config.SMTP_USER,
+      supportEmail: "doquangdung1782004@gmail.com",
     });
 
     await sendEmail(to, subject, html);

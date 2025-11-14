@@ -72,6 +72,7 @@
     "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.14.0",
     "@supabase/supabase-js": "^2.57.4",

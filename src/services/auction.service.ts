@@ -86,7 +86,7 @@ export const auctionService = {
       startingPrice: number;
       bidIncrement: number;
       depositAmount?: number;
-      auctionEndsAt: Date;
+      buyNowPrice?: number;
     },
   ) => {
     const redisKey = `auction-rejection:${listingType}:${listingId}`;
@@ -271,12 +271,7 @@ export const auctionService = {
         },
       });
 
-      await walletService.refundAllDeposits(
-        listingId,
-        listingType,
-        userId,
-        tx,
-      );
+      await walletService.refundAllDeposits(listingId, listingType, userId, tx);
 
       await walletService.createFinancialTransaction(
         userId,

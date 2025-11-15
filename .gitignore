@@ -6,6 +6,9 @@ dist
 .env.development
 .env.staging
 
+# Cache Puppeteer
+.cache
+
 # Logs
 logs
 *.log

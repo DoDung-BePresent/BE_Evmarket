@@ -117,4 +117,20 @@ export const auctionController = {
       data: newBid,
     });
   }),
+  buyNow: asyncHandler(async (req, res) => {
+    const { id: userId } = req.user!;
+    const { listingType, listingId } = req.validated?.params;
+
+    const transaction = await auctionService.buyNow(
+      userId,
+      listingType,
+      listingId,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message:
+        "Successfully purchased the item. Please complete the payment within 24 hours.",
+      data: { transaction },
+    });
+  }),
 };

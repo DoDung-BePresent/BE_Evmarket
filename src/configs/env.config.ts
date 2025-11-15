@@ -53,13 +53,7 @@ const config = {
   MOMO_SECRET_KEY: process.env.MOMO_SECRET_KEY!,
   MOMO_API_ENDPOINT: process.env.MOMO_API_ENDPOINT!,
 
-  // SMTP
-  SMTP_HOST: process.env.SMTP_HOST!,
-  SMTP_PORT: Number(process.env.SMTP_PORT!),
-  SMTP_SECURE: process.env.SMTP_SECURE === "true",
-  SMTP_USER: process.env.SMTP_USER!,
-  SMTP_PASS: process.env.SMTP_PASS!,
-  RESEND_API_KEY: process.env.RESEND_API_KEY!,
+  BREVO_API_KEY: process.env.BREVO_API_KEY!,
 };
 
 export default config;

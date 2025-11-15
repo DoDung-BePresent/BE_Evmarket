@@ -5,6 +5,10 @@ dist
 .env.production
 .env.development
 .env.staging
+
+# Cache Puppeteer
+.cache
+
 # Logs
 logs
 *.log

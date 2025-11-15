@@ -8,6 +8,9 @@ import { Bid, ListingStatus, ListingType } from "@prisma/client";
  * Services
  */
 import { walletService } from "@/services/wallet.service";
+import { contractService } from "./contract.service";
+import { emailService } from "./email.service";
+import logger from "@/libs/logger";
 
 /**
  * Types
@@ -83,7 +86,7 @@ export const auctionService = {
       startingPrice: number;
       bidIncrement: number;
       depositAmount?: number;
-      auctionEndsAt: Date;
+      buyNowPrice?: number;
     },
   ) => {
     const redisKey = `auction-rejection:${listingType}:${listingId}`;
@@ -156,9 +159,19 @@ export const auctionService = {
       "SOLD",
     ];
 
-    if (listing.auction && endedStatuses.includes(listing.status)) {
-      const winnerId = listing.auction.winnerId;
-      if (winnerId) {
+    if (endedStatuses.includes(listing.status)) {
+      const transaction = await prisma.transaction.findFirst({
+        where: {
+          type: "AUCTION",
+          status: { notIn: ["CANCELLED", "CANCELLED"] },
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+        },
+      });
+
+      if (transaction) {
+        const winnerId = transaction.buyerId;
         if (userId && userId === winnerId) {
           userAuctionResult = "WON";
         } else if (userId) {
@@ -190,6 +203,124 @@ export const auctionService = {
 
     return { ...listing, hasUserDeposit, userAuctionResult };
   },
+
+  buyNow: async (
+    userId: string,
+    listingType: ListingType,
+    listingId: string,
+  ) => {
+    const completedTransaction = await prisma.$transaction(async (tx) => {
+      const model = listingType === "VEHICLE" ? tx.vehicle : tx.battery;
+
+      const [listing, buyerWallet] = await Promise.all([
+        (model as any).findUnique({
+          where: { id: listingId },
+          include: { seller: true },
+        }),
+        tx.wallet.findUnique({ where: { userId } }),
+      ]);
+
+      if (!listing || !listing.isAuction || listing.status !== "AUCTION_LIVE") {
+        throw new NotFoundError("This auction is not available for purchase.");
+      }
+      if (!listing.buyNowPrice || listing.buyNowPrice <= 0) {
+        throw new BadRequestError(
+          "This item does not have a 'Buy Now' option.",
+        );
+      }
+      if (listing.sellerId === userId) {
+        throw new ForbiddenError("You cannot purchase your own item.");
+      }
+      if (!buyerWallet || buyerWallet.availableBalance < listing.buyNowPrice) {
+        throw new BadRequestError(
+          "Insufficient wallet balance. Please top up to 'Buy Now'.",
+        );
+      }
+
+      await tx.wallet.update({
+        where: { userId },
+        data: { availableBalance: { decrement: listing.buyNowPrice } },
+      });
+
+      await walletService.addLockedBalance(
+        listing.sellerId,
+        listing.buyNowPrice,
+        tx,
+      );
+
+      await (model as any).update({
+        where: { id: listingId },
+        data: { status: "SOLD" },
+      });
+
+      const transaction = await tx.transaction.create({
+        data: {
+          buyerId: userId,
+          finalPrice: listing.buyNowPrice,
+          status: "PAID",
+          type: "AUCTION",
+          paymentGateway: "WALLET",
+          ...(listingType === "VEHICLE"
+            ? { vehicleId: listingId }
+            : { batteryId: listingId }),
+        },
+        include: {
+          vehicle: { include: { seller: true } },
+          battery: { include: { seller: true } },
+          buyer: true,
+        },
+      });
+
+      await walletService.refundAllDeposits(listingId, listingType, userId, tx);
+
+      await walletService.createFinancialTransaction(
+        userId,
+        -listing.buyNowPrice,
+        "PURCHASE",
+        tx,
+        `Buy Now: ${listing.title}`,
+      );
+
+      return transaction;
+    });
+
+    if (completedTransaction) {
+      try {
+        const pdfBuffer =
+          await contractService.generateAndSaveContract(completedTransaction);
+        logger.info(
+          `Contract generated for Buy Now transaction ${completedTransaction.id}`,
+        );
+        const seller =
+          completedTransaction.vehicle?.seller ||
+          completedTransaction.battery?.seller;
+        if (seller && pdfBuffer) {
+          await Promise.all([
+            emailService.sendContractEmail(
+              completedTransaction.buyer.email,
+              completedTransaction.buyer.name,
+              completedTransaction.id,
+              Buffer.from(pdfBuffer),
+            ),
+            emailService.sendContractEmail(
+              seller.email,
+              seller.name,
+              completedTransaction.id,
+              Buffer.from(pdfBuffer),
+            ),
+          ]);
+        }
+      } catch (error) {
+        logger.error(
+          `Failed to run post-purchase actions for transaction ${completedTransaction.id}`,
+          error,
+        );
+      }
+    }
+
+    return completedTransaction;
+  },
+
   queryLiveAuctions: async (options: IQueryOptions & { time?: string }) => {
     const {
       limit = 10,

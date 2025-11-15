@@ -260,6 +260,7 @@ export const auctionService = {
           status: "PAID",
           type: "AUCTION",
           paymentGateway: "WALLET",
+          listingType: listingType,
           ...(listingType === "VEHICLE"
             ? { vehicleId: listingId }
             : { batteryId: listingId }),

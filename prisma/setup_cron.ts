@@ -12,7 +12,9 @@ async function setupCronJobs() {
 
     // XÓA TẤT CẢ CRON JOBS CŨ ĐỂ TRÁNH TRÙNG LẶP
     console.log("🧹 Clearing old cron jobs...");
-    await prisma.$executeRawUnsafe("SELECT cron.unschedule(jobid) FROM cron.job;");
+    await prisma.$executeRawUnsafe(
+      "SELECT cron.unschedule(jobid) FROM cron.job;",
+    );
     console.log("✅ Old cron jobs cleared.");
 
     // Job 1: Hủy giao dịch mua hàng thông thường quá hạn
@@ -39,17 +41,18 @@ async function setupCronJobs() {
       `✅ Cron job '${processAuctionsJobName}' setup completed successfully.`,
     );
 
-    // Job 3: Xử lý các thanh toán đấu giá quá hạn (đã được thay thế bằng Job 5)
-    // const overduePaymentsJobName = "process-overdue-auction-payments";
-    // const overduePaymentsSchedule = "*/15 * * * *"; // Mỗi 15 phút
-    // const overduePaymentsCommand = "SELECT process_overdue_auction_payments();";
-    // await prisma.$executeRaw`
-    //   SELECT schedule_cron_job(${overduePaymentsJobName}, ${overduePaymentsSchedule}, ${overduePaymentsCommand});
-    // `;
-    // console.log(
-    //   `✅ Cron job '${overduePaymentsJobName}' setup completed successfully.`,
-    // );
+    // Job 3: Hủy giao dịch xe không hẹn được lịch
+    const cancelAppointmentsJobName = "cancel-overdue-appointments";
+    const cancelAppointmentsSchedule = "0 1 * * *"; // Chạy vào 1:00 sáng mỗi ngày
+    const cancelAppointmentsCommand = "SELECT cancel_overdue_appointments();";
 
+    await prisma.$executeRaw`
+      SELECT schedule_cron_job(${cancelAppointmentsJobName}, ${cancelAppointmentsSchedule}, ${cancelAppointmentsCommand});
+    `;
+    console.log(
+      `✅ Cron job '${cancelAppointmentsJobName}' setup completed successfully.`,
+    );
+    
     // Job 4: Tự động hoàn tất các giao dịch đã giao hàng
     const autoCompleteJobName = "auto-complete-shipped-transactions";
     const autoCompleteSchedule = "*/30 * * * *";

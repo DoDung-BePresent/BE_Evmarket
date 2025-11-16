@@ -323,6 +323,7 @@ export const transactionService = {
 
       // Lấy tổng giá trị của xe
       const totalVehiclePrice = transaction.vehicle.price;
+      const depositAmount = totalVehiclePrice * 0.1;
 
       // Tìm quy tắc tính phí và tính hoa hồng
       const feeRule = await tx.fee.findUnique({
@@ -336,7 +337,8 @@ export const transactionService = {
       // Hàm releaseFunds đã bao gồm logic này.
       await walletService.releaseFunds(
         transaction.vehicle.sellerId,
-        totalVehiclePrice, // Tổng số tiền bị khóa (cọc + 90%)
+        depositAmount,
+        paidAmount,
         commissionAmount,
         tx,
       );

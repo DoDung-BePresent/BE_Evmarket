@@ -426,7 +426,7 @@ export const checkoutService = {
   },
 
   completeMomoPurchase: async (
-    orderId: string, // Sẽ có dạng 'uuid-remainder'
+    orderId: string, // Sẽ có dạng 'uuid' hoặc 'uuid-remainder'
     paidAmount: number,
   ) => {
     const isRemainderPayment = orderId.endsWith("-remainder");
@@ -434,7 +434,11 @@ export const checkoutService = {
       ? orderId.split("-remainder")[0]
       : orderId;
 
+    // Nếu là thanh toán 90% còn lại
     if (isRemainderPayment) {
+      logger.info(
+        `Processing remainder payment for transaction ${transactionId}`,
+      );
       return transactionService.completeVehiclePurchase(
         transactionId,
         paidAmount,

@@ -33,11 +33,13 @@ export const paymentController = {
     const { orderId, amount, resultCode, transId } = req.body;
 
     if (resultCode === 0) {
-      const transaction = await prisma.transaction.findUnique({
+      // Kiểm tra xem orderId có phải là của một financial transaction (nạp tiền) không
+      const financialTx = await prisma.financialTransaction.findUnique({
         where: { id: orderId },
       });
 
-      if (transaction) {
+      // Nếu không phải nạp tiền, thì đó là thanh toán checkout
+      if (!financialTx) {
         await checkoutService.completeMomoPurchase(orderId, amount);
       } else {
         await walletService.processSuccessfulDeposit(

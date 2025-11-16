@@ -316,16 +316,26 @@ export const transactionService = {
       }
 
       const expectedAmount = transaction.vehicle.price * 0.9;
-      // Cho phép sai số nhỏ
+      // Cho phép sai số nhỏ để tránh lỗi float
       if (Math.abs(expectedAmount - paidAmount) > 1) {
         throw new BadRequestError("Incorrect payment amount for remainder.");
       }
 
-      // Chuyển tiền cho người bán (cả cọc và 90% còn lại)
-      // Sử dụng hàm releaseLockedBalance
+      // Lấy lại số tiền cọc đã khóa trước đó
+      const depositAmount = transaction.vehicle.price * 0.1;
+
+      // Chuyển toàn bộ tiền cho người bán:
+      // 1. Giải ngân 10% tiền cọc từ lockedBalance
+      // 2. Cộng trực tiếp 90% vừa thanh toán vào availableBalance
       await walletService.releaseLockedBalance(
         transaction.vehicle.sellerId,
-        transaction.vehicle.price, // Toàn bộ giá trị xe
+        depositAmount,
+        tx,
+      );
+      await walletService.updateBalance(
+        transaction.vehicle.sellerId,
+        paidAmount, // 90% còn lại
+        "SALE_REVENUE",
         tx,
       );
 

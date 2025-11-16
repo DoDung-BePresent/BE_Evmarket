@@ -321,21 +321,23 @@ export const transactionService = {
         throw new BadRequestError("Incorrect payment amount for remainder.");
       }
 
-      // Lấy lại số tiền cọc đã khóa trước đó
-      const depositAmount = transaction.vehicle.price * 0.1;
+      // Lấy tổng giá trị của xe
+      const totalVehiclePrice = transaction.vehicle.price;
 
-      // Chuyển toàn bộ tiền cho người bán:
-      // 1. Giải ngân 10% tiền cọc từ lockedBalance
-      // 2. Cộng trực tiếp 90% vừa thanh toán vào availableBalance
-      await walletService.releaseLockedBalance(
+      // Tìm quy tắc tính phí và tính hoa hồng
+      const feeRule = await tx.fee.findUnique({
+        where: { type: "REGULAR_SALE" },
+      });
+      const commissionPercentage = feeRule?.percentage || 0;
+      const commissionAmount = (totalVehiclePrice * commissionPercentage) / 100;
+
+      // Giải ngân toàn bộ số tiền đã khóa (10% cọc) và số tiền vừa thanh toán (90%)
+      // sau đó chuyển doanh thu cho người bán và hoa hồng cho hệ thống.
+      // Hàm releaseFunds đã bao gồm logic này.
+      await walletService.releaseFunds(
         transaction.vehicle.sellerId,
-        depositAmount,
-        tx,
-      );
-      await walletService.updateBalance(
-        transaction.vehicle.sellerId,
-        paidAmount, // 90% còn lại
-        "SALE_REVENUE",
+        totalVehiclePrice, // Tổng số tiền bị khóa (cọc + 90%)
+        commissionAmount,
         tx,
       );
 

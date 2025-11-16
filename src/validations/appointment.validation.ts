@@ -7,17 +7,31 @@ export const appointmentValidation = {
     }),
     body: z.object({
       // Ngày phải ở định dạng ISO 8601 và trong tương lai
-      proposedDate: z
-        .string()
-        .datetime({ message: "Invalid date format. Must be ISO 8601 string." })
-        .refine((date) => new Date(date) > new Date(), {
-          message: "Proposed date must be in the future.",
-        }),
+      proposedDates: z
+        .array(
+          z
+            .string()
+            .datetime({
+              offset: true,
+              message:
+                "Invalid date format. Must be ISO 8601 string with timezone.",
+            })
+            .refine((date) => new Date(date) > new Date(), {
+              message: "Proposed date must be in the future.",
+            }),
+        )
+        .min(1, "At least one date must be proposed."),
     }),
   }),
   confirmDate: z.object({
     params: z.object({
       appointmentId: z.string().cuid(),
+    }),
+    body: z.object({
+      confirmedDate: z.string().datetime({
+        offset: true,
+        message: "Invalid date format. Must be ISO 8601 string with timezone.",
+      }),
     }),
   }),
   getAppointments: z.object({

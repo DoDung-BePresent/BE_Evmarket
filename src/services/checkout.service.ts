@@ -328,6 +328,11 @@ export const checkoutService = {
           },
         });
 
+        await tx.vehicle.update({
+          where: { id: transaction.vehicleId! },
+          data: { status: "RESERVED" },
+        });
+
         return tx.transaction.update({
           where: { id: transactionId },
           data: {
@@ -487,6 +492,11 @@ export const checkoutService = {
             sellerId: listing.sellerId,
             vehicleId: transaction.vehicleId,
           },
+        });
+
+        await tx.vehicle.update({
+          where: { id: transaction.vehicleId! },
+          data: { status: "RESERVED" },
         });
 
         return tx.transaction.update({

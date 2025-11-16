@@ -6,7 +6,7 @@ export const appointmentService = {
   proposeDate: async (
     userId: string,
     appointmentId: string,
-    proposedDate: Date,
+    proposedDates: Date[],
   ) => {
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
@@ -27,11 +27,12 @@ export const appointmentService = {
     }
 
     const isBuyer = appointment.buyerId === userId;
+    // Ghi đè danh sách ngày đề xuất của người dùng hiện tại
     const dataToUpdate = isBuyer
-      ? { buyerProposedDate: proposedDate }
-      : { sellerProposedDate: proposedDate };
+      ? { buyerProposedDates: proposedDates }
+      : { sellerProposedDates: proposedDates };
 
-    // TODO: Gửi email/thông báo cho người còn lại
+    // TODO: Gửi email/thông báo cho người còn lại về các ngày đã được đề xuất
 
     return prisma.appointment.update({
       where: { id: appointmentId },
@@ -39,7 +40,11 @@ export const appointmentService = {
     });
   },
 
-  confirmDate: async (userId: string, appointmentId: string) => {
+  confirmDate: async (
+    userId: string,
+    appointmentId: string,
+    confirmedDate: Date,
+  ) => {
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
     });
@@ -55,17 +60,30 @@ export const appointmentService = {
     }
 
     if (appointment.status !== "PENDING") {
-      throw new BadRequestError("This appointment has already been confirmed or cancelled.");
+      throw new BadRequestError(
+        "This appointment has already been confirmed or cancelled.",
+      );
     }
 
     const isBuyer = appointment.buyerId === userId;
-    const proposedDate = isBuyer
-      ? appointment.sellerProposedDate
-      : appointment.buyerProposedDate;
+    const datesProposedByOtherParty = isBuyer
+      ? appointment.sellerProposedDates
+      : appointment.buyerProposedDates;
 
-    if (!proposedDate) {
+    if (datesProposedByOtherParty.length === 0) {
       throw new BadRequestError(
-        "The other party has not proposed a date yet.",
+        "The other party has not proposed any dates yet.",
+      );
+    }
+
+    // Kiểm tra xem ngày xác nhận có nằm trong danh sách đề xuất không
+    const isValidDate = datesProposedByOtherParty.some(
+      (proposedDate) => proposedDate.getTime() === confirmedDate.getTime(),
+    );
+
+    if (!isValidDate) {
+      throw new BadRequestError(
+        "The selected date is not in the list of proposed dates.",
       );
     }
 
@@ -75,7 +93,7 @@ export const appointmentService = {
         where: { id: appointmentId },
         data: {
           status: "CONFIRMED",
-          confirmedDate: proposedDate,
+          confirmedDate: confirmedDate, // Lưu ngày đã được xác nhận
         },
       });
 
@@ -85,15 +103,20 @@ export const appointmentService = {
           status: "APPOINTMENT_SCHEDULED",
         },
       });
-      
-      // TODO: Gửi email/thông báo xác nhận cho cả 2 bên
+
+      // TODO: Gửi email/thông báo xác nhận lịch hẹn thành công cho cả 2 bên
 
       return updatedAppointment;
     });
   },
 
   getMyAppointments: async (userId: string, options: IQueryOptions) => {
-    const { limit = 10, page = 1, sortBy = "createdAt", sortOrder = "desc" } = options;
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
     const skip = (page - 1) * limit;
 
     const where = {

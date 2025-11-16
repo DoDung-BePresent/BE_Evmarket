@@ -9,17 +9,21 @@ export const appointmentController = {
   proposeDate: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const { appointmentId } = req.validated?.params;
-    const { proposedDate } = req.validated?.body;
+    const { proposedDates } = req.validated?.body;
+
+    const dateObjects = proposedDates.map(
+      (dateStr: string) => new Date(dateStr),
+    );
 
     const appointment = await appointmentService.proposeDate(
       userId,
       appointmentId,
-      new Date(proposedDate),
+      dateObjects,
     );
 
     res.status(STATUS_CODE.OK).json({
       message:
-        "Date proposed successfully. Waiting for the other party to confirm.",
+        "Date proposals submitted successfully. Waiting for the other party to confirm.",
       data: appointment,
     });
   }),
@@ -27,10 +31,12 @@ export const appointmentController = {
   confirmDate: asyncHandler(async (req, res) => {
     const { id: userId } = req.user!;
     const { appointmentId } = req.validated?.params;
+    const { confirmedDate } = req.validated?.body;
 
     const appointment = await appointmentService.confirmDate(
       userId,
       appointmentId,
+      new Date(confirmedDate),
     );
 
     res.status(STATUS_CODE.OK).json({

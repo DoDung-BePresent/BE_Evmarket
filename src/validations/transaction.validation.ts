@@ -34,6 +34,20 @@ export const transactionValidation = {
       redirectUrl: z.url().optional(),
     }),
   }),
+  payRemainder: z.object({
+    params: z.object({
+      transactionId: z.uuid(),
+    }),
+    body: z.object({
+      paymentMethod: z.enum(PaymentGateway),
+      redirectUrl: z.url().optional(),
+    }),
+  }),
+  rejectPurchase: z.object({
+    params: z.object({
+      transactionId: z.uuid(),
+    }),
+  }),
   createTransaction: z.object({
     body: z.object({
       vehicleId: z.cuid().optional(),

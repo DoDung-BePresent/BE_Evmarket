@@ -1,7 +1,11 @@
 /**
- * Libs
+ * Node modules
  */
 import { add } from "date-fns";
+
+/**
+ * Libs
+ */
 import prisma from "@/libs/prisma";
 import {
   BadRequestError,
@@ -9,9 +13,21 @@ import {
   InternalServerError,
   NotFoundError,
 } from "@/libs/error";
-import { walletService } from "./wallet.service";
-import { IQueryOptions } from "@/types/pagination.type";
 import { supabase } from "@/libs/supabase";
+
+/**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
+
+/**
+ * Types
+ */
+import { IQueryOptions } from "@/types/pagination.type";
+
+/**
+ * Constants
+ */
 import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 
 export const transactionService = {
@@ -23,27 +39,30 @@ export const transactionService = {
     if (!vehicleId && !batteryId) {
       throw new BadRequestError("Must provide vehicleId or batteryId");
     }
-    // let sellerId: string | undefined;
+
+    let listingType: "VEHICLE" | "BATTERY";
+
     if (vehicleId) {
       const vehicle = await prisma.vehicle.findUnique({
         where: { id: vehicleId },
       });
       if (!vehicle) throw new NotFoundError("Vehicle not found");
-      //   sellerId = vehicle.sellerId;
-    }
-    if (batteryId) {
+      listingType = "VEHICLE";
+    } else {
       const battery = await prisma.battery.findUnique({
-        where: { id: batteryId },
+        where: { id: batteryId! },
       });
       if (!battery) throw new NotFoundError("Battery not found");
-      //   sellerId = battery.sellerId;
+      listingType = "BATTERY";
     }
+
     const transaction = await prisma.transaction.create({
       data: {
         buyerId,
         vehicleId,
         batteryId,
         status: "PENDING",
+        listingType: listingType, // Thêm trường listingType bị thiếu
       },
     });
     return transaction;
@@ -189,11 +208,12 @@ export const transactionService = {
         },
       });
       const commission = (listing.price * (feeRule?.percentage || 0)) / 100;
+      const amountToRelease = priceToUse - commission;
 
-      await walletService.releaseFunds(
+      // Sử dụng hàm releaseLockedBalance
+      await walletService.releaseLockedBalance(
         listing.sellerId,
-        priceToUse,
-        commission,
+        amountToRelease,
         tx,
       );
 
@@ -274,6 +294,101 @@ export const transactionService = {
         buyer: { select: { id: true, name: true, avatar: true } },
         review: { select: { id: true, rating: true, comment: true } },
       },
+    });
+  },
+
+  completeVehiclePurchase: async (
+    transactionId: string,
+    paidAmount: number,
+  ) => {
+    return prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: { vehicle: true },
+      });
+
+      if (
+        !transaction ||
+        !transaction.vehicle ||
+        transaction.status !== "APPOINTMENT_SCHEDULED"
+      ) {
+        throw new NotFoundError("Transaction cannot be completed.");
+      }
+
+      const expectedAmount = transaction.vehicle.price * 0.9;
+      // Cho phép sai số nhỏ để tránh lỗi float
+      if (Math.abs(expectedAmount - paidAmount) > 1) {
+        throw new BadRequestError("Incorrect payment amount for remainder.");
+      }
+
+      // Lấy tổng giá trị của xe
+      const totalVehiclePrice = transaction.vehicle.price;
+      const depositAmount = totalVehiclePrice * 0.1;
+
+      // Tìm quy tắc tính phí và tính hoa hồng
+      const feeRule = await tx.fee.findUnique({
+        where: { type: "REGULAR_SALE" },
+      });
+      const commissionPercentage = feeRule?.percentage || 0;
+      const commissionAmount = (totalVehiclePrice * commissionPercentage) / 100;
+
+      // Giải ngân toàn bộ số tiền đã khóa (10% cọc) và số tiền vừa thanh toán (90%)
+      // sau đó chuyển doanh thu cho người bán và hoa hồng cho hệ thống.
+      // Hàm releaseFunds đã bao gồm logic này.
+      await walletService.releaseFunds(
+        transaction.vehicle.sellerId,
+        depositAmount,
+        paidAmount,
+        commissionAmount,
+        tx,
+      );
+
+      // Cập nhật trạng thái xe và giao dịch
+      await tx.vehicle.update({
+        where: { id: transaction.vehicleId! },
+        data: { status: "SOLD" },
+      });
+
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "PAID" }, // Chuyển sang PAID, chờ seller "giao xe" (hoàn tất thủ tục)
+      });
+    });
+  },
+
+  rejectVehiclePurchase: async (transactionId: string, buyerId: string) => {
+    const transaction = await prisma.transaction.findFirst({
+      where: {
+        id: transactionId,
+        buyerId,
+        status: "APPOINTMENT_SCHEDULED",
+        listingType: "VEHICLE",
+      },
+      include: { vehicle: true },
+    });
+
+    if (!transaction || !transaction.vehicle) {
+      throw new NotFoundError("Transaction not found or cannot be rejected.");
+    }
+
+    // Logic hoàn cọc có thể thay đổi tùy nghiệp vụ
+    // Ở đây, giả sử người mua được hoàn lại cọc
+    // Sử dụng hàm refundLockedBalance
+    await walletService.refundLockedBalance(
+      transaction.vehicle.sellerId,
+      buyerId,
+      transaction.finalPrice!, // finalPrice đang là tiền cọc
+    );
+
+    // Cập nhật trạng thái
+    await prisma.vehicle.update({
+      where: { id: transaction.vehicleId! },
+      data: { status: "AVAILABLE" },
+    });
+
+    return prisma.transaction.update({
+      where: { id: transactionId },
+      data: { status: "REJECTED" },
     });
   },
 };

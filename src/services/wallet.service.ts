@@ -88,6 +88,77 @@ export const walletService = {
 
     return updatedWallet;
   },
+  releaseLockedBalance: async (
+    sellerId: string,
+    amount: number,
+    tx?: PrismaTransactionClient,
+  ) => {
+    const prismaClient = tx || prisma;
+    const wallet = await prismaClient.wallet.update({
+      where: { userId: sellerId },
+      data: {
+        lockedBalance: {
+          decrement: amount,
+        },
+        availableBalance: {
+          increment: amount,
+        },
+      },
+    });
+
+    await prismaClient.financialTransaction.create({
+      data: {
+        walletId: wallet.id,
+        amount: amount,
+        type: "SALE_REVENUE", // Was "SALE_PAYOUT" -> use existing enum value
+        status: "COMPLETED", // required by schema
+        gateway: "INTERNAL", // required by schema
+        description: `Funds released from sale.`,
+      },
+    });
+
+    return wallet;
+  },
+  refundLockedBalance: async (
+    sellerId: string,
+    buyerId: string,
+    amount: number,
+    tx?: PrismaTransactionClient,
+  ) => {
+    const prismaClient = tx || prisma;
+
+    // Trừ tiền đang khóa của người bán
+    const sellerWallet = await prismaClient.wallet.update({
+      where: { userId: sellerId },
+      data: {
+        lockedBalance: {
+          decrement: amount,
+        },
+      },
+    });
+
+    // Cộng tiền vào ví người mua
+    const buyerWallet = await prismaClient.wallet.update({
+      where: { userId: buyerId },
+      data: {
+        availableBalance: {
+          increment: amount,
+        },
+      },
+    });
+    await prismaClient.financialTransaction.create({
+      data: {
+        walletId: buyerWallet.id,
+        amount: amount,
+        type: "REFUND",
+        status: "COMPLETED", // added
+        gateway: "INTERNAL", // added
+        description: `Refund from seller ${sellerId}.`,
+      },
+    });
+
+    return { sellerWallet, buyerWallet };
+  },
   getWalletByUserId: async (userId: string) => {
     const wallet = await prisma.wallet.findUnique({
       where: { userId },
@@ -145,19 +216,20 @@ export const walletService = {
   },
   releaseFunds: async (
     sellerId: string,
-    amount: number,
+    lockedAmountToRelease: number, // Số tiền đang bị khóa cần giải ngân
+    newlyPaidAmount: number, // Số tiền mới thanh toán
     commission: number,
     tx: Prisma.TransactionClient,
   ) => {
-    const sellerRevenue = amount - commission;
+    const totalRevenue = lockedAmountToRelease + newlyPaidAmount - commission;
     await tx.wallet.update({
       where: { userId: sellerId },
       data: {
         lockedBalance: {
-          decrement: amount,
+          decrement: lockedAmountToRelease, // Chỉ trừ đi số tiền thực sự đã bị khóa
         },
         availableBalance: {
-          increment: sellerRevenue,
+          increment: totalRevenue, // Cộng vào số dư khả dụng
         },
       },
     });

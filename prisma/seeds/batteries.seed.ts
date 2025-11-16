@@ -62,6 +62,7 @@ const createBatteries = async (config: BatterySeedConfig = {}) => {
 
   // Get all existing users to assign as sellers
   const users = await prisma.user.findMany({
+    where: { role: "MEMBER" },
     select: { id: true },
   });
 

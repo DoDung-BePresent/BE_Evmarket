@@ -62,6 +62,7 @@ const createVehicles = async (config: VehicleSeedConfig = {}) => {
 
   // Get all existing users to assign as sellers
   const users = await prisma.user.findMany({
+    where: { role: "MEMBER" },
     select: { id: true },
   });
 

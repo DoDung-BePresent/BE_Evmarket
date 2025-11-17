@@ -519,11 +519,52 @@ export const checkoutService = {
           "Associated listing not found for transaction.",
         );
       }
-      // ... (phần code xử lý đặt cọc xe và mua pin đơn lẻ giữ nguyên)
-      if (transaction.listingType === "VEHICLE") {
-        // ...
+
+      // Logic cũ cho thanh toán cọc và mua pin
+      if (Math.abs(transaction.finalPrice! - paidAmount) > 1) {
+        throw new BadRequestError(
+          "Paid amount does not match the required amount.",
+        );
       }
-      // ...
+
+      // Nếu là giao dịch đặt cọc xe
+      if (transaction.listingType === "VEHICLE") {
+        const appointmentDeadline = new Date();
+        appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
+
+        // TẠO LẠI APPOINTMENT
+        await tx.appointment.create({
+          data: {
+            transactionId: transaction.id,
+            buyerId: transaction.buyerId,
+            sellerId: listing.sellerId,
+          },
+        });
+
+        // Cập nhật trạng thái xe thành RESERVED
+        await tx.vehicle.update({
+          where: { id: transaction.vehicleId! },
+          data: { status: "RESERVED" },
+        });
+
+        // Cập nhật trạng thái giao dịch thành DEPOSIT_PAID
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: {
+            status: "DEPOSIT_PAID",
+            appointmentDeadline: appointmentDeadline, // Lưu deadline vào Transaction
+          },
+          include: { buyer: true, vehicle: true },
+        });
+      }
+
+      // Nếu là mua pin đơn lẻ
+      await walletService.addLockedBalance(listing.sellerId, paidAmount, tx);
+      await tx.battery.update({
+        where: { id: transaction.batteryId! },
+        data: { status: "SOLD" },
+      });
+
       return tx.transaction.update({
         where: { id: transactionId },
         data: { status: "PAID" },

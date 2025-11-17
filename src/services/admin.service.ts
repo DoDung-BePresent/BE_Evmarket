@@ -535,4 +535,40 @@ export const adminService = {
       totalResults,
     };
   },
+  getAppointments: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const [appointments, totalResults] = await prisma.$transaction([
+      prisma.appointment.findMany({
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          seller: { select: { id: true, name: true, email: true } },
+          transaction: {
+            select: {
+              id: true,
+              status: true,
+              vehicle: { select: { id: true, title: true } },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.appointment.count(),
+    ]);
+    return {
+      appointments,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
 };

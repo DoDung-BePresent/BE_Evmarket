@@ -30,7 +30,7 @@ export const adminValidation = {
       body: z.object({
         approved: z.boolean(),
         rejectionReason: z.string().optional(),
-        auctionStartsAt: z.string().datetime({ offset: true }).optional(), 
+        auctionStartsAt: z.string().datetime({ offset: true }).optional(),
         auctionEndsAt: z.string().datetime({ offset: true }).optional(),
       }),
       params: z.object({
@@ -162,6 +162,14 @@ export const adminValidation = {
       sortOrder: z.enum(["asc", "desc"]).optional(),
     }),
   }),
+  getAppointments: z.object({
+    query: z.object({
+      page: z.coerce.number().int().positive().optional(),
+      limit: z.coerce.number().int().positive().optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(["asc", "desc"]).optional(),
+    }),
+  }),
 };
 
 export type GetUsersQuery = z.infer<typeof adminValidation.getUsers>["query"];
@@ -170,6 +178,9 @@ export type GetListingsQuery = z.infer<
 >["query"];
 export type GetContractsQuery = z.infer<
   typeof adminValidation.getContracts
+>["query"];
+export type GetAppointmentsQuery = z.infer<
+  typeof adminValidation.getAppointments
 >["query"];
 export type GetDisputedTransactionsQuery = z.infer<
   typeof adminValidation.getDisputedTransactions

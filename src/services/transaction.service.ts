@@ -351,44 +351,49 @@ export const transactionService = {
 
       return tx.transaction.update({
         where: { id: transactionId },
-        data: { status: "PAID" }, // Chuyển sang PAID, chờ seller "giao xe" (hoàn tất thủ tục)
+        data: { status: "COMPLETED" }, // Chuyển thẳng sang COMPLETED
       });
     });
   },
 
   rejectVehiclePurchase: async (transactionId: string, buyerId: string) => {
-    const transaction = await prisma.transaction.findFirst({
-      where: {
-        id: transactionId,
+    return prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: { vehicle: true },
+      });
+
+      if (!transaction || !transaction.vehicle) {
+        throw new NotFoundError("Transaction not found.");
+      }
+      if (transaction.buyerId !== buyerId) {
+        throw new ForbiddenError("You are not the buyer of this transaction.");
+      }
+      if (transaction.status !== "APPOINTMENT_SCHEDULED") {
+        throw new BadRequestError(
+          "This transaction cannot be rejected at its current state.",
+        );
+      }
+
+      // Hoàn lại tiền cọc (10%) cho người mua
+      const depositAmount = transaction.vehicle.price * 0.1;
+      await walletService.refundToBuyer(
         buyerId,
-        status: "APPOINTMENT_SCHEDULED",
-        listingType: "VEHICLE",
-      },
-      include: { vehicle: true },
-    });
+        transaction.vehicle.sellerId,
+        depositAmount,
+        tx,
+      );
+      // Mở bán lại xe
+      await tx.vehicle.update({
+        where: { id: transaction.vehicleId! },
+        data: { status: "AVAILABLE" },
+      });
 
-    if (!transaction || !transaction.vehicle) {
-      throw new NotFoundError("Transaction not found or cannot be rejected.");
-    }
-
-    // Logic hoàn cọc có thể thay đổi tùy nghiệp vụ
-    // Ở đây, giả sử người mua được hoàn lại cọc
-    // Sử dụng hàm refundLockedBalance
-    await walletService.refundLockedBalance(
-      transaction.vehicle.sellerId,
-      buyerId,
-      transaction.finalPrice!, // finalPrice đang là tiền cọc
-    );
-
-    // Cập nhật trạng thái
-    await prisma.vehicle.update({
-      where: { id: transaction.vehicleId! },
-      data: { status: "AVAILABLE" },
-    });
-
-    return prisma.transaction.update({
-      where: { id: transactionId },
-      data: { status: "REJECTED" },
+      // Hủy giao dịch
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "CANCELLED" },
+      });
     });
   },
 };

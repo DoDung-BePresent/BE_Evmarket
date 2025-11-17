@@ -76,14 +76,13 @@ export const transactionController = {
   rejectPurchase: asyncHandler(async (req, res) => {
     const { transactionId } = req.validated?.params;
     const { id: buyerId } = req.user!;
-
     const transaction = await transactionService.rejectVehiclePurchase(
       transactionId,
       buyerId,
     );
-
     res.status(STATUS_CODE.OK).json({
-      message: "Purchase has been rejected.",
+      message:
+        "Vehicle purchase rejected. Deposit will be refunded to your wallet.",
       data: { transaction },
     });
   }),

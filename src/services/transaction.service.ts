@@ -263,18 +263,35 @@ export const transactionService = {
     const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
     const skip = (page - 1) * limit;
 
+    // Điều kiện mới: Chỉ lấy các giao dịch là đơn hàng thực tế,
+    // không lấy giao dịch cha (giao dịch tổng của giỏ hàng).
+    const whereClause = {
+      buyerId,
+      // Giao dịch cha sẽ có childTransactions, chúng ta không lấy nó.
+      // Chúng ta chỉ lấy các giao dịch không có con (đơn lẻ) hoặc có cha (là con).
+      // Cách đơn giản nhất là lọc bỏ các giao dịch có finalPrice nhưng không có sản phẩm nào gắn vào.
+      // Tuy nhiên, cách tiếp cận tốt hơn là chỉ lấy các giao dịch có sản phẩm.
+      // Hoặc đơn giản hơn, chỉ lấy các giao dịch không phải là cha.
+      // Một giao dịch cha là giao dịch có childTransactions.
+      childTransactions: {
+        none: {}, // Lọc bỏ tất cả các giao dịch cha
+      },
+    };
+
     const [transactions, totalResults] = await prisma.$transaction([
       prisma.transaction.findMany({
-        where: { buyerId },
+        where: whereClause,
         include: {
           vehicle: { select: { title: true, images: true } },
-          battery: { select: { title: true, images: true } },
+          // Include cả 2 mối quan hệ để lấy đủ thông tin pin
+          battery: { select: { title: true, images: true } }, // Cho đơn hàng lẻ
+          batteries: { select: { title: true, images: true } }, // Cho đơn hàng từ giỏ hàng
         },
         skip,
         take: limit,
         orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
       }),
-      prisma.transaction.count({ where: { buyerId } }),
+      prisma.transaction.count({ where: whereClause }),
     ]);
 
     return {

@@ -27,6 +27,18 @@ transactionRouter.post(
 );
 
 transactionRouter.post(
+  "/:transactionId/pay-remainder",
+  validate(transactionValidation.payRemainder),
+  transactionController.payRemainder,
+);
+
+transactionRouter.post(
+  "/:transactionId/reject",
+  validate(transactionValidation.rejectPurchase),
+  transactionController.rejectPurchase,
+);
+
+transactionRouter.post(
   "/:transactionId/ship",
   validate(transactionValidation.shipTransaction),
   transactionController.shipTransaction,

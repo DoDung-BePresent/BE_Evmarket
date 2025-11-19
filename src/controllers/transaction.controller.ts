@@ -56,6 +56,36 @@ export const transactionController = {
       data: result,
     });
   }),
+  payRemainder: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { paymentMethod, redirectUrl } = req.validated?.body;
+    const { id: buyerId } = req.user!;
+
+    const result = await checkoutService.payRemainderForVehicle(
+      buyerId,
+      transactionId,
+      paymentMethod,
+      redirectUrl,
+    );
+
+    res.status(STATUS_CODE.OK).json({
+      message: "Remainder payment initiated successfully.",
+      data: result,
+    });
+  }),
+  rejectPurchase: asyncHandler(async (req, res) => {
+    const { transactionId } = req.validated?.params;
+    const { id: buyerId } = req.user!;
+    const transaction = await transactionService.rejectVehiclePurchase(
+      transactionId,
+      buyerId,
+    );
+    res.status(STATUS_CODE.OK).json({
+      message:
+        "Vehicle purchase rejected. Deposit will be refunded to your wallet.",
+      data: { transaction },
+    });
+  }),
   shipTransaction: asyncHandler(async (req, res) => {
     const { transactionId } = req.validated?.params;
     const { id: sellerId } = req.user!;

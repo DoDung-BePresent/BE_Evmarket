@@ -1,7 +1,11 @@
 /**
- * Libs
+ * Node modules
  */
 import { add } from "date-fns";
+
+/**
+ * Libs
+ */
 import prisma from "@/libs/prisma";
 import {
   BadRequestError,
@@ -9,9 +13,21 @@ import {
   InternalServerError,
   NotFoundError,
 } from "@/libs/error";
-import { walletService } from "./wallet.service";
-import { IQueryOptions } from "@/types/pagination.type";
 import { supabase } from "@/libs/supabase";
+
+/**
+ * Services
+ */
+import { walletService } from "@/services/wallet.service";
+
+/**
+ * Types
+ */
+import { IQueryOptions } from "@/types/pagination.type";
+
+/**
+ * Constants
+ */
 import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
 
 export const transactionService = {
@@ -23,27 +39,30 @@ export const transactionService = {
     if (!vehicleId && !batteryId) {
       throw new BadRequestError("Must provide vehicleId or batteryId");
     }
-    // let sellerId: string | undefined;
+
+    let listingType: "VEHICLE" | "BATTERY";
+
     if (vehicleId) {
       const vehicle = await prisma.vehicle.findUnique({
         where: { id: vehicleId },
       });
       if (!vehicle) throw new NotFoundError("Vehicle not found");
-      //   sellerId = vehicle.sellerId;
-    }
-    if (batteryId) {
+      listingType = "VEHICLE";
+    } else {
       const battery = await prisma.battery.findUnique({
-        where: { id: batteryId },
+        where: { id: batteryId! },
       });
       if (!battery) throw new NotFoundError("Battery not found");
-      //   sellerId = battery.sellerId;
+      listingType = "BATTERY";
     }
+
     const transaction = await prisma.transaction.create({
       data: {
         buyerId,
         vehicleId,
         batteryId,
         status: "PENDING",
+        listingType: listingType, // Thêm trường listingType bị thiếu
       },
     });
     return transaction;
@@ -51,15 +70,33 @@ export const transactionService = {
   shipTransaction: async (transactionId: string, sellerId: string) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { vehicle: true, battery: true },
+      include: {
+        vehicle: { select: { sellerId: true } },
+        battery: { select: { sellerId: true } },
+        batteries: { select: { sellerId: true } }, // Quan trọng: include cả batteries
+      },
     });
 
     if (!transaction) {
       throw new NotFoundError("Transaction not found.");
     }
 
-    const listing = transaction.vehicle || transaction.battery;
-    if (listing?.sellerId !== sellerId) {
+    if (transaction.listingType !== "BATTERY") {
+      throw new BadRequestError("This type of transaction cannot be shipped.");
+    }
+
+    // Logic kiểm tra quyền sở hữu mới, đã sửa lỗi
+    let isSellerOfThisTransaction = false;
+    if (transaction.battery) {
+      // Đơn hàng mua 1 pin lẻ
+      isSellerOfThisTransaction = transaction.battery.sellerId === sellerId;
+    } else if (transaction.batteries && transaction.batteries.length > 0) {
+      // Đơn hàng từ giỏ hàng (chứa nhiều pin)
+      isSellerOfThisTransaction =
+        transaction.batteries[0].sellerId === sellerId;
+    }
+
+    if (!isSellerOfThisTransaction) {
       throw new ForbiddenError("You are not the seller of this item.");
     }
 
@@ -109,6 +146,7 @@ export const transactionService = {
   ) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
+      include: { batteries: true },
     });
 
     if (!transaction) {
@@ -165,7 +203,7 @@ export const transactionService = {
     return prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
-        include: { vehicle: true, battery: true },
+        include: { vehicle: true, battery: true, batteries: true }, // Thêm 'batteries'
       });
 
       if (
@@ -175,7 +213,11 @@ export const transactionService = {
         throw new BadRequestError("Transaction cannot be completed.");
       }
 
-      const listing = transaction.vehicle || transaction.battery;
+      const listing =
+        transaction.vehicle ||
+        transaction.battery ||
+        (transaction.batteries && transaction.batteries[0]);
+
       if (!listing) throw new InternalServerError("Listing not found");
 
       const priceToUse = transaction.finalPrice;
@@ -189,11 +231,12 @@ export const transactionService = {
         },
       });
       const commission = (listing.price * (feeRule?.percentage || 0)) / 100;
+      const amountToRelease = priceToUse - commission;
 
-      await walletService.releaseFunds(
+      // Sử dụng hàm releaseLockedBalance
+      await walletService.releaseLockedBalance(
         listing.sellerId,
-        priceToUse,
-        commission,
+        amountToRelease,
         tx,
       );
 
@@ -209,9 +252,15 @@ export const transactionService = {
     const skip = (page - 1) * limit;
 
     const whereClause = {
+      childTransactions: {
+        // Điều kiện mới: Lấy các giao dịch mà người bán này có liên quan,
+        // và loại bỏ các giao dịch cha (giao dịch tổng của giỏ hàng).
+        none: {}, // Lọc bỏ các giao dịch cha
+      },
       OR: [
-        { vehicle: { sellerId: sellerId } },
-        { battery: { sellerId: sellerId } },
+        { vehicle: { sellerId: sellerId } }, // Bán xe
+        { battery: { sellerId: sellerId } }, // Bán 1 pin lẻ
+        { batteries: { some: { sellerId: sellerId } } }, // Bán nhiều pin qua giỏ hàng
       ],
     };
 
@@ -221,6 +270,7 @@ export const transactionService = {
         include: {
           vehicle: { select: { title: true, images: true } },
           battery: { select: { title: true, images: true } },
+          batteries: { select: { title: true, images: true } }, // Include cả batteries
           buyer: { select: { name: true, avatar: true } }, // Người bán cần xem thông tin người mua
         },
         skip,
@@ -243,18 +293,35 @@ export const transactionService = {
     const { limit = 10, page = 1, sortBy, sortOrder = "desc" } = options;
     const skip = (page - 1) * limit;
 
+    // Điều kiện mới: Chỉ lấy các giao dịch là đơn hàng thực tế,
+    // không lấy giao dịch cha (giao dịch tổng của giỏ hàng).
+    const whereClause = {
+      buyerId,
+      // Giao dịch cha sẽ có childTransactions, chúng ta không lấy nó.
+      // Chúng ta chỉ lấy các giao dịch không có con (đơn lẻ) hoặc có cha (là con).
+      // Cách đơn giản nhất là lọc bỏ các giao dịch có finalPrice nhưng không có sản phẩm nào gắn vào.
+      // Tuy nhiên, cách tiếp cận tốt hơn là chỉ lấy các giao dịch có sản phẩm.
+      // Hoặc đơn giản hơn, chỉ lấy các giao dịch không phải là cha.
+      // Một giao dịch cha là giao dịch có childTransactions.
+      childTransactions: {
+        none: {}, // Lọc bỏ tất cả các giao dịch cha
+      },
+    };
+
     const [transactions, totalResults] = await prisma.$transaction([
       prisma.transaction.findMany({
-        where: { buyerId },
+        where: whereClause,
         include: {
           vehicle: { select: { title: true, images: true } },
-          battery: { select: { title: true, images: true } },
+          // Include cả 2 mối quan hệ để lấy đủ thông tin pin
+          battery: { select: { title: true, images: true } }, // Cho đơn hàng lẻ
+          batteries: { select: { title: true, images: true } }, // Cho đơn hàng từ giỏ hàng
         },
         skip,
         take: limit,
         orderBy: sortBy ? { [sortBy]: sortOrder } : { createdAt: "desc" },
       }),
-      prisma.transaction.count({ where: { buyerId } }),
+      prisma.transaction.count({ where: whereClause }),
     ]);
 
     return {
@@ -274,6 +341,106 @@ export const transactionService = {
         buyer: { select: { id: true, name: true, avatar: true } },
         review: { select: { id: true, rating: true, comment: true } },
       },
+    });
+  },
+
+  completeVehiclePurchase: async (
+    transactionId: string,
+    paidAmount: number,
+  ) => {
+    return prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: { vehicle: true },
+      });
+
+      if (
+        !transaction ||
+        !transaction.vehicle ||
+        transaction.status !== "APPOINTMENT_SCHEDULED"
+      ) {
+        throw new NotFoundError("Transaction cannot be completed.");
+      }
+
+      const expectedAmount = transaction.vehicle.price * 0.9;
+      // Cho phép sai số nhỏ để tránh lỗi float
+      if (Math.abs(expectedAmount - paidAmount) > 1) {
+        throw new BadRequestError("Incorrect payment amount for remainder.");
+      }
+
+      // Lấy tổng giá trị của xe
+      const totalVehiclePrice = transaction.vehicle.price;
+      const depositAmount = totalVehiclePrice * 0.1;
+
+      // Tìm quy tắc tính phí và tính hoa hồng
+      const feeRule = await tx.fee.findUnique({
+        where: { type: "REGULAR_SALE" },
+      });
+      const commissionPercentage = feeRule?.percentage || 0;
+      const commissionAmount = (totalVehiclePrice * commissionPercentage) / 100;
+
+      // Giải ngân toàn bộ số tiền đã khóa (10% cọc) và số tiền vừa thanh toán (90%)
+      // sau đó chuyển doanh thu cho người bán và hoa hồng cho hệ thống.
+      // Hàm releaseFunds đã bao gồm logic này.
+      await walletService.releaseFunds(
+        transaction.vehicle.sellerId,
+        depositAmount,
+        paidAmount,
+        commissionAmount,
+        tx,
+      );
+
+      // Cập nhật trạng thái xe và giao dịch
+      await tx.vehicle.update({
+        where: { id: transaction.vehicleId! },
+        data: { status: "SOLD" },
+      });
+
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "COMPLETED" }, // Chuyển thẳng sang COMPLETED
+      });
+    });
+  },
+
+  rejectVehiclePurchase: async (transactionId: string, buyerId: string) => {
+    return prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findUnique({
+        where: { id: transactionId },
+        include: { vehicle: true },
+      });
+
+      if (!transaction || !transaction.vehicle) {
+        throw new NotFoundError("Transaction not found.");
+      }
+      if (transaction.buyerId !== buyerId) {
+        throw new ForbiddenError("You are not the buyer of this transaction.");
+      }
+      if (transaction.status !== "APPOINTMENT_SCHEDULED") {
+        throw new BadRequestError(
+          "This transaction cannot be rejected at its current state.",
+        );
+      }
+
+      // Hoàn lại tiền cọc (10%) cho người mua
+      const depositAmount = transaction.vehicle.price * 0.1;
+      await walletService.refundToBuyer(
+        buyerId,
+        transaction.vehicle.sellerId,
+        depositAmount,
+        tx,
+      );
+      // Mở bán lại xe
+      await tx.vehicle.update({
+        where: { id: transaction.vehicleId! },
+        data: { status: "AVAILABLE" },
+      });
+
+      // Hủy giao dịch
+      return tx.transaction.update({
+        where: { id: transactionId },
+        data: { status: "CANCELLED" },
+      });
     });
   },
 };

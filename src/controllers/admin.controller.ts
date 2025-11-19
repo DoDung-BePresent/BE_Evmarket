@@ -27,6 +27,7 @@ import {
   GetUsersQuery,
   GetContractsQuery,
   GetListingsQuery,
+  GetAppointmentsQuery,
 } from "@/validations/admin.validation";
 
 export const adminController = {
@@ -162,6 +163,15 @@ export const adminController = {
     const result = await adminService.getContracts(options);
     res.status(STATUS_CODE.OK).json({
       message: "Contracts fetched successfully",
+      data: result,
+    });
+  }),
+  getAppointments: asyncHandler(async (req, res) => {
+    const query = req.validated?.query as GetAppointmentsQuery;
+    const options = pick(query, ["sortBy", "limit", "page", "sortOrder"]);
+    const result = await adminService.getAppointments(options);
+    res.status(STATUS_CODE.OK).json({
+      message: "Appointments fetched successfully",
       data: result,
     });
   }),

@@ -37,6 +37,7 @@ enum ListingType {
 
 enum ListingStatus {
   AVAILABLE
+  RESERVED
   SOLD
   DELISTED
   AUCTION_PENDING_APPROVAL
@@ -48,11 +49,14 @@ enum ListingStatus {
 
 enum TransactionStatus {
   PENDING     // Chờ thanh toán
+  DEPOSIT_PAID       // Đã cọc, chờ hẹn gặp
+  APPOINTMENT_SCHEDULED // Đã hẹn, chờ gặp mặt
   PAID        // Đã thanh toán, chờ người bán giao hàng
   SHIPPED     // Đã giao hàng, chờ người mua xác nhận
   COMPLETED   // Giao dịch hoàn tất
   DISPUTED    // Đang khiếu nại
   CANCELLED   // Đã hủy
+  REJECTED    // Người mua từ chối nhận xe sau khi xem
   REFUNDED    // Đã hoàn
 }
 
@@ -71,6 +75,12 @@ enum FinancialTransactionType {
   AUCTION_DEPOSIT
   AUCTION_DEPOSIT_REFUND
   COMMISSION_FEE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
 }
 
 enum FeeType {
@@ -111,9 +121,12 @@ model User {
   reviews         Review[]
   wallet          Wallet?
   bids            Bid[]
+  cart            Cart?
   auctionDeposits AuctionDeposit[]
   buyerContracts  Contract[]  @relation("BuyerContracts")
   sellerContracts Contract[]  @relation("SellerContracts")
+  buyerAppointments Appointment[]   @relation("BuyerAppointments")
+  sellerAppointments Appointment[] @relation("SellerAppointments")
 }
 
 model Account {
@@ -168,6 +181,7 @@ model Vehicle {
   transactions    Transaction[]
   bids            Bid[]
   deposits        AuctionDeposit[]
+  appointments    Appointment[]
 }
 
 model Battery {
@@ -202,9 +216,12 @@ model Battery {
   // Relations
   sellerId        String
   seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  transactions    Transaction[]
+  singleItemTransactions Transaction[] @relation("SingleBatteryTransaction") // Giao dịch mua lẻ
+  cartTransactions       Transaction[] @relation("CartBatteriesTransaction") // Giao dịch trong giỏ hàng
   bids            Bid[]
   deposits        AuctionDeposit[]
+  appointments    Appointment[]
+  cartItems       CartItem[]
 }
 
 model Transaction {
@@ -212,7 +229,14 @@ model Transaction {
   buyerId         String
   buyer           User     @relation(fields: [buyerId], references: [id])
   status          TransactionStatus @default(PENDING)
+  listingType          ListingType
 
+  parentId             String?
+  parentTransaction    Transaction? @relation("TransactionChildren", fields: [parentId], references: [id])
+  childTransactions    Transaction[] @relation("TransactionChildren")
+
+  isDepositPaid        Boolean           @default(false)
+  appointmentDeadline  DateTime?
   confirmationDeadline DateTime? 
   paymentDeadline      DateTime?
   type                 TransactionType   @default(SALE)
@@ -223,7 +247,9 @@ model Transaction {
   vehicle         Vehicle? @relation(fields: [vehicleId], references: [id])
 
   batteryId       String?
-  battery         Battery? @relation(fields: [batteryId], references: [id])
+  battery         Battery? @relation("SingleBatteryTransaction", fields: [batteryId], references: [id])
+  batteries       Battery[] @relation("CartBatteriesTransaction")
+
 
   finalPrice      Float?
   paymentGateway  PaymentGateway?
@@ -231,6 +257,7 @@ model Transaction {
 
   review          Review? // A transaction can have one review
   contract        Contract?
+  appointment     Appointment?
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -347,4 +374,46 @@ model Contract {
 
   @@index([buyerId])
   @@index([sellerId])
+}
+
+model Appointment {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  buyerId       String
+  sellerId      String
+  buyerProposedDates   DateTime[]
+  sellerProposedDates  DateTime[]
+  confirmedDate DateTime?
+  status        AppointmentStatus @default(PENDING)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  buyer    User @relation("BuyerAppointments", fields: [buyerId], references: [id], onDelete: NoAction)
+  seller   User @relation("SellerAppointments", fields: [sellerId], references: [id], onDelete: NoAction)
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId String?
+  battery   Battery? @relation(fields: [batteryId], references: [id])
+  batteryId String?
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  batteryId String
+  battery   Battery  @relation(fields: [batteryId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1) // Luôn là 1 vì pin cũ là sản phẩm đơn chiếc
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, batteryId])
 }

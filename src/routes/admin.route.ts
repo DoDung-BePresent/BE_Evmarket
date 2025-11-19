@@ -93,4 +93,10 @@ adminRouter.get(
   adminController.getContracts,
 );
 
+adminRouter.get(
+  "/appointments",
+  validate(adminValidation.getAppointments),
+  adminController.getAppointments,
+);
+
 export default adminRouter;

@@ -89,13 +89,18 @@ export const adminService = {
       return prisma.$transaction(async (tx) => {
         const transaction = await tx.transaction.findUnique({
           where: { id: transactionId },
-          include: { vehicle: true, battery: true },
+          include: { vehicle: true, battery: true, batteries: true },
         });
 
         if (!transaction || transaction.status !== "DISPUTED") {
           throw new BadRequestError("Transaction cannot be refunded.");
         }
-        const listing = transaction.vehicle || transaction.battery;
+        
+        const listing =
+          transaction.vehicle ||
+          transaction.battery ||
+          (transaction.batteries && transaction.batteries[0]);
+
         if (!listing) throw new InternalServerError("Listing not found");
 
         if (transaction.finalPrice === null) {
@@ -466,19 +471,37 @@ export const adminService = {
       prisma.transaction.findMany({
         where: { status: "DISPUTED" },
         include: {
-          buyer: { select: { id: true, name: true, email: true } },
+          buyer: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
           vehicle: {
             select: {
               id: true,
               title: true,
-              seller: { select: { id: true, name: true, email: true } },
+              images: true,
+              seller: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
           battery: {
             select: {
               id: true,
               title: true,
-              seller: { select: { id: true, name: true, email: true } },
+              images: true,
+              seller: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
+            },
+          },
+          batteries: {
+            select: {
+              id: true,
+              title: true,
+              images: true,
+              seller: {
+                select: { id: true, name: true, email: true, avatar: true },
+              },
             },
           },
         },
@@ -529,6 +552,42 @@ export const adminService = {
     ]);
     return {
       contracts,
+      page,
+      limit,
+      totalPages: Math.ceil(totalResults / limit),
+      totalResults,
+    };
+  },
+  getAppointments: async (options: IQueryOptions) => {
+    const {
+      limit = 10,
+      page = 1,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+    const skip = (page - 1) * limit;
+
+    const [appointments, totalResults] = await prisma.$transaction([
+      prisma.appointment.findMany({
+        include: {
+          buyer: { select: { id: true, name: true, email: true } },
+          seller: { select: { id: true, name: true, email: true } },
+          transaction: {
+            select: {
+              id: true,
+              status: true,
+              vehicle: { select: { id: true, title: true } },
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      prisma.appointment.count(),
+    ]);
+    return {
+      appointments,
       page,
       limit,
       totalPages: Math.ceil(totalResults / limit),

@@ -229,9 +229,15 @@ export const transactionService = {
     const skip = (page - 1) * limit;
 
     const whereClause = {
+      childTransactions: {
+        // Điều kiện mới: Lấy các giao dịch mà người bán này có liên quan,
+        // và loại bỏ các giao dịch cha (giao dịch tổng của giỏ hàng).
+        none: {}, // Lọc bỏ các giao dịch cha
+      },
       OR: [
-        { vehicle: { sellerId: sellerId } },
-        { battery: { sellerId: sellerId } },
+        { vehicle: { sellerId: sellerId } }, // Bán xe
+        { battery: { sellerId: sellerId } }, // Bán 1 pin lẻ
+        { batteries: { some: { sellerId: sellerId } } }, // Bán nhiều pin qua giỏ hàng
       ],
     };
 
@@ -241,6 +247,7 @@ export const transactionService = {
         include: {
           vehicle: { select: { title: true, images: true } },
           battery: { select: { title: true, images: true } },
+          batteries: { select: { title: true, images: true } }, // Include cả batteries
           buyer: { select: { name: true, avatar: true } }, // Người bán cần xem thông tin người mua
         },
         skip,

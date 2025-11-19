@@ -1,0 +1,17 @@
+name: Scheduled Tasks Runner
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-tasks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API to run scheduled tasks
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_URL }}/api/v1/system/run-tasks"

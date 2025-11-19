@@ -19,6 +19,11 @@ import { emailService } from "@/services/email.service";
 import { transactionService } from "@/services/transaction.service";
 
 /**
+ * Queues
+ */
+import { contractQueue } from "@/queues";
+
+/**
  * Libs
  */
 import logger from "@/libs/logger";
@@ -599,29 +604,10 @@ export const checkoutService = {
   // Hàm helper để xử lý các tác vụ sau thanh toán
   postPaymentActions: async (transaction: any) => {
     try {
-      const pdfBuffer =
-        await contractService.generateAndSaveContract(transaction);
-      logger.info(`Contract generated for transaction ${transaction.id}`);
-
-      const seller = transaction.vehicle?.seller || transaction.battery?.seller;
-
-      if (seller && pdfBuffer) {
-        // Gửi email hợp đồng cho cả 2 bên
-        await Promise.all([
-          emailService.sendContractEmail(
-            transaction.buyer.email,
-            transaction.buyer.name,
-            transaction.id,
-            Buffer.from(pdfBuffer),
-          ),
-          emailService.sendContractEmail(
-            seller.email,
-            seller.name,
-            transaction.id,
-            Buffer.from(pdfBuffer),
-          ),
-        ]);
-      }
+      await contractQueue.add("generateContract", { transaction });
+      logger.info(
+        `Contract generation job added for transaction ${transaction.id}`,
+      );
 
       // Nếu là đặt cọc xe, gửi thêm email hướng dẫn đặt lịch hẹn
       if (

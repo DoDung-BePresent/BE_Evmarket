@@ -8,9 +8,11 @@ import { Bid, ListingStatus, ListingType } from "@prisma/client";
  * Services
  */
 import { walletService } from "@/services/wallet.service";
-import { contractService } from "./contract.service";
-import { emailService } from "./email.service";
-import logger from "@/libs/logger";
+
+/**
+ * Queues
+ */
+import { contractQueue } from "@/queues";
 
 /**
  * Types
@@ -20,6 +22,7 @@ import { IQueryOptions } from "@/types/pagination.type";
 /**
  * Libs
  */
+import logger from "@/libs/logger";
 import prisma from "@/libs/prisma";
 import redisClient from "@/libs/redis";
 import { supabase } from "@/libs/supabase";
@@ -287,30 +290,12 @@ export const auctionService = {
 
     if (completedTransaction) {
       try {
-        const pdfBuffer =
-          await contractService.generateAndSaveContract(completedTransaction);
+        await contractQueue.add("generateContract", {
+          transaction: completedTransaction,
+        });
         logger.info(
-          `Contract generated for Buy Now transaction ${completedTransaction.id}`,
+          `Contract generation job added for Buy Now transaction ${completedTransaction.id}`,
         );
-        const seller =
-          completedTransaction.vehicle?.seller ||
-          completedTransaction.battery?.seller;
-        if (seller && pdfBuffer) {
-          await Promise.all([
-            emailService.sendContractEmail(
-              completedTransaction.buyer.email,
-              completedTransaction.buyer.name,
-              completedTransaction.id,
-              Buffer.from(pdfBuffer),
-            ),
-            emailService.sendContractEmail(
-              seller.email,
-              seller.name,
-              completedTransaction.id,
-              Buffer.from(pdfBuffer),
-            ),
-          ]);
-        }
       } catch (error) {
         logger.error(
           `Failed to run post-purchase actions for transaction ${completedTransaction.id}`,

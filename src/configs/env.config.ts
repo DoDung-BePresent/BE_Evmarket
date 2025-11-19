@@ -54,6 +54,7 @@ const config = {
   MOMO_API_ENDPOINT: process.env.MOMO_API_ENDPOINT!,
 
   BREVO_API_KEY: process.env.BREVO_API_KEY!,
+  CRON_SECRET: process.env.CRON_SECRET!,
 };
 
 export default config;

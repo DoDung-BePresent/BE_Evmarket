@@ -20,6 +20,7 @@ import chatbotRouter from "@/routes/chatbot.route";
 import contractRouter from "@/routes/contract.route";
 import appointmentRouter from "@/routes/appointment.route";
 import cartRouter from "@/routes/cart.route";
+import systemRouter from "@/routes/system.route";
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.use("/transactions", transactionRouter);
 router.use("/chatbot", chatbotRouter);
 router.use("/contracts", contractRouter);
 router.use("/appointments", appointmentRouter);
+router.use("/system", systemRouter);
 router.use("/cart", cartRouter);
 
 export default router;

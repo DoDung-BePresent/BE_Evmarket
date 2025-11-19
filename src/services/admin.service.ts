@@ -16,8 +16,12 @@ import {
  * Services
  */
 import { walletService } from "@/services/wallet.service";
-import { emailService } from "@/services/email.service";
 import { transactionService } from "@/services/transaction.service";
+
+/**
+ * Queues
+ */
+import { emailQueue } from "@/queues";
 
 /**
  * Libs
@@ -95,7 +99,7 @@ export const adminService = {
         if (!transaction || transaction.status !== "DISPUTED") {
           throw new BadRequestError("Transaction cannot be refunded.");
         }
-        
+
         const listing =
           transaction.vehicle ||
           transaction.battery ||
@@ -314,11 +318,11 @@ export const adminService = {
       },
     });
 
-    await emailService.sendAccountLockedEmail(
-      updatedUser.email,
-      updatedUser.name,
-      lockReason,
-    );
+    await emailQueue.add("sendAccountLockedEmail", {
+      to: updatedUser.email,
+      name: updatedUser.name,
+      reason: lockReason,
+    });
 
     return updatedUser;
   },
@@ -424,12 +428,12 @@ export const adminService = {
       },
     });
 
-    await emailService.sendListingVerifiedEmail(
-      listing.seller.email,
-      listing.seller.name,
-      listing.title,
-      payload.isVerified,
-    );
+    await emailQueue.add("sendListingVerifiedEmail", {
+      to: listing.seller.email,
+      name: listing.seller.name,
+      listingTitle: listing.title,
+      isVerified: payload.isVerified,
+    });
 
     return updatedListing;
   },

@@ -19,6 +19,11 @@ import {
 } from "@/libs/error";
 
 /**
+ * Queues
+ */
+import { emailQueue } from "@/queues";
+
+/**
  * Constants
  */
 import { SUPABASE_BUCKETS } from "@/constants/supabase.constant";
@@ -97,6 +102,21 @@ export const contractService = {
         contractUrl: publicUrlData.publicUrl,
       },
     });
+
+    await Promise.all([
+      emailQueue.add("sendContractEmail", {
+        to: buyer.email,
+        name: buyer.name,
+        transactionId: transaction.id,
+        pdfBuffer: pdfBuffer,
+      }),
+      emailQueue.add("sendContractEmail", {
+        to: seller.email,
+        name: seller.name,
+        transactionId: transaction.id,
+        pdfBuffer: pdfBuffer,
+      }),
+    ]);
 
     return pdfBuffer; // <-- Trả về buffer
   },

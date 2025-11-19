@@ -146,6 +146,7 @@ export const transactionService = {
   ) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
+      include: { batteries: true },
     });
 
     if (!transaction) {
@@ -202,7 +203,7 @@ export const transactionService = {
     return prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.findUnique({
         where: { id: transactionId },
-        include: { vehicle: true, battery: true },
+        include: { vehicle: true, battery: true, batteries: true }, // Thêm 'batteries'
       });
 
       if (
@@ -212,7 +213,11 @@ export const transactionService = {
         throw new BadRequestError("Transaction cannot be completed.");
       }
 
-      const listing = transaction.vehicle || transaction.battery;
+      const listing =
+        transaction.vehicle ||
+        transaction.battery ||
+        (transaction.batteries && transaction.batteries[0]);
+
       if (!listing) throw new InternalServerError("Listing not found");
 
       const priceToUse = transaction.finalPrice;

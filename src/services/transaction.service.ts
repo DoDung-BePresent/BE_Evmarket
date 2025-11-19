@@ -70,15 +70,33 @@ export const transactionService = {
   shipTransaction: async (transactionId: string, sellerId: string) => {
     const transaction = await prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { vehicle: true, battery: true },
+      include: {
+        vehicle: { select: { sellerId: true } },
+        battery: { select: { sellerId: true } },
+        batteries: { select: { sellerId: true } }, // Quan trọng: include cả batteries
+      },
     });
 
     if (!transaction) {
       throw new NotFoundError("Transaction not found.");
     }
 
-    const listing = transaction.vehicle || transaction.battery;
-    if (listing?.sellerId !== sellerId) {
+    if (transaction.listingType !== "BATTERY") {
+      throw new BadRequestError("This type of transaction cannot be shipped.");
+    }
+
+    // Logic kiểm tra quyền sở hữu mới, đã sửa lỗi
+    let isSellerOfThisTransaction = false;
+    if (transaction.battery) {
+      // Đơn hàng mua 1 pin lẻ
+      isSellerOfThisTransaction = transaction.battery.sellerId === sellerId;
+    } else if (transaction.batteries && transaction.batteries.length > 0) {
+      // Đơn hàng từ giỏ hàng (chứa nhiều pin)
+      isSellerOfThisTransaction =
+        transaction.batteries[0].sellerId === sellerId;
+    }
+
+    if (!isSellerOfThisTransaction) {
       throw new ForbiddenError("You are not the seller of this item.");
     }
 

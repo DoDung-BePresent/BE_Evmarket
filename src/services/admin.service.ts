@@ -86,41 +86,46 @@ export const adminService = {
   resolveDispute: async (transactionId: string, approved: boolean) => {
     if (approved) {
       // Admin đồng ý với người mua -> Hoàn tiền
-      return prisma.$transaction(async (tx) => {
-        const transaction = await tx.transaction.findUnique({
-          where: { id: transactionId },
-          include: { vehicle: true, battery: true, batteries: true },
-        });
+      return prisma.$transaction(
+        async (tx) => {
+          const transaction = await tx.transaction.findUnique({
+            where: { id: transactionId },
+            include: { vehicle: true, battery: true, batteries: true },
+          });
 
-        if (!transaction || transaction.status !== "DISPUTED") {
-          throw new BadRequestError("Transaction cannot be refunded.");
-        }
-        
-        const listing =
-          transaction.vehicle ||
-          transaction.battery ||
-          (transaction.batteries && transaction.batteries[0]);
+          if (!transaction || transaction.status !== "DISPUTED") {
+            throw new BadRequestError("Transaction cannot be refunded.");
+          }
 
-        if (!listing) throw new InternalServerError("Listing not found");
+          const listing =
+            transaction.vehicle ||
+            transaction.battery ||
+            (transaction.batteries && transaction.batteries[0]);
 
-        if (transaction.finalPrice === null) {
-          throw new InternalServerError(
-            "Cannot resolve dispute: transaction is missing final price.",
+          if (!listing) throw new InternalServerError("Listing not found");
+
+          if (transaction.finalPrice === null) {
+            throw new InternalServerError(
+              "Cannot resolve dispute: transaction is missing final price.",
+            );
+          }
+
+          await walletService.refundToBuyer(
+            transaction.buyerId,
+            listing.sellerId,
+            transaction.finalPrice,
+            tx,
           );
-        }
 
-        await walletService.refundToBuyer(
-          transaction.buyerId,
-          listing.sellerId,
-          transaction.finalPrice,
-          tx,
-        );
-
-        return tx.transaction.update({
-          where: { id: transactionId },
-          data: { status: "REFUNDED" },
-        });
-      });
+          return tx.transaction.update({
+            where: { id: transactionId },
+            data: { status: "REFUNDED" },
+          });
+        },
+        {
+          timeout: 15000, // Tăng thời gian chờ
+        },
+      );
     } else {
       // Admin không đồng ý -> Hoàn tất giao dịch cho người bán
       return transactionService.completeTransaction(transactionId);

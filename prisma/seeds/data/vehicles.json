@@ -1,0 +1,328 @@
+[
+  {
+    "title": "2022 Tesla Model 3 Long Range",
+    "description": "A well-maintained 2022 Tesla Model 3 Long Range with Full Self-Driving capability included. Low mileage, single owner. The car is in excellent condition, both inside and out. Features premium interior, all-glass roof, and 19-inch sport wheels. Selling due to an upgrade.",
+    "price": 78000,
+    "brand": "Tesla",
+    "model": "Model 3",
+    "year": 2022,
+    "mileage": 15500,
+    "images": [
+      "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png",
+      "https://w7.pngwing.com/pngs/705/817/png-transparent-white-tesla-model-y-transport-cars-tesla.png"
+    ],
+    "specifications": {
+      "performance": { "topSpeed": "233 km/h", "acceleration": "4.4s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "449 hp" },
+      "dimensions": { "length": "4,694 mm", "width": "1,849 mm", "height": "1,443 mm", "curbWeight": "1,847 kg" },
+      "batteryAndCharging": { "batteryCapacity": "82 kWh", "range": "568 km (WLTP)", "chargingSpeed": "250 kW", "chargeTime": "27 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 192,000 km", "drivetrain": "8 years / 192,000 km" }
+    }
+  },
+  {
+    "title": "2023 Hyundai Ioniq 5 SEL",
+    "description": "Almost new 2023 Hyundai Ioniq 5 SEL trim. Striking Cyber Gray exterior. This award-winning EV offers an ultra-spacious interior and ultra-fast charging capabilities. Perfect for city driving and long road trips. Includes all standard SEL features.",
+    "price": 91000,
+    "brand": "Hyundai",
+    "model": "Ioniq 5",
+    "year": 2023,
+    "mileage": 8200,
+    "images": [
+      "https://hyundaithainguyenjsc.vn/wp-content/uploads/2023/08/KyOubHOmxibDQusk8_34-1.png",
+      "https://media.licdn.com/dms/image/v2/D5622AQEgP55Qx26WJg/feedshare-shrink_800/feedshare-shrink_800/0/1712310604083?e=2147483647&v=beta&t=g49Radvb_ojPuhpE7eJzdB1YsW5d5049X7NlozAgfXM"
+    ],
+    "specifications": {
+      "performance": { "topSpeed": "185 km/h", "acceleration": "7.3s (0-100 km/h)", "motorType": "Single Motor RWD", "horsepower": "225 hp" },
+      "dimensions": { "length": "4,635 mm", "width": "1,890 mm", "height": "1,605 mm", "curbWeight": "1,920 kg" },
+      "batteryAndCharging": { "batteryCapacity": "77.4 kWh", "range": "488 km (WLTP)", "chargingSpeed": "350 kW", "chargeTime": "18 minutes (10-80%)" },
+      "warranty": { "basic": "5 years / 100,000 km", "battery": "10 years / 160,000 km", "drivetrain": "10 years / 160,000 km" }
+    }
+  },
+  {
+    "title": "2022 Kia EV6 GT-Line",
+    "description": "Stunning 2022 Kia EV6 GT-Line in Runway Red. This car turns heads everywhere it goes. Packed with technology, including a panoramic curved display and augmented reality head-up display. Very low mileage and meticulously cared for.",
+    "price": 115000,
+    "brand": "Kia",
+    "model": "EV6",
+    "year": 2022,
+    "mileage": 12000,
+    "images": [ "https://www.halliwelljones.co.uk/uploads/page-images/kia-ev6-gt_2022-gt-white-pearl_0000.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "188 km/h", "acceleration": "5.2s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "320 hp" },
+      "dimensions": { "length": "4,695 mm", "width": "1,890 mm", "height": "1,550 mm", "curbWeight": "2,090 kg" },
+      "batteryAndCharging": { "batteryCapacity": "77.4 kWh", "range": "484 km (WLTP)", "chargingSpeed": "350 kW", "chargeTime": "18 minutes (10-80%)" },
+      "warranty": { "basic": "7 years / 150,000 km", "battery": "7 years / 150,000 km", "drivetrain": "7 years / 150,000 km" }
+    }
+  },
+  {
+    "title": "2023 Ford Mustang Mach-E Premium",
+    "description": "Experience the future of muscle with this 2023 Ford Mustang Mach-E. Premium trim with extended range battery and AWD. Grabber Blue Metallic paint. It's incredibly fun to drive and surprisingly practical.",
+    "price": 130000,
+    "brand": "Ford",
+    "model": "Mustang Mach-E",
+    "year": 2023,
+    "mileage": 9500,
+    "images": [ "https://cdn.prod.website-files.com/60ce1b7dd21cd517bb39ff20/61a7aef2dfdf5e75ef5bb4bf_mustang-mache.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "180 km/h", "acceleration": "5.1s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "346 hp" },
+      "dimensions": { "length": "4,712 mm", "width": "1,881 mm", "height": "1,597 mm", "curbWeight": "2,182 kg" },
+      "batteryAndCharging": { "batteryCapacity": "91 kWh", "range": "540 km (WLTP)", "chargingSpeed": "150 kW", "chargeTime": "45 minutes (10-80%)" },
+      "warranty": { "basic": "3 years / 60,000 km", "battery": "8 years / 160,000 km", "drivetrain": "5 years / 100,000 km" }
+    }
+  },
+  {
+    "title": "2021 Audi e-tron GT",
+    "description": "A masterpiece of design and engineering. This 2021 Audi e-tron GT offers breathtaking performance and a luxurious cabin. Kemora Gray metallic paint. Single owner, full service history with Audi.",
+    "price": 250000,
+    "brand": "Audi",
+    "model": "e-tron GT",
+    "year": 2021,
+    "mileage": 25000,
+    "images": [ "https://get-moba.com/app/uploads/2024/05/audi-e-tron-gt-666x375-1.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "245 km/h", "acceleration": "4.1s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "522 hp" },
+      "dimensions": { "length": "4,989 mm", "width": "1,964 mm", "height": "1,414 mm", "curbWeight": "2,276 kg" },
+      "batteryAndCharging": { "batteryCapacity": "93.4 kWh", "range": "488 km (WLTP)", "chargingSpeed": "270 kW", "chargeTime": "22.5 minutes (5-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2022 BMW i4 eDrive40",
+    "description": "The ultimate electric driving machine. This 2022 BMW i4 combines BMW's legendary driving dynamics with an efficient electric powertrain. Sanremo Green metallic. Excellent condition, one owner.",
+    "price": 145000,
+    "brand": "BMW",
+    "model": "i4",
+    "year": 2022,
+    "mileage": 18000,
+    "images": [ "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/BMW_Concept_i4.png/1200px-BMW_Concept_i4.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "190 km/h", "acceleration": "5.7s (0-100 km/h)", "motorType": "Single Motor RWD", "horsepower": "335 hp" },
+      "dimensions": { "length": "4,783 mm", "width": "1,852 mm", "height": "1,448 mm", "curbWeight": "2,125 kg" },
+      "batteryAndCharging": { "batteryCapacity": "83.9 kWh", "range": "590 km (WLTP)", "chargingSpeed": "205 kW", "chargeTime": "31 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2023 BYD Atto 3",
+    "description": "Popular and practical BYD Atto 3, 2023 model. Extended Range version. A fantastic and affordable family EV with a high-quality interior and lots of features. Surf Blue color.",
+    "price": 73000,
+    "brand": "BYD",
+    "model": "Atto 3",
+    "year": 2023,
+    "mileage": 11000,
+    "images": [ "https://media.licdn.com/dms/image/v2/D5622AQEgP55Qx26WJg/feedshare-shrink_800/feedshare-shrink_800/0/1712310604083?e=2147483647&v=beta&t=g49Radvb_ojPuhpE7eJzdB1YsW5d5049X7NlozAgfXM" ],
+    "specifications": {
+      "performance": { "topSpeed": "160 km/h", "acceleration": "7.3s (0-100 km/h)", "motorType": "Single Motor FWD", "horsepower": "201 hp" },
+      "dimensions": { "length": "4,455 mm", "width": "1,875 mm", "height": "1,615 mm", "curbWeight": "1,750 kg" },
+      "batteryAndCharging": { "batteryCapacity": "60.5 kWh", "range": "420 km (WLTP)", "chargingSpeed": "88 kW", "chargeTime": "45 minutes (0-80%)" },
+      "warranty": { "basic": "6 years / 150,000 km", "battery": "8 years / 160,000 km", "drivetrain": "8 years / 150,000 km" }
+    }
+  },
+  {
+    "title": "2020 Nissan Leaf SL Plus",
+    "description": "Reliable and efficient 2020 Nissan Leaf SL Plus. 62 kWh battery provides ample range for daily commuting and more. Comes with ProPILOT Assist. A great first EV.",
+    "price": 45000,
+    "brand": "Nissan",
+    "model": "Leaf",
+    "year": 2020,
+    "mileage": 45000,
+    "images": [ "https://www.pngplay.com/wp-content/uploads/13/Nissan-Leaf-PNG-Free-File-Download.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "157 km/h", "acceleration": "7.3s (0-100 km/h)", "motorType": "Single Motor FWD", "horsepower": "214 hp" },
+      "dimensions": { "length": "4,490 mm", "width": "1,788 mm", "height": "1,540 mm", "curbWeight": "1,707 kg" },
+      "batteryAndCharging": { "batteryCapacity": "62 kWh", "range": "364 km (WLTP)", "chargingSpeed": "100 kW", "chargeTime": "40 minutes (20-80%)" },
+      "warranty": { "basic": "3 years / 60,000 km", "battery": "8 years / 160,000 km", "drivetrain": "5 years / 100,000 km" }
+    }
+  },
+  {
+    "title": "2022 Polestar 2 Long Range Dual Motor",
+    "description": "Scandinavian design meets electric performance. This 2022 Polestar 2 is a joy to drive, with instant torque and a minimalist, high-tech interior. Includes Pilot and Plus packs.",
+    "price": 125000,
+    "brand": "Polestar",
+    "model": "2",
+    "year": 2022,
+    "mileage": 22000,
+    "images": [ "https://file.kelleybluebookimages.com/kbb/base/evox/CP/53890/2024-Polestar-2-front_53890_032_2400x1800_729.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "205 km/h", "acceleration": "4.7s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "408 hp" },
+      "dimensions": { "length": "4,606 mm", "width": "1,859 mm", "height": "1,479 mm", "curbWeight": "2,123 kg" },
+      "batteryAndCharging": { "batteryCapacity": "78 kWh", "range": "480 km (WLTP)", "chargingSpeed": "155 kW", "chargeTime": "35 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2022 Rivian R1T Adventure",
+    "description": "The ultimate electric adventure vehicle. This 2022 Rivian R1T can do it all, from silent city cruising to serious off-roading. Features the large battery pack, quad-motor AWD, and the famous gear tunnel.",
+    "price": 180000,
+    "brand": "Rivian",
+    "model": "R1T",
+    "year": 2022,
+    "mileage": 19000,
+    "images": [ "https://www.electrifying.com/files/Nb3H3VsqrldjLWDq/rivian-rt1-evchargeplus-00.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "201 km/h", "acceleration": "3.3s (0-100 km/h)", "motorType": "Quad-Motor AWD", "horsepower": "835 hp" },
+      "dimensions": { "length": "5,514 mm", "width": "2,078 mm", "height": "1,986 mm", "curbWeight": "3,243 kg" },
+      "batteryAndCharging": { "batteryCapacity": "135 kWh", "range": "505 km (EPA)", "chargingSpeed": "220 kW", "chargeTime": "40 minutes (20-80%)" },
+      "warranty": { "basic": "5 years / 100,000 km", "battery": "8 years / 280,000 km", "drivetrain": "8 years / 280,000 km" }
+    }
+  },
+  {
+    "title": "2023 Tesla Model Y Performance",
+    "description": "Blisteringly fast and incredibly practical. This 2023 Tesla Model Y Performance is the perfect all-rounder. White interior, 21-inch Überturbine wheels. Full Self-Driving capability included.",
+    "price": 140000,
+    "brand": "Tesla",
+    "model": "Model Y",
+    "year": 2023,
+    "mileage": 7500,
+    "images": [ "https://w7.pngwing.com/pngs/705/817/png-transparent-white-tesla-model-y-transport-cars-tesla.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "250 km/h", "acceleration": "3.7s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "534 hp" },
+      "dimensions": { "length": "4,751 mm", "width": "1,921 mm", "height": "1,624 mm", "curbWeight": "1,995 kg" },
+      "batteryAndCharging": { "batteryCapacity": "82 kWh", "range": "514 km (WLTP)", "chargingSpeed": "250 kW", "chargeTime": "27 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 192,000 km", "drivetrain": "8 years / 192,000 km" }
+    }
+  },
+  {
+    "title": "2021 Volkswagen ID.4 Pro",
+    "description": "A comfortable and user-friendly electric SUV. This 2021 VW ID.4 Pro is a great choice for families. Spacious interior and a smooth, quiet ride. Well-maintained with a full service history.",
+    "price": 80000,
+    "brand": "Volkswagen",
+    "model": "ID.4",
+    "year": 2021,
+    "mileage": 35000,
+    "images": [ "https://media.oneweb.mercedes-benz.com/images/dynamic/asia/VN/297123/802_052/iris.png?q=COSY-EU-100-1713d0VXq0YFqtyO67PobzIr3eWsrrCsdRRzwQZhkHZbMw3SGtGyMtsd2vtcUfp8cXGEuiRJ0l34AOB2NQnbApj7bI5ux52QC31vTkzNBTnm7jA6IhKV5Kh%vqCBlyLRznyYax7oxrH1KMun8wvVwoiZUbXM4FG4fTg906O6PDBSqSeWAhItsd5kdcUfKM6XGEvTRJ0lL6qOB2abRbApHYpI5usoJQC3UC1kzNGtNm7j0O3hKVB%t%vqA8TyLRiO6Yax4JOroYhfldsbbAp7oMIkb1ECQmIFUOkzNUTum7jscWhKVzsM%vq7UcyLRKOyYaxvODrH1peen8wiA2oiZ45gM4zuA1YtEWpTuP6CPoZFIT9ZxexrlrKE847dvE5jCDtyAib&BKGND=9&IMGT=P27&cp=U7lLKRUtPa6KAFr8s_ubHw&uni=m&POV=BE040,PZM" ],
+    "specifications": {
+      "performance": { "topSpeed": "160 km/h", "acceleration": "8.5s (0-100 km/h)", "motorType": "Single Motor RWD", "horsepower": "201 hp" },
+      "dimensions": { "length": "4,584 mm", "width": "1,852 mm", "height": "1,636 mm", "curbWeight": "2,124 kg" },
+      "batteryAndCharging": { "batteryCapacity": "82 kWh", "range": "520 km (WLTP)", "chargingSpeed": "125 kW", "chargeTime": "38 minutes (5-80%)" },
+      "warranty": { "basic": "3 years / 100,000 km", "battery": "8 years / 160,000 km", "drivetrain": "3 years / 100,000 km" }
+    }
+  },
+  {
+    "title": "2023 VinFast VF 9 Plus",
+    "description": "Full-size 7-seater electric SUV. This 2023 VinFast VF 9 Plus is the ultimate family vehicle, offering immense space, luxury, and advanced technology. Top-of-the-line model with panoramic glass roof.",
+    "price": 190000,
+    "brand": "VinFast",
+    "model": "VF 9",
+    "year": 2023,
+    "mileage": 6000,
+    "images": [ "https://hyundaithainguyenjsc.vn/wp-content/uploads/2023/08/KyOubHOmxibDQusk8_34-1.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "200 km/h", "acceleration": "6.5s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "402 hp" },
+      "dimensions": { "length": "5,118 mm", "width": "2,004 mm", "height": "1,721 mm", "curbWeight": "2,830 kg" },
+      "batteryAndCharging": { "batteryCapacity": "92 kWh", "range": "423 km (WLTP)", "chargingSpeed": "250 kW", "chargeTime": "26 minutes (10-70%)" },
+      "warranty": { "basic": "10 years / 200,000 km", "battery": "10 years, unlimited km", "drivetrain": "10 years / 200,000 km" }
+    }
+  },
+  {
+    "title": "2022 Mercedes-Benz EQS 450+",
+    "description": "The pinnacle of electric luxury. This 2022 Mercedes EQS 450+ features the incredible MBUX Hyperscreen, air suspension, and rear-axle steering. A truly first-class travel experience. Obsidian Black.",
+    "price": 350000,
+    "brand": "Mercedes-Benz",
+    "model": "EQS",
+    "year": 2022,
+    "mileage": 15000,
+    "images": [ "https://media.oneweb.mercedes-benz.com/images/dynamic/asia/VN/297123/802_052/iris.png?q=COSY-EU-100-1713d0VXq0YFqtyO67PobzIr3eWsrrCsdRRzwQZhkHZbMw3SGtGyMtsd2vtcUfp8cXGEuiRJ0l34AOB2NQnbApj7bI5ux52QC31vTkzNBTnm7jA6IhKV5Kh%vqCBlyLRznyYax7oxrH1KMun8wvVwoiZUbXM4FG4fTg906O6PDBSqSeWAhItsd5kdcUfKM6XGEvTRJ0lL6qOB2abRbApHYpI5usoJQC3UC1kzNGtNm7j0O3hKVB%t%vqA8TyLRiO6Yax4JOroYhfldsbbAp7oMIkb1ECQmIFUOkzNUTum7jscWhKVzsM%vq7UcyLRKOyYaxvODrH1peen8wiA2oiZ45gM4zuA1YtEWpTuP6CPoZFIT9ZxexrlrKE847dvE5jCDtyAib&BKGND=9&IMGT=P27&cp=U7lLKRUtPa6KAFr8s_ubHw&uni=m&POV=BE040,PZM" ],
+    "specifications": {
+      "performance": { "topSpeed": "210 km/h", "acceleration": "6.2s (0-100 km/h)", "motorType": "Single Motor RWD", "horsepower": "329 hp" },
+      "dimensions": { "length": "5,216 mm", "width": "1,926 mm", "height": "1,512 mm", "curbWeight": "2,480 kg" },
+      "batteryAndCharging": { "batteryCapacity": "107.8 kWh", "range": "770 km (WLTP)", "chargingSpeed": "200 kW", "chargeTime": "31 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "10 years / 250,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2023 Chevrolet Bolt EUV Premier",
+    "description": "A fantastic value proposition. This 2023 Bolt EUV offers great range, a spacious interior, and available Super Cruise hands-free driving. Low mileage and in like-new condition.",
+    "price": 55000,
+    "brand": "Chevrolet",
+    "model": "Bolt EUV",
+    "year": 2023,
+    "mileage": 5000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "145 km/h", "acceleration": "7.0s (0-96 km/h)", "motorType": "Single Motor FWD", "horsepower": "200 hp" },
+      "dimensions": { "length": "4,306 mm", "width": "1,770 mm", "height": "1,616 mm", "curbWeight": "1,669 kg" },
+      "batteryAndCharging": { "batteryCapacity": "65 kWh", "range": "397 km (EPA)", "chargingSpeed": "55 kW", "chargeTime": "60 minutes (to 80%)" },
+      "warranty": { "basic": "3 years / 60,000 km", "battery": "8 years / 160,000 km", "drivetrain": "5 years / 100,000 km" }
+    }
+  },
+  {
+    "title": "2022 Lucid Air Grand Touring",
+    "description": "The new standard in luxury EVs. This 2022 Lucid Air Grand Touring boasts industry-leading range, incredible performance, and a stunningly designed interior. A rare opportunity to own one.",
+    "price": 280000,
+    "brand": "Lucid",
+    "model": "Air",
+    "year": 2022,
+    "mileage": 11000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "270 km/h", "acceleration": "3.0s (0-96 km/h)", "motorType": "Dual Motor AWD", "horsepower": "819 hp" },
+      "dimensions": { "length": "4,975 mm", "width": "1,939 mm", "height": "1,410 mm", "curbWeight": "2,360 kg" },
+      "batteryAndCharging": { "batteryCapacity": "112 kWh", "range": "830 km (EPA)", "chargingSpeed": "300 kW", "chargeTime": "20 minutes (for 480 km)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "8 years / 160,000 km" }
+    }
+  },
+  {
+    "title": "2023 Tesla Model S Plaid",
+    "description": "Beyond ludicrous. This 2023 Tesla Model S Plaid offers hypercar acceleration in a practical sedan. Yoke steering, 17-inch cinematic display. One owner, pristine condition.",
+    "price": 290000,
+    "brand": "Tesla",
+    "model": "Model S",
+    "year": 2023,
+    "mileage": 4000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "322 km/h", "acceleration": "2.1s (0-100 km/h)", "motorType": "Tri-Motor AWD", "horsepower": "1,020 hp" },
+      "dimensions": { "length": "4,979 mm", "width": "1,964 mm", "height": "1,445 mm", "curbWeight": "2,162 kg" },
+      "batteryAndCharging": { "batteryCapacity": "100 kWh", "range": "637 km (WLTP)", "chargingSpeed": "250 kW", "chargeTime": "30 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 240,000 km", "drivetrain": "8 years / 240,000 km" }
+    }
+  },
+  {
+    "title": "2022 Porsche Taycan 4S",
+    "description": "The soul of a sports car, electrified. This 2022 Porsche Taycan 4S delivers the driving pleasure Porsche is known for. Performance Battery Plus option. Gentian Blue Metallic.",
+    "price": 270000,
+    "brand": "Porsche",
+    "model": "Taycan",
+    "year": 2022,
+    "mileage": 13000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "250 km/h", "acceleration": "4.0s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "563 hp" },
+      "dimensions": { "length": "4,963 mm", "width": "1,966 mm", "height": "1,379 mm", "curbWeight": "2,220 kg" },
+      "batteryAndCharging": { "batteryCapacity": "93.4 kWh", "range": "464 km (WLTP)", "chargingSpeed": "270 kW", "chargeTime": "22.5 minutes (5-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2023 Volvo C40 Recharge",
+    "description": "A stylish and safe electric crossover. This 2023 Volvo C40 Recharge features a sleek coupe-like design and a fully vegan interior. Dual motor version for spirited performance.",
+    "price": 135000,
+    "brand": "Volvo",
+    "model": "C40 Recharge",
+    "year": 2023,
+    "mileage": 8000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "180 km/h", "acceleration": "4.7s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "402 hp" },
+      "dimensions": { "length": "4,440 mm", "width": "1,873 mm", "height": "1,591 mm", "curbWeight": "2,185 kg" },
+      "batteryAndCharging": { "batteryCapacity": "78 kWh", "range": "450 km (WLTP)", "chargingSpeed": "150 kW", "chargeTime": "37 minutes (10-80%)" },
+      "warranty": { "basic": "4 years / 80,000 km", "battery": "8 years / 160,000 km", "drivetrain": "4 years / 80,000 km" }
+    }
+  },
+  {
+    "title": "2021 Jaguar I-PACE HSE",
+    "description": "Award-winning design and performance. This 2021 Jaguar I-PACE HSE is a thrilling EV to drive, with a luxurious and spacious interior. Caldera Red. Top-spec HSE model.",
+    "price": 160000,
+    "brand": "Jaguar",
+    "model": "I-PACE",
+    "year": 2021,
+    "mileage": 30000,
+    "images": [ "https://www.nicepng.com/png/full/77-778891_model-s-tesla-model-3-png.png" ],
+    "specifications": {
+      "performance": { "topSpeed": "200 km/h", "acceleration": "4.8s (0-100 km/h)", "motorType": "Dual Motor AWD", "horsepower": "394 hp" },
+      "dimensions": { "length": "4,682 mm", "width": "2,011 mm", "height": "1,565 mm", "curbWeight": "2,208 kg" },
+      "batteryAndCharging": { "batteryCapacity": "90 kWh", "range": "470 km (WLTP)", "chargingSpeed": "100 kW", "chargeTime": "40 minutes (0-80%)" },
+      "warranty": { "basic": "5 years / 100,000 km", "battery": "8 years / 160,000 km", "drivetrain": "5 years / 100,000 km" }
+    }
+  }
+]

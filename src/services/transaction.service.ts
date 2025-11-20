@@ -200,51 +200,56 @@ export const transactionService = {
   },
 
   completeTransaction: async (transactionId: string) => {
-    return prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findUnique({
-        where: { id: transactionId },
-        include: { vehicle: true, battery: true, batteries: true }, // Thêm 'batteries'
-      });
+    return prisma.$transaction(
+      async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: { vehicle: true, battery: true, batteries: true }, // Thêm 'batteries'
+        });
 
-      if (
-        !transaction ||
-        (transaction.status !== "SHIPPED" && transaction.status !== "PAID")
-      ) {
-        throw new BadRequestError("Transaction cannot be completed.");
-      }
+        if (
+          !transaction ||
+          (transaction.status !== "SHIPPED" && transaction.status !== "PAID")
+        ) {
+          throw new BadRequestError("Transaction cannot be completed.");
+        }
 
-      const listing =
-        transaction.vehicle ||
-        transaction.battery ||
-        (transaction.batteries && transaction.batteries[0]);
+        const listing =
+          transaction.vehicle ||
+          transaction.battery ||
+          (transaction.batteries && transaction.batteries[0]);
 
-      if (!listing) throw new InternalServerError("Listing not found");
+        if (!listing) throw new InternalServerError("Listing not found");
 
-      const priceToUse = transaction.finalPrice;
-      if (priceToUse === null) {
-        throw new InternalServerError("Transaction is missing final price.");
-      }
+        const priceToUse = transaction.finalPrice;
+        if (priceToUse === null) {
+          throw new InternalServerError("Transaction is missing final price.");
+        }
 
-      const feeRule = await tx.fee.findUnique({
-        where: {
-          type: listing.isAuction ? "AUCTION_SALE" : "REGULAR_SALE",
-        },
-      });
-      const commission = (listing.price * (feeRule?.percentage || 0)) / 100;
-      const amountToRelease = priceToUse - commission;
+        const feeRule = await tx.fee.findUnique({
+          where: {
+            type: listing.isAuction ? "AUCTION_SALE" : "REGULAR_SALE",
+          },
+        });
+        const commission = (listing.price * (feeRule?.percentage || 0)) / 100;
+        const amountToRelease = priceToUse - commission;
 
-      // Sử dụng hàm releaseLockedBalance
-      await walletService.releaseLockedBalance(
-        listing.sellerId,
-        amountToRelease,
-        tx,
-      );
+        // Sử dụng hàm releaseLockedBalance
+        await walletService.releaseLockedBalance(
+          listing.sellerId,
+          amountToRelease,
+          tx,
+        );
 
-      return tx.transaction.update({
-        where: { id: transactionId },
-        data: { status: "COMPLETED" },
-      });
-    });
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: { status: "COMPLETED" },
+        });
+      },
+      {
+        timeout: 15000, // Tăng thời gian chờ
+      },
+    );
   },
 
   getTransactionsBySeller: async (sellerId: string, options: IQueryOptions) => {

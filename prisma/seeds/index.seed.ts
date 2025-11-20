@@ -29,14 +29,12 @@ const seedAll = async () => {
 
     await Promise.all([
       createVehicles({
-        available: 30,
-        sold: 20,
-        delisted: 10,
+        available: 15,
+        sold: 5,
       }),
       createBatteries({
-        available: 25,
-        sold: 15,
-        delisted: 5,
+        available: 15,
+        sold: 5,
       }),
     ]);
 

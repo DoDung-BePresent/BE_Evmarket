@@ -83,6 +83,23 @@ export const checkoutService = {
       throw new BadRequestError("Your cart is empty.");
     }
 
+    const totalAmount = cart.items.reduce(
+      (sum, item) => sum + item.battery.price,
+      0,
+    );
+
+    // SỬA LỖI: Kiểm tra số dư VÍ trước khi làm bất cứ điều gì khác
+    if (paymentMethod === "WALLET") {
+      const wallet = await prisma.wallet.findUnique({
+        where: { userId: buyerId },
+      });
+      if (!wallet || wallet.availableBalance < totalAmount) {
+        throw new BadRequestError(
+          "Insufficient wallet balance. Please top up.",
+        );
+      }
+    }
+
     // Nhóm các sản phẩm theo người bán
     const itemsBySeller = cart.items.reduce(
       (acc, item) => {
@@ -97,10 +114,6 @@ export const checkoutService = {
     );
 
     // Tạo một "meta-transaction" để gom các giao dịch con và tổng số tiền
-    const totalAmount = cart.items.reduce(
-      (sum, item) => sum + item.battery.price,
-      0,
-    );
     const parentTransaction = await prisma.transaction.create({
       data: {
         buyerId,
@@ -132,7 +145,12 @@ export const checkoutService = {
 
     // Bắt đầu quy trình thanh toán cho tổng số tiền
     if (paymentMethod === "WALLET") {
-      // ... xử lý thanh toán bằng ví cho parentTransaction
+      // Gọi hàm xử lý thanh toán giỏ hàng bằng ví ngay lập tức
+      const paidTransaction = await checkoutService.payCartWithWallet(
+        parentTransaction.id,
+        buyerId,
+      );
+      return { transactionId: paidTransaction.id, paymentInfo: null };
     } else if (paymentMethod === "MOMO") {
       const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
       const redirectUrl =
@@ -286,86 +304,94 @@ export const checkoutService = {
   },
 
   payWithWallet: async (transactionId: string, buyerId: string) => {
-    const completedTransaction = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findUnique({
-        where: { id: transactionId },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-        },
-      });
-
-      if (
-        !transaction ||
-        transaction.buyerId !== buyerId ||
-        transaction.status !== "PENDING"
-      ) {
-        throw new NotFoundError("Transaction not found or already processed.");
-      }
-
-      const price = transaction.finalPrice!;
-      const listing = transaction.vehicle || transaction.battery;
-      if (!listing) {
-        throw new InternalServerError("Associated listing not found.");
-      }
-
-      // Trừ tiền từ ví người mua và khóa tiền cho người bán
-      await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
-      await walletService.addLockedBalance(listing.sellerId, price, tx);
-
-      // Nếu là giao dịch đặt cọc xe
-      if (transaction.listingType === "VEHICLE") {
-        const appointmentDeadline = new Date();
-        appointmentDeadline.setDate(appointmentDeadline.getDate() + 7);
-
-        await tx.appointment.create({
-          data: {
-            transactionId: transaction.id,
-            buyerId: transaction.buyerId,
-            sellerId: listing.sellerId,
-            vehicleId: transaction.vehicleId,
-            location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
-          },
-        });
-
-        await tx.vehicle.update({
-          where: { id: transaction.vehicleId! },
-          data: { status: "RESERVED" },
-        });
-
-        return tx.transaction.update({
+    const completedTransaction = await prisma.$transaction(
+      async (tx) => {
+        const transaction = await tx.transaction.findUnique({
           where: { id: transactionId },
-          data: {
-            status: "DEPOSIT_PAID",
-            isDepositPaid: true,
-            appointmentDeadline: appointmentDeadline,
-          },
           include: {
             vehicle: { include: { seller: true } },
             battery: { include: { seller: true } },
             buyer: true,
           },
         });
-      }
 
-      // Nếu là giao dịch mua pin (luồng cũ)
-      const model = transaction.vehicleId ? tx.vehicle : tx.battery;
-      await (model as any).update({
-        where: { id: listing.id },
-        data: { status: "SOLD" },
-      });
+        if (
+          !transaction ||
+          transaction.buyerId !== buyerId ||
+          transaction.status !== "PENDING"
+        ) {
+          throw new NotFoundError(
+            "Transaction not found or already processed.",
+          );
+        }
 
-      return tx.transaction.update({
-        where: { id: transactionId },
-        data: { status: "PAID" },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-        },
-      });
-    });
+        const price = transaction.finalPrice!;
+        const listing = transaction.vehicle || transaction.battery;
+        if (!listing) {
+          throw new InternalServerError("Associated listing not found.");
+        }
+
+        // Trừ tiền từ ví người mua và khóa tiền cho người bán
+        await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
+        await walletService.addLockedBalance(listing.sellerId, price, tx);
+
+        // Nếu là giao dịch đặt cọc xe
+        if (transaction.listingType === "VEHICLE") {
+          const appointmentDeadline = new Date();
+          appointmentDeadline.setDate(appointmentDeadline.getDate() + 7);
+
+          await tx.appointment.create({
+            data: {
+              transactionId: transaction.id,
+              buyerId: transaction.buyerId,
+              sellerId: listing.sellerId,
+              vehicleId: transaction.vehicleId,
+              location:
+                "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
+            },
+          });
+
+          await tx.vehicle.update({
+            where: { id: transaction.vehicleId! },
+            data: { status: "RESERVED" },
+          });
+
+          return tx.transaction.update({
+            where: { id: transactionId },
+            data: {
+              status: "DEPOSIT_PAID",
+              isDepositPaid: true,
+              appointmentDeadline: appointmentDeadline,
+            },
+            include: {
+              vehicle: { include: { seller: true } },
+              battery: { include: { seller: true } },
+              buyer: true,
+            },
+          });
+        }
+
+        // Nếu là giao dịch mua pin (luồng cũ)
+        const model = transaction.vehicleId ? tx.vehicle : tx.battery;
+        await (model as any).update({
+          where: { id: listing.id },
+          data: { status: "SOLD" },
+        });
+
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: { status: "PAID" },
+          include: {
+            vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
+          },
+        });
+      },
+      {
+        timeout: 25000, // Tăng thời gian chờ
+      },
+    );
 
     // Gửi email và hợp đồng sau khi transaction thành công
     if (completedTransaction) {
@@ -447,139 +473,149 @@ export const checkoutService = {
     }
 
     // Logic mới để xử lý thanh toán giỏ hàng và thanh toán đơn lẻ
-    const updatedTransaction = await prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.findUnique({
-        where: { id: transactionId },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-          // Quan trọng: Lấy cả các giao dịch con
-          childTransactions: {
-            include: {
-              batteries: { include: { seller: true } },
+    const updatedTransaction = await prisma.$transaction(
+      async (tx) => {
+        const transaction = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
+            // Quan trọng: Lấy cả các giao dịch con
+            childTransactions: {
+              include: {
+                batteries: { include: { seller: true } },
+              },
             },
           },
-        },
-      });
+        });
 
-      if (!transaction || transaction.status !== "PENDING") {
-        logger.warn(
-          `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
-        );
-        return null;
-      }
+        if (!transaction || transaction.status !== "PENDING") {
+          logger.warn(
+            `completeMomoPurchase: Invalid or already processed transaction ${transactionId}`,
+          );
+          return null;
+        }
 
-      // Trường hợp 1: Thanh toán giỏ hàng (giao dịch cha)
-      if (
-        transaction.childTransactions &&
-        transaction.childTransactions.length > 0
-      ) {
-        logger.info(
-          `Processing cart checkout for parent transaction ${transactionId}`,
-        );
-        if (Math.abs(transaction.finalPrice! - paidAmount) > 1) {
-          throw new BadRequestError(
-            "Paid amount does not match total cart price.",
+        // Trường hợp 1: Thanh toán giỏ hàng (giao dịch cha)
+        if (
+          transaction.childTransactions &&
+          transaction.childTransactions.length > 0
+        ) {
+          logger.info(
+            `Processing cart checkout for parent transaction ${transactionId}`,
+          );
+          if (Math.abs(transaction.finalPrice! - paidAmount) > 1) {
+            throw new BadRequestError(
+              "Paid amount does not match total cart price.",
+            );
+          }
+
+          // Lặp qua từng giao dịch con để xử lý
+          for (const child of transaction.childTransactions) {
+            const sellerId = child.batteries[0]?.sellerId;
+            if (!sellerId) continue;
+
+            // Khóa tiền cho người bán của giao dịch con này
+            await walletService.addLockedBalance(
+              sellerId,
+              child.finalPrice!,
+              tx,
+            );
+
+            // Cập nhật trạng thái các sản phẩm trong giao dịch con thành SOLD
+            await tx.battery.updateMany({
+              where: { id: { in: child.batteries.map((b) => b.id) } },
+              data: { status: "SOLD" },
+            });
+
+            // Cập nhật trạng thái giao dịch con thành PAID
+            await tx.transaction.update({
+              where: { id: child.id },
+              data: { status: "PAID" },
+            });
+          }
+
+          // Cập nhật trạng thái giao dịch cha thành PAID
+          return tx.transaction.update({
+            where: { id: transactionId },
+            data: { status: "PAID" },
+            include: { buyer: true, childTransactions: true }, // Trả về thông tin cần thiết
+          });
+        }
+
+        // Trường hợp 2: Thanh toán đơn lẻ (đặt cọc xe hoặc mua 1 pin)
+        const listing = transaction.vehicle || transaction.battery;
+        if (!listing) {
+          throw new NotFoundError(
+            "Associated listing not found for transaction.",
           );
         }
 
-        // Lặp qua từng giao dịch con để xử lý
-        for (const child of transaction.childTransactions) {
-          const sellerId = child.batteries[0]?.sellerId;
-          if (!sellerId) continue;
+        // Logic cũ cho thanh toán cọc và mua pin
+        if (Math.abs(transaction.finalPrice! - paidAmount) > 1) {
+          throw new BadRequestError(
+            "Paid amount does not match the required amount.",
+          );
+        }
 
-          // Khóa tiền cho người bán của giao dịch con này
-          await walletService.addLockedBalance(sellerId, child.finalPrice!, tx);
+        // Nếu là giao dịch đặt cọc xe
+        if (transaction.listingType === "VEHICLE") {
+          const appointmentDeadline = new Date();
+          appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
 
-          // Cập nhật trạng thái các sản phẩm trong giao dịch con thành SOLD
-          await tx.battery.updateMany({
-            where: { id: { in: child.batteries.map((b) => b.id) } },
-            data: { status: "SOLD" },
+          // TẠO LẠI APPOINTMENT
+          await tx.appointment.create({
+            data: {
+              transactionId: transaction.id,
+              buyerId: transaction.buyerId,
+              sellerId: listing.sellerId,
+              location:
+                "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
+            },
           });
 
-          // Cập nhật trạng thái giao dịch con thành PAID
-          await tx.transaction.update({
-            where: { id: child.id },
-            data: { status: "PAID" },
+          // Cập nhật trạng thái xe thành RESERVED
+          await tx.vehicle.update({
+            where: { id: transaction.vehicleId! },
+            data: { status: "RESERVED" },
+          });
+
+          // Cập nhật trạng thái giao dịch thành DEPOSIT_PAID
+          return tx.transaction.update({
+            where: { id: transactionId },
+            data: {
+              status: "DEPOSIT_PAID",
+              appointmentDeadline: appointmentDeadline, // Lưu deadline vào Transaction
+            },
+            include: {
+              buyer: true,
+              vehicle: { include: { seller: true } },
+            },
           });
         }
 
-        // Cập nhật trạng thái giao dịch cha thành PAID
+        // Nếu là mua pin đơn lẻ
+        await walletService.addLockedBalance(listing.sellerId, paidAmount, tx);
+        await tx.battery.update({
+          where: { id: transaction.batteryId! },
+          data: { status: "SOLD" },
+        });
+
         return tx.transaction.update({
           where: { id: transactionId },
           data: { status: "PAID" },
-          include: { buyer: true, childTransactions: true }, // Trả về thông tin cần thiết
-        });
-      }
-
-      // Trường hợp 2: Thanh toán đơn lẻ (đặt cọc xe hoặc mua 1 pin)
-      const listing = transaction.vehicle || transaction.battery;
-      if (!listing) {
-        throw new NotFoundError(
-          "Associated listing not found for transaction.",
-        );
-      }
-
-      // Logic cũ cho thanh toán cọc và mua pin
-      if (Math.abs(transaction.finalPrice! - paidAmount) > 1) {
-        throw new BadRequestError(
-          "Paid amount does not match the required amount.",
-        );
-      }
-
-      // Nếu là giao dịch đặt cọc xe
-      if (transaction.listingType === "VEHICLE") {
-        const appointmentDeadline = new Date();
-        appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
-
-        // TẠO LẠI APPOINTMENT
-        await tx.appointment.create({
-          data: {
-            transactionId: transaction.id,
-            buyerId: transaction.buyerId,
-            sellerId: listing.sellerId,
-            location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
-          },
-        });
-
-        // Cập nhật trạng thái xe thành RESERVED
-        await tx.vehicle.update({
-          where: { id: transaction.vehicleId! },
-          data: { status: "RESERVED" },
-        });
-
-        // Cập nhật trạng thái giao dịch thành DEPOSIT_PAID
-        return tx.transaction.update({
-          where: { id: transactionId },
-          data: {
-            status: "DEPOSIT_PAID",
-            appointmentDeadline: appointmentDeadline, // Lưu deadline vào Transaction
-          },
           include: {
-            buyer: true,
             vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
           },
         });
-      }
-
-      // Nếu là mua pin đơn lẻ
-      await walletService.addLockedBalance(listing.sellerId, paidAmount, tx);
-      await tx.battery.update({
-        where: { id: transaction.batteryId! },
-        data: { status: "SOLD" },
-      });
-
-      return tx.transaction.update({
-        where: { id: transactionId },
-        data: { status: "PAID" },
-        include: {
-          vehicle: { include: { seller: true } },
-          battery: { include: { seller: true } },
-          buyer: true,
-        },
-      });
-    });
+      },
+      {
+        timeout: 40000, // Tăng thời gian chờ lên 15 giây
+      },
+    );
 
     // Logic tạo hợp đồng và gửi email sau thanh toán
     if (updatedTransaction) {
@@ -678,5 +714,89 @@ export const checkoutService = {
         error,
       );
     }
+  },
+  payCartWithWallet: async (transactionId: string, buyerId: string) => {
+    // BƯỚC 1: Thực hiện tất cả các thao tác CSDL trong một transaction
+    const updatedParent = await prisma.$transaction(
+      async (tx) => {
+        const parentTransaction = await tx.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            childTransactions: {
+              include: { batteries: { select: { id: true, sellerId: true } } },
+            },
+          },
+        });
+
+        if (
+          !parentTransaction ||
+          parentTransaction.buyerId !== buyerId ||
+          parentTransaction.status !== "PENDING"
+        ) {
+          throw new NotFoundError(
+            "Cart transaction not found or already processed.",
+          );
+        }
+
+        // Trừ tiền từ ví người mua
+        await walletService.updateBalance(
+          buyerId,
+          -parentTransaction.finalPrice!,
+          "PURCHASE",
+          tx,
+        );
+        // Lặp qua từng giao dịch con để xử lý
+        for (const child of parentTransaction.childTransactions) {
+          const sellerId = child.batteries[0]?.sellerId;
+          if (!sellerId) continue;
+
+          // Khóa tiền cho người bán của giao dịch con này
+          await walletService.addLockedBalance(sellerId, child.finalPrice!, tx);
+
+          // Cập nhật trạng thái các sản phẩm trong giao dịch con thành SOLD
+          await tx.battery.updateMany({
+            where: { id: { in: child.batteries.map((b) => b.id) } },
+            data: { status: "SOLD" },
+          });
+
+          // Cập nhật trạng thái giao dịch con thành PAID
+          await tx.transaction.update({
+            where: { id: child.id },
+            data: { status: "PAID" },
+          });
+        }
+        // Cập nhật trạng thái giao dịch cha thành PAID
+        return tx.transaction.update({
+          where: { id: transactionId },
+          data: { status: "PAID" },
+          include: {
+            buyer: true,
+            childTransactions: {
+              include: {
+                buyer: true,
+                batteries: { include: { seller: true } },
+              },
+            },
+          },
+        });
+      },
+      { timeout: 40000 }, // Tăng nhẹ timeout để đảm bảo CSDL hoàn tất
+    );
+
+    // BƯỚC 2: Sau khi transaction thành công, thực hiện các tác vụ bên ngoài
+    if (updatedParent) {
+      for (const child of updatedParent.childTransactions) {
+        try {
+          await checkoutService.postPaymentActions(child);
+        } catch (error) {
+          logger.error(
+            `Failed to process post-payment actions for child transaction ${child.id} after main transaction commit`,
+            error,
+          );
+        }
+      }
+    }
+
+    return updatedParent;
   },
 };

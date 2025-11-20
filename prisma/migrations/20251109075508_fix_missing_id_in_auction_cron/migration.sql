@@ -39,7 +39,7 @@ BEGIN
 
             -- Thêm `id` và `gen_random_uuid()` vào câu lệnh INSERT
             INSERT INTO "Transaction" (
-                "id", "buyerId", "vehicleId", "batteryId", "finalPrice", "status", "type", "paymentDeadline", "createdAt", "updatedAt"
+                "id", "buyerId", "vehicleId", "batteryId", "finalPrice", "status", "type", "paymentDeadline", "listingType", "createdAt", "updatedAt"
             )
             VALUES (
                 gen_random_uuid(),
@@ -50,6 +50,7 @@ BEGIN
                 'PENDING',
                 'AUCTION',
                 NOW() + INTERVAL '24 hours',
+                listing_type_text::"ListingType",
                 NOW(),
                 NOW()
             );

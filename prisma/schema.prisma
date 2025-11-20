@@ -369,7 +369,7 @@ model Contract {
   buyerId       String
   seller        User        @relation("SellerContracts", fields: [sellerId], references: [id], onDelete: Cascade)
   sellerId      String
-  contractUrl   String
+  contractUrl   String?
   createdAt     DateTime    @default(now())
 
   @@index([buyerId])

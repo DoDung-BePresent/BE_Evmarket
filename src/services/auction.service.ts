@@ -287,27 +287,29 @@ export const auctionService = {
 
     if (completedTransaction) {
       try {
-        const pdfBuffer =
-          await contractService.generateAndSaveContract(completedTransaction);
+        await contractService.createContractRecord(completedTransaction);
         logger.info(
-          `Contract generated for Buy Now transaction ${completedTransaction.id}`,
+          `Contract record created for Buy Now transaction ${completedTransaction.id}`,
         );
+
         const seller =
           completedTransaction.vehicle?.seller ||
           completedTransaction.battery?.seller;
-        if (seller && pdfBuffer) {
+
+        if (seller) {
+          logger.info(
+            `Sending contract notification emails for transaction ${completedTransaction.id}`,
+          );
           await Promise.all([
             emailService.sendContractEmail(
               completedTransaction.buyer.email,
               completedTransaction.buyer.name,
               completedTransaction.id,
-              Buffer.from(pdfBuffer),
             ),
             emailService.sendContractEmail(
               seller.email,
               seller.name,
               completedTransaction.id,
-              Buffer.from(pdfBuffer),
             ),
           ]);
         }

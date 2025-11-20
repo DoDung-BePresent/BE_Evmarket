@@ -661,40 +661,39 @@ export const checkoutService = {
   // Hàm helper để xử lý các tác vụ sau thanh toán
   postPaymentActions: async (transaction: any) => {
     try {
-      const pdfBuffer =
-        await contractService.generateAndSaveContract(transaction);
-      logger.info(`Contract generated for transaction ${transaction.id}`);
+      await contractService.createContractRecord(transaction);
+      logger.info(`Contract record created for transaction ${transaction.id}`);
 
       const seller =
         transaction.vehicle?.seller ||
         transaction.battery?.seller ||
         (transaction.batteries && transaction.batteries[0]?.seller);
 
-      if (seller && pdfBuffer) {
-        // Gửi email hợp đồng cho cả 2 bên
+      if (seller) {
+        // THAY ĐỔI: Gửi email thông báo, không đính kèm file
         logger.info(
-          `Sending contract emails for transaction ${transaction.id} to ${transaction.buyer.email} and ${seller.email}`,
+          `Sending contract notification emails for transaction ${transaction.id} to ${transaction.buyer.email} and ${seller.email}`,
         );
         await Promise.all([
           emailService.sendContractEmail(
             transaction.buyer.email,
             transaction.buyer.name,
             transaction.id,
-            Buffer.from(pdfBuffer),
+            // Bỏ buffer PDF
           ),
           emailService.sendContractEmail(
             seller.email,
             seller.name,
             transaction.id,
-            Buffer.from(pdfBuffer),
+            // Bỏ buffer PDF
           ),
         ]);
         logger.info(
-          `Successfully sent contract emails for transaction ${transaction.id}`,
+          `Successfully sent contract notification emails for transaction ${transaction.id}`,
         );
       } else {
         logger.warn(
-          `Skipping email for transaction ${transaction.id} because seller or pdfBuffer is missing.`,
+          `Skipping email for transaction ${transaction.id} because seller is missing.`,
         );
       }
 

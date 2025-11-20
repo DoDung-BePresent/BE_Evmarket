@@ -546,6 +546,7 @@ export const adminService = {
               status: true,
               vehicle: { select: { title: true } },
               battery: { select: { title: true } },
+              batteries: { select: { title: true } },
             },
           },
         },
@@ -581,7 +582,7 @@ export const adminService = {
             select: {
               id: true,
               status: true,
-              vehicle: { select: { id: true, title: true } },
+              vehicle: { select: { id: true, title: true, images: true } },
             },
           },
         },

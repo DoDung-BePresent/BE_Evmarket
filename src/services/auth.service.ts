@@ -166,12 +166,27 @@ export const authService = {
     });
 
     if (existingAccount?.user) {
+      if (existingAccount.user.isLocked) {
+        throw new ForbiddenError(
+          `Your account has been locked. Reason: ${
+            existingAccount.user.lockReason || "No reason provided."
+          }`,
+        );
+      }
       return existingAccount.user;
     }
 
     let user = email
       ? await prisma.user.findUnique({ where: { email } })
       : null;
+
+    if (user && user.isLocked) {
+      throw new ForbiddenError(
+        `Your account has been locked. Reason: ${
+          user.lockReason || "No reason provided."
+        }`,
+      );
+    }
 
     if (!user) {
       let avatarPublicUrl: string | undefined;

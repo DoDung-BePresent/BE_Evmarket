@@ -325,6 +325,7 @@ export const checkoutService = {
             buyerId: transaction.buyerId,
             sellerId: listing.sellerId,
             vehicleId: transaction.vehicleId,
+            location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
           },
         });
 
@@ -538,6 +539,7 @@ export const checkoutService = {
             transactionId: transaction.id,
             buyerId: transaction.buyerId,
             sellerId: listing.sellerId,
+            location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
           },
         });
 

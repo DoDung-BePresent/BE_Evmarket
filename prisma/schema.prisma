@@ -386,6 +386,7 @@ model Appointment {
   sellerProposedDates  DateTime[]
   confirmedDate DateTime?
   status        AppointmentStatus @default(PENDING)
+  location      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

@@ -235,7 +235,7 @@ export const contractService = {
       throw new ForbiddenError("You are not authorized to view this contract.");
     }
 
-    const filePath = `${SUPABASE_BUCKETS.CONTRACTS}/${transactionId}.pdf`;
+    const filePath = `${transactionId}.pdf`;
     const { data, error } = await supabase.storage
       .from(SUPABASE_BUCKETS.CONTRACTS)
       .createSignedUrl(filePath, 3600);

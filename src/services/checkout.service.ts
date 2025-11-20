@@ -636,6 +636,9 @@ export const checkoutService = {
 
       if (seller && pdfBuffer) {
         // Gửi email hợp đồng cho cả 2 bên
+        logger.info(
+          `Sending contract emails for transaction ${transaction.id} to ${transaction.buyer.email} and ${seller.email}`,
+        );
         await Promise.all([
           emailService.sendContractEmail(
             transaction.buyer.email,
@@ -650,6 +653,13 @@ export const checkoutService = {
             Buffer.from(pdfBuffer),
           ),
         ]);
+        logger.info(
+          `Successfully sent contract emails for transaction ${transaction.id}`,
+        );
+      } else {
+        logger.warn(
+          `Skipping email for transaction ${transaction.id} because seller or pdfBuffer is missing.`,
+        );
       }
 
       // Nếu là đặt cọc xe, gửi thêm email hướng dẫn đặt lịch hẹn

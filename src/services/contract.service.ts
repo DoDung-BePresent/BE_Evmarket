@@ -11,6 +11,7 @@ import { Transaction, User, Vehicle, Battery } from "@prisma/client";
  * Libs
  */
 import prisma from "@/libs/prisma";
+import logger from "@/libs/logger";
 import { supabase } from "@/libs/supabase";
 import {
   ForbiddenError,
@@ -27,15 +28,35 @@ type TransactionWithDetails = Transaction & {
   buyer: User;
   vehicle?: (Vehicle & { seller: User }) | null;
   battery?: (Battery & { seller: User }) | null;
+  batteries?: (Battery & { seller: User })[]; // Thêm batteries vào type
 };
 
 export const contractService = {
   generateAndSaveContract: async (transaction: TransactionWithDetails) => {
-    const listing = transaction.vehicle || transaction.battery;
-    if (!listing) return;
+    const listing =
+      transaction.vehicle ||
+      transaction.battery ||
+      (transaction.batteries && transaction.batteries[0]);
 
-    const seller = listing.seller;
+    if (!listing) {
+      logger.error(
+        `Could not find any listing (vehicle, battery, or batteries) for transaction ${transaction.id}`,
+      );
+      return; // Trả về undefined nếu không có sản phẩm
+    }
+
+    const seller =
+      transaction.vehicle?.seller ||
+      transaction.battery?.seller ||
+      (transaction.batteries && transaction.batteries[0]?.seller);
+
     const buyer = transaction.buyer;
+    if (!seller || !buyer) {
+      logger.error(
+        `Could not find seller or buyer for transaction ${transaction.id}`,
+      );
+      return;
+    }
 
     const templatePath = path.join(
       process.cwd(),

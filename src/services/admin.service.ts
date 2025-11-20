@@ -581,7 +581,7 @@ export const adminService = {
             select: {
               id: true,
               status: true,
-              vehicle: { select: { id: true, title: true } },
+              vehicle: { select: { id: true, title: true, images: true } },
             },
           },
         },

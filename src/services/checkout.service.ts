@@ -556,7 +556,10 @@ export const checkoutService = {
             status: "DEPOSIT_PAID",
             appointmentDeadline: appointmentDeadline, // Lưu deadline vào Transaction
           },
-          include: { buyer: true, vehicle: true },
+          include: {
+            buyer: true,
+            vehicle: { include: { seller: true } },
+          },
         });
       }
 
@@ -588,7 +591,28 @@ export const checkoutService = {
         updatedTransaction.childTransactions.length > 0
       ) {
         logger.info(`Cart transaction ${updatedTransaction.id} completed.`);
-        // TODO: Có thể gửi một email tổng hợp cho người mua
+
+        for (const child of updatedTransaction.childTransactions) {
+          try {
+            // Lấy thông tin đầy đủ của giao dịch con để tạo hợp đồng
+            const fullChildTransaction = await prisma.transaction.findUnique({
+              where: { id: child.id },
+              include: {
+                buyer: true,
+                batteries: { include: { seller: true } },
+              },
+            });
+
+            if (fullChildTransaction) {
+              await checkoutService.postPaymentActions(fullChildTransaction);
+            }
+          } catch (error) {
+            logger.error(
+              `Failed to process post-payment actions for child transaction ${child.id}`,
+              error,
+            );
+          }
+        }
       } else {
         await checkoutService.postPaymentActions(updatedTransaction);
       }
@@ -605,7 +629,10 @@ export const checkoutService = {
         await contractService.generateAndSaveContract(transaction);
       logger.info(`Contract generated for transaction ${transaction.id}`);
 
-      const seller = transaction.vehicle?.seller || transaction.battery?.seller;
+      const seller =
+        transaction.vehicle?.seller ||
+        transaction.battery?.seller ||
+        (transaction.batteries && transaction.batteries[0]?.seller);
 
       if (seller && pdfBuffer) {
         // Gửi email hợp đồng cho cả 2 bên

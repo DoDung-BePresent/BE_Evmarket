@@ -23,10 +23,24 @@ const contractRouter = Router();
 
 contractRouter.use(authenticate);
 
+// Route mới để xem HTML
 contractRouter.get(
-  "/:transactionId",
+  "/:transactionId/view",
   validate(contractValidation.getContract),
-  contractController.getContract,
+  contractController.viewContract,
 );
 
+// Route mới để tải PDF
+contractRouter.get(
+  "/:transactionId/download",
+  validate(contractValidation.getContract),
+  contractController.downloadContract,
+);
+
+// Route cũ có thể giữ lại để lấy URL nếu cần
+contractRouter.get(
+  "/:transactionId/url",
+  validate(contractValidation.getContract),
+  contractController.getContractUrl,
+);
 export default contractRouter;

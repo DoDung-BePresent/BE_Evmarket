@@ -287,27 +287,29 @@ export const auctionService = {
 
     if (completedTransaction) {
       try {
-        const pdfBuffer =
-          await contractService.generateAndSaveContract(completedTransaction);
+        await contractService.createContractRecord(completedTransaction);
         logger.info(
-          `Contract generated for Buy Now transaction ${completedTransaction.id}`,
+          `Contract record created for Buy Now transaction ${completedTransaction.id}`,
         );
+
         const seller =
           completedTransaction.vehicle?.seller ||
           completedTransaction.battery?.seller;
-        if (seller && pdfBuffer) {
+
+        if (seller) {
+          logger.info(
+            `Sending contract notification emails for transaction ${completedTransaction.id}`,
+          );
           await Promise.all([
             emailService.sendContractEmail(
               completedTransaction.buyer.email,
               completedTransaction.buyer.name,
               completedTransaction.id,
-              Buffer.from(pdfBuffer),
             ),
             emailService.sendContractEmail(
               seller.email,
               seller.name,
               completedTransaction.id,
-              Buffer.from(pdfBuffer),
             ),
           ]);
         }
@@ -401,51 +403,58 @@ export const auctionService = {
     listingType: ListingType,
     listingId: string,
   ) => {
-    return prisma.$transaction(async (tx) => {
-      const listing = await (tx as any)[listingType.toLowerCase()].findUnique({
-        where: { id: listingId },
-      });
-
-      if (listing.sellerId === userId) {
-        throw new ForbiddenError(
-          "You cannot pay a deposit on your own auction.",
+    return prisma.$transaction(
+      async (tx) => {
+        const listing = await (tx as any)[listingType.toLowerCase()].findUnique(
+          {
+            where: { id: listingId },
+          },
         );
-      }
 
-      if (!listing || listing.status !== "AUCTION_LIVE") {
-        throw new BadRequestError("Auction is not available for deposit.");
-      }
+        if (listing.sellerId === userId) {
+          throw new ForbiddenError(
+            "You cannot pay a deposit on your own auction.",
+          );
+        }
 
-      if (!listing.depositAmount || listing.depositAmount <= 0) {
-        throw new BadRequestError("This auction does not require a deposit.");
-      }
+        if (!listing || listing.status !== "AUCTION_LIVE") {
+          throw new BadRequestError("Auction is not available for deposit.");
+        }
 
-      const existingDeposit = await tx.auctionDeposit.findFirst({
-        where: { userId, [`${listingType.toLowerCase()}Id`]: listingId },
-      });
-      if (existingDeposit) {
-        throw new ConflictError(
-          "You have already paid a deposit for this auction.",
-        );
-      }
+        if (!listing.depositAmount || listing.depositAmount <= 0) {
+          throw new BadRequestError("This auction does not require a deposit.");
+        }
 
-      await walletService.updateBalance(
-        userId,
-        -listing.depositAmount,
-        "AUCTION_DEPOSIT",
-        tx,
-      );
+        const existingDeposit = await tx.auctionDeposit.findFirst({
+          where: { userId, [`${listingType.toLowerCase()}Id`]: listingId },
+        });
+        if (existingDeposit) {
+          throw new ConflictError(
+            "You have already paid a deposit for this auction.",
+          );
+        }
 
-      const deposit = await tx.auctionDeposit.create({
-        data: {
-          amount: listing.depositAmount,
+        await walletService.updateBalance(
           userId,
-          [`${listingType.toLowerCase()}Id`]: listingId,
-        },
-      });
+          -listing.depositAmount,
+          "AUCTION_DEPOSIT",
+          tx,
+        );
 
-      return deposit;
-    });
+        const deposit = await tx.auctionDeposit.create({
+          data: {
+            amount: listing.depositAmount,
+            userId,
+            [`${listingType.toLowerCase()}Id`]: listingId,
+          },
+        });
+
+        return deposit;
+      },
+      {
+        timeout: 10000, // Tăng thời gian chờ
+      },
+    );
   },
   placeBid: async ({
     listingType,

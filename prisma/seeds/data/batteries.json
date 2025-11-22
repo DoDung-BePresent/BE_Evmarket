@@ -1,0 +1,402 @@
+[
+  {
+    "title": "CATL 75kWh LFP Battery Pack",
+    "description": "A robust and reliable 75kWh Lithium Iron Phosphate (LFP) battery pack from CATL. Pulled from a low-mileage vehicle. Ideal for EV conversion projects or as a replacement. State of Health (SOH) is excellent.",
+    "price": 125000,
+    "brand": "CATL",
+    "year": 2022,
+    "capacity": 75,
+    "health": 96,
+    "images": ["https://i.ebayimg.com/images/g/LRYAAOSwdWNke4Tb/s-l1600.webp"],
+    "specifications": {
+      "weight": "480 kg",
+      "voltage": "400V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 40 mins (DC Fast Charge)",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Minimal, tested and verified",
+      "installation": "Requires professional installation"
+    }
+  },
+  {
+    "title": "LG Chem 64kWh NMC Battery Module",
+    "description": "High-energy density 64kWh Nickel Manganese Cobalt (NMC) battery module from LG Chem. Perfect for projects requiring a balance of power and range. Comes with original BMS wiring harness.",
+    "price": 98000,
+    "brand": "LG Chem",
+    "year": 2021,
+    "capacity": 64,
+    "health": 92,
+    "images": ["https://i.ebayimg.com/images/g/jpYAAOSwci9lzry1/s-l1600.webp"],
+    "specifications": {
+      "weight": "450 kg",
+      "voltage": "355V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 35 mins (DC Fast Charge)",
+      "chemistry": "NMC (Nickel Manganese Cobalt)",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Expected normal degradation for age",
+      "installation": "Requires professional installation"
+    }
+  },
+  {
+    "title": "Panasonic 82kWh Pack for Tesla Model 3/Y",
+    "description": "Original 2170 cell Panasonic 82kWh battery pack, salvaged from a 2022 Tesla Model 3. Low cycles, excellent health. A perfect high-performance replacement or for a high-power DIY project.",
+    "price": 150000,
+    "brand": "Panasonic",
+    "year": 2022,
+    "capacity": 82,
+    "health": 97,
+    "images": ["https://i.ebayimg.com/images/g/R8cAAeSw4zBox89t/s-l1600.webp"],
+    "specifications": {
+      "weight": "478 kg",
+      "voltage": "357V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 27 mins (10-80% on Supercharger)",
+      "chemistry": "NCA (Nickel Cobalt Aluminum)",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Low, typical for Tesla packs",
+      "installation": "Direct fit for Tesla Model 3/Y"
+    }
+  },
+  {
+    "title": "Samsung SDI 94Ah BMW i3 Battery",
+    "description": "A complete 42.2kWh battery pack from a 2020 BMW i3. Manufactured by Samsung SDI. Known for its reliability and compact form factor. Ideal for smaller vehicle conversions or energy storage.",
+    "price": 75000,
+    "brand": "Samsung SDI",
+    "year": 2020,
+    "capacity": 42.2,
+    "health": 94,
+    "images": ["https://i.ebayimg.com/images/g/ANoAAeSwEcVox8-5/s-l1600.webp"],
+    "specifications": {
+      "weight": "278 kg",
+      "voltage": "353V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 45 mins (DC Fast Charge)",
+      "chemistry": "NMC (Nickel Manganese Cobalt)",
+      "temperatureRange": "-25°C to 55°C",
+      "degradation": "Very low, well-maintained",
+      "installation": "Requires custom mounting for non-i3 use"
+    }
+  },
+  {
+    "title": "SK Innovation 77.4kWh Pack for Hyundai/Kia",
+    "description": "E-GMP platform 77.4kWh battery pack from SK Innovation. Pulled from a 2022 Kia EV6. Features ultra-fast charging capabilities. Excellent condition, ready for a new life.",
+    "price": 140000,
+    "brand": "SK Innovation",
+    "year": 2022,
+    "capacity": 77.4,
+    "health": 96,
+    "images": ["https://i.ebayimg.com/images/g/O2YAAeSwYdJox9AH/s-l1600.webp"],
+    "specifications": {
+      "weight": "477 kg",
+      "voltage": "697V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 18 mins (10-80% on 350kW charger)",
+      "chemistry": "NMC 811",
+      "temperatureRange": "-30°C to 60°C",
+      "degradation": "Minimal",
+      "installation": "Direct fit for E-GMP platform vehicles"
+    }
+  },
+  {
+    "title": "BYD Blade Battery 60.5kWh Pack",
+    "description": "Revolutionary Blade Battery technology from BYD. 60.5kWh pack from a 2023 Atto 3. Known for its exceptional safety and long cycle life. A top choice for safety-critical applications.",
+    "price": 110000,
+    "brand": "BYD",
+    "year": 2023,
+    "capacity": 60.5,
+    "health": 99,
+    "images": ["http://i.ebayimg.com/images/g/FK4AAOSwie5ntvct/s-l1600.webp"],
+    "specifications": {
+      "weight": "420 kg",
+      "voltage": "403V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 45 mins (0-80%)",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-30°C to 60°C",
+      "degradation": "Extremely low, near new",
+      "installation": "Requires professional integration"
+    }
+  },
+  {
+    "title": "A123 Systems 48V LFP Module",
+    "description": "A compact and robust 48V, 2.5kWh LFP module from A123 Systems. Perfect for golf carts, small utility vehicles, or 48V home energy storage systems. Multiple units available.",
+    "price": 15000,
+    "brand": "A123 Systems",
+    "year": 2021,
+    "capacity": 2.5,
+    "health": 95,
+    "images": ["https://i.ebayimg.com/images/g/qSAAAeSw-jFoeCjB/s-l1600.webp"],
+    "specifications": {
+      "weight": "25 kg",
+      "voltage": "48V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 2 hours",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Low",
+      "installation": "Standard 48V system integration"
+    }
+  },
+  {
+    "title": "Gotion High-tech 50kWh LFP Pack",
+    "description": "Affordable and reliable 50kWh LFP battery pack from Gotion High-tech. A great budget option for EV conversions where extreme performance is not the priority. Good condition.",
+    "price": 70000,
+    "brand": "Gotion High-tech",
+    "year": 2021,
+    "capacity": 50,
+    "health": 91,
+    "images": ["https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp"],
+    "specifications": {
+      "weight": "350 kg",
+      "voltage": "350V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 50 mins (DC Fast Charge)",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-15°C to 50°C",
+      "degradation": "Normal for age",
+      "installation": "Requires professional installation"
+    }
+  },
+  {
+    "title": "EVE Energy 40kWh NMC Battery",
+    "description": "40kWh NMC battery from EVE Energy. Good energy density in a relatively small package. Pulled from a city commuter EV. Health tested and verified.",
+    "price": 65000,
+    "brand": "EVE Energy",
+    "year": 2020,
+    "capacity": 40,
+    "health": 93,
+    "images": ["https://i.ebayimg.com/images/g/19sAAeSwsDVooIXg/s-l1600.webp"],
+    "specifications": {
+      "weight": "280 kg",
+      "voltage": "360V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 40 mins (DC Fast Charge)",
+      "chemistry": "NMC (Nickel Manganese Cobalt)",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Low",
+      "installation": "Requires professional installation"
+    }
+  },
+  {
+    "title": "Farasis Energy 90kWh High-Performance Pack",
+    "description": "High-performance 90kWh battery pack from Farasis Energy, designed for luxury EVs. Excellent power output and thermal management. Salvaged from a low-mileage premium vehicle.",
+    "price": 160000,
+    "brand": "Farasis Energy",
+    "year": 2022,
+    "capacity": 90,
+    "health": 97,
+    "images": ["https://i.ebayimg.com/images/g/v~IAAeSwQDponF99/s-l1600.webp"],
+    "specifications": {
+      "weight": "550 kg",
+      "voltage": "400V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 30 mins (10-80%)",
+      "chemistry": "NMC 811",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Minimal",
+      "installation": "Requires professional installation for high-power systems"
+    }
+  },
+  {
+    "title": "Tesla Model S/X 100kWh Battery Pack",
+    "description": "Complete 100kWh battery pack from a 2019 Tesla Model S. Still holds excellent charge and has been professionally tested. Ideal for a high-range conversion or as a large-scale powerwall.",
+    "price": 180000,
+    "brand": "Tesla",
+    "year": 2019,
+    "capacity": 100,
+    "health": 90,
+    "images": ["https://i.ebayimg.com/images/g/z3MAAeSwqgdooIXd/s-l1600.webp"],
+    "specifications": {
+      "weight": "540 kg",
+      "voltage": "350V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 40 mins (10-80% on Supercharger)",
+      "chemistry": "NCA (Nickel Cobalt Aluminum)",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Normal for a 2019 pack",
+      "installation": "Direct fit for Tesla Model S/X"
+    }
+  },
+  {
+    "title": "CATL 52kWh Pack for VW ID Series",
+    "description": "A 52kWh (net) battery pack from CATL, used in the Volkswagen ID series. Great reliability and integration with the MEB platform. Pulled from a 2021 model.",
+    "price": 95000,
+    "brand": "CATL",
+    "year": 2021,
+    "capacity": 52,
+    "health": 95,
+    "images": ["https://i.ebayimg.com/images/g/e0EAAeSwHHFooIXf/s-l1600.webp"],
+    "specifications": {
+      "weight": "344 kg",
+      "voltage": "408V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 35 mins (5-80%)",
+      "chemistry": "NMC",
+      "temperatureRange": "-25°C to 55°C",
+      "degradation": "Low",
+      "installation": "Direct fit for MEB platform vehicles"
+    }
+  },
+  {
+    "title": "LG Chem 70kWh Bolt EV Battery",
+    "description": "Upgraded 70kWh battery pack for Chevrolet Bolt EV. Manufactured by LG Chem. This is a great upgrade for older Bolt models, offering increased range. Excellent health.",
+    "price": 115000,
+    "brand": "LG Chem",
+    "year": 2022,
+    "capacity": 70,
+    "health": 98,
+    "images": ["https://i.ebayimg.com/images/g/UMUAAeSwEcJooxPJ/s-l1600.webp"],
+    "specifications": {
+      "weight": "430 kg",
+      "voltage": "350V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 60 mins (DC Fast Charge)",
+      "chemistry": "NMC",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Minimal",
+      "installation": "Direct fit for Chevrolet Bolt EV"
+    }
+  },
+  {
+    "title": "Panasonic 4680 Structural Pack (Module)",
+    "description": "A single module from a Tesla 4680 structural battery pack. For research, development, or small-scale projects. This is next-generation battery tech. Sold as-is.",
+    "price": 25000,
+    "brand": "Panasonic",
+    "year": 2023,
+    "capacity": 5,
+    "health": 99,
+    "images": ["https://i.ebayimg.com/images/g/3mUAAeSwgpJooxPM/s-l1600.webp"],
+    "specifications": {
+      "weight": "30 kg",
+      "voltage": "48V",
+      "warrantyPeriod": "N/A (R&D)",
+      "chargingTime": "N/A",
+      "chemistry": "High-Nickel Cathode",
+      "temperatureRange": "N/A",
+      "degradation": "Unknown",
+      "installation": "For advanced users only"
+    }
+  },
+  {
+    "title": "SK Innovation 105kWh Ford F-150 Lightning Pack",
+    "description": "Standard range 105kWh battery pack from a Ford F-150 Lightning. Incredible power output capabilities, perfect for a high-performance truck or large vehicle conversion.",
+    "price": 190000,
+    "brand": "SK Innovation",
+    "year": 2022,
+    "capacity": 105,
+    "health": 96,
+    "images": ["https://i.ebayimg.com/images/g/LRYAAOSwdWNke4Tb/s-l1600.webp"],
+    "specifications": {
+      "weight": "816 kg",
+      "voltage": "400V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 44 mins (15-80%)",
+      "chemistry": "NMC",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Low",
+      "installation": "Requires heavy-duty mounting and integration"
+    }
+  },
+  {
+    "title": "BYD 30kWh Dolphin Battery",
+    "description": "Compact 30.7kWh LFP Blade Battery from a BYD Dolphin. Ideal for a small city car conversion or a large home solar storage system. Excellent safety and longevity.",
+    "price": 55000,
+    "brand": "BYD",
+    "year": 2023,
+    "capacity": 30.7,
+    "health": 99,
+    "images": ["https://i.ebayimg.com/images/g/jpYAAOSwci9lzry1/s-l1600.webp"],
+    "specifications": {
+      "weight": "260 kg",
+      "voltage": "400V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 30 mins (30-80%)",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-30°C to 60°C",
+      "degradation": "Near zero",
+      "installation": "Professional installation recommended"
+    }
+  },
+  {
+    "title": "Samsung SDI 85kWh Rivian R1S Pack",
+    "description": "85kWh battery pack from a Rivian R1S, manufactured by Samsung SDI. High-quality cells with excellent thermal management. A great option for off-road or high-demand applications.",
+    "price": 175000,
+    "brand": "Samsung SDI",
+    "year": 2022,
+    "capacity": 85,
+    "health": 95,
+    "images": ["https://i.ebayimg.com/images/g/R8cAAeSw4zBox89t/s-l1600.webp"],
+    "specifications": {
+      "weight": "560 kg",
+      "voltage": "400V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 30 mins (10-80%)",
+      "chemistry": "NMC",
+      "temperatureRange": "-25°C to 55°C",
+      "degradation": "Low",
+      "installation": "Requires professional installation"
+    }
+  },
+  {
+    "title": "CATL 100kWh Shenxing Plus LFP Battery",
+    "description": "State-of-the-art Shenxing Plus battery from CATL with 4C charging. This 100kWh LFP pack can charge incredibly fast. Pulled from a demo vehicle. Perfect for high-use applications.",
+    "price": 220000,
+    "brand": "CATL",
+    "year": 2024,
+    "capacity": 100,
+    "health": 99,
+    "images": ["https://i.ebayimg.com/images/g/ANoAAeSwEcVox8-5/s-l1600.webp"],
+    "specifications": {
+      "weight": "600 kg",
+      "voltage": "800V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "10 minutes (for 600km range)",
+      "chemistry": "LFP (Lithium Iron Phosphate)",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Minimal",
+      "installation": "Requires 800V architecture and professional setup"
+    }
+  },
+  {
+    "title": "LG Chem 16kWh PHEV Battery",
+    "description": "A small and compact 16kWh battery from an LG Chem-supplied Plug-in Hybrid. Ideal for smaller projects, motorcycle conversions, or as a buffer in a solar system. Low cycles.",
+    "price": 30000,
+    "brand": "LG Chem",
+    "year": 2021,
+    "capacity": 16,
+    "health": 97,
+    "images": ["https://i.ebayimg.com/images/g/O2YAAeSwYdJox9AH/s-l1600.webp"],
+    "specifications": {
+      "weight": "120 kg",
+      "voltage": "360V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 4 hours (Level 2)",
+      "chemistry": "NMC",
+      "temperatureRange": "-20°C to 55°C",
+      "degradation": "Very low",
+      "installation": "Suitable for various small-scale applications"
+    }
+  },
+  {
+    "title": "Panasonic 75kWh Pack for Tesla Model 3 SR+",
+    "description": "Original Panasonic 75kWh battery pack from a 2021 Tesla Model 3 Standard Range Plus. Excellent condition, professionally removed and tested. A great replacement part.",
+    "price": 130000,
+    "brand": "Panasonic",
+    "year": 2021,
+    "capacity": 75,
+    "health": 96,
+    "images": ["http://i.ebayimg.com/images/g/FK4AAOSwie5ntvct/s-l1600.webp"],
+    "specifications": {
+      "weight": "470 kg",
+      "voltage": "357V",
+      "warrantyPeriod": "N/A (Used)",
+      "chargingTime": "Approx. 30 mins (10-80% on Supercharger)",
+      "chemistry": "NCA (Nickel Cobalt Aluminum)",
+      "temperatureRange": "-20°C to 60°C",
+      "degradation": "Low",
+      "installation": "Direct fit for Tesla Model 3 SR+"
+    }
+  }
+]

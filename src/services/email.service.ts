@@ -106,7 +106,7 @@ export const emailService = {
     to: string,
     name: string | null,
     transactionId: string,
-    pdfBuffer: Buffer,
+    pdfBuffer?: Buffer,
   ) => {
     const subject = `Your Purchase Contract for Transaction #${transactionId}`;
     const templatePath = path.join(
@@ -122,12 +122,15 @@ export const emailService = {
       transactionId,
     });
 
-    await sendEmail(to, subject, html, [
-      {
+    const attachments = [];
+    if (pdfBuffer) {
+      attachments.push({
         filename: `contract-${transactionId}.pdf`,
         content: pdfBuffer,
-      },
-    ]);
+      });
+    }
+
+    await sendEmail(to, subject, html, attachments);
   },
   sendPasswordResetEmail: async (
     to: string,

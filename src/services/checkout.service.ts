@@ -561,6 +561,12 @@ export const checkoutService = {
 
         // Nếu là giao dịch đặt cọc xe
         if (transaction.listingType === "VEHICLE") {
+          await walletService.addLockedBalance(
+            listing.sellerId,
+            paidAmount,
+            tx,
+          );
+
           const appointmentDeadline = new Date();
           appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
 

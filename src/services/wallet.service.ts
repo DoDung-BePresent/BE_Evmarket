@@ -218,24 +218,22 @@ export const walletService = {
   },
   releaseFunds: async (
     sellerId: string,
-    lockedAmountToRelease: number, // Số tiền đang bị khóa cần giải ngân
-    newlyPaidAmount: number, // Số tiền mới thanh toán
-    commission: number,
+    totalLockedAmount: number, // Tổng số tiền đang bị khóa (100%)
+    revenueToReceive: number, // Doanh thu thực nhận (100% - hoa hồng)
     tx: Prisma.TransactionClient,
   ) => {
-    const totalRevenue = lockedAmountToRelease + newlyPaidAmount - commission;
+    // SỬA LỖI: Không tính toán gì ở đây nữa. Chỉ thực hiện lệnh từ service cha.
     await tx.wallet.update({
       where: { userId: sellerId },
       data: {
         lockedBalance: {
-          decrement: lockedAmountToRelease, // Chỉ trừ đi số tiền thực sự đã bị khóa
+          decrement: totalLockedAmount, // Trừ toàn bộ số tiền đã khóa
         },
         availableBalance: {
-          increment: totalRevenue, // Cộng vào số dư khả dụng
+          increment: revenueToReceive, // Cộng đúng doanh thu thực nhận
         },
       },
     });
-    await walletService.addCommissionFeeToSystemWallet(commission, tx);
   },
   refundToBuyer: async (
     buyerId: string,

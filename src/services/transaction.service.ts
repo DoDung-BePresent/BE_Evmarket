@@ -404,7 +404,13 @@ export const transactionService = {
 
       // Lấy tổng giá trị của xe
       const totalVehiclePrice = transaction.vehicle.price;
-      const depositAmount = totalVehiclePrice * 0.1;
+
+      // SỬA LỖI: Khóa số tiền 90% vừa thanh toán vào lockedBalance của người bán
+      await walletService.addLockedBalance(
+        transaction.vehicle.sellerId,
+        paidAmount,
+        tx,
+      );
 
       // Tìm quy tắc tính phí và tính hoa hồng
       const feeRule = await tx.fee.findUnique({
@@ -413,14 +419,15 @@ export const transactionService = {
       const commissionPercentage = feeRule?.percentage || 0;
       const commissionAmount = (totalVehiclePrice * commissionPercentage) / 100;
 
-      // Giải ngân toàn bộ số tiền đã khóa (10% cọc) và số tiền vừa thanh toán (90%)
-      // sau đó chuyển doanh thu cho người bán và hoa hồng cho hệ thống.
-      // Hàm releaseFunds đã bao gồm logic này.
+      // Thu hoa hồng cho hệ thống
+      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
+
+      // Giải ngân cho người bán
+      // Lúc này lockedBalance của seller = 10% (cọc) + 90% (vừa khóa) = 100%
       await walletService.releaseFunds(
         transaction.vehicle.sellerId,
-        depositAmount,
-        paidAmount,
-        commissionAmount,
+        totalVehiclePrice, // totalLockedAmount = 100% giá trị xe
+        totalVehiclePrice - commissionAmount, // revenueToReceive = 100% - hoa hồng
         tx,
       );
 

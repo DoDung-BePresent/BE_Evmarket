@@ -67,6 +67,18 @@ BEGIN
                 (listing_type_text = 'BATTERY' AND ad."batteryId" = auction_record.id)
               );
 
+            -- THÊM MỚI: Ghi lại giao dịch tài chính cho việc hoàn cọc
+            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, description, "createdAt", "updatedAt")
+            SELECT gen_random_uuid(), w.id, ad.amount, 'AUCTION_DEPOSIT_REFUND', 'COMPLETED', 'Refund for losing auction on ' || listing_type_text || ' #' || auction_record.id, now(), now()
+            FROM "AuctionDeposit" ad
+            JOIN "Wallet" w ON ad."userId" = w."userId"
+            WHERE ad."status" = 'PAID'
+              AND ad."userId" != winner_record."bidderId"
+              AND (
+                (listing_type_text = 'VEHICLE' AND ad."vehicleId" = auction_record.id) OR
+                (listing_type_text = 'BATTERY' AND ad."batteryId" = auction_record.id)
+              );
+
             UPDATE "AuctionDeposit"
             SET "status" = 'REFUNDED'
             WHERE "status" = 'PAID'

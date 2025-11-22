@@ -90,7 +90,8 @@ export const walletService = {
   },
   releaseLockedBalance: async (
     sellerId: string,
-    amount: number,
+    lockedAmountToRelease: number, // Số tiền thực sự đang bị khóa
+    revenueToReceive: number, // Số tiền người bán thực nhận
     tx?: PrismaTransactionClient,
   ) => {
     const prismaClient = tx || prisma;
@@ -98,22 +99,23 @@ export const walletService = {
       where: { userId: sellerId },
       data: {
         lockedBalance: {
-          decrement: amount,
+          decrement: lockedAmountToRelease, // Trừ đúng số tiền đã khóa
         },
         availableBalance: {
-          increment: amount,
+          increment: revenueToReceive, // Cộng đúng số tiền thực nhận
         },
       },
     });
 
+    // Ghi lại giao dịch tài chính cho người bán
     await prismaClient.financialTransaction.create({
       data: {
         walletId: wallet.id,
-        amount: amount,
-        type: "SALE_REVENUE", // Was "SALE_PAYOUT" -> use existing enum value
-        status: "COMPLETED", // required by schema
-        gateway: "INTERNAL", // required by schema
-        description: `Funds released from sale.`,
+        amount: revenueToReceive,
+        type: "SALE_REVENUE",
+        status: "COMPLETED",
+        gateway: "INTERNAL",
+        description: `Funds released from completed sale.`,
       },
     });
 

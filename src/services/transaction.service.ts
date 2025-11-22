@@ -204,7 +204,7 @@ export const transactionService = {
       async (tx) => {
         const transaction = await tx.transaction.findUnique({
           where: { id: transactionId },
-          include: { vehicle: true, battery: true, batteries: true }, // Thêm 'batteries'
+          include: { vehicle: true, battery: true, batteries: true },
         });
 
         if (
@@ -214,30 +214,59 @@ export const transactionService = {
           throw new BadRequestError("Transaction cannot be completed.");
         }
 
-        const listing =
-          transaction.vehicle ||
-          transaction.battery ||
-          (transaction.batteries && transaction.batteries[0]);
-
-        if (!listing) throw new InternalServerError("Listing not found");
-
+        // SỬA LỖI: Xử lý đúng cả giao dịch đơn lẻ và giao dịch con từ giỏ hàng
         const priceToUse = transaction.finalPrice;
         if (priceToUse === null) {
           throw new InternalServerError("Transaction is missing final price.");
         }
 
+        // Xác định người bán và sản phẩm
+        let sellerId: string;
+        let isAuction: boolean = false;
+
+        if (transaction.vehicle) {
+          // Trường hợp: Giao dịch mua xe
+          sellerId = transaction.vehicle.sellerId;
+          isAuction = transaction.vehicle.isAuction;
+        } else if (transaction.battery) {
+          // Trường hợp: Giao dịch mua 1 pin lẻ
+          sellerId = transaction.battery.sellerId;
+          isAuction = transaction.battery.isAuction;
+        } else if (transaction.batteries && transaction.batteries.length > 0) {
+          // Trường hợp: Giao dịch con từ giỏ hàng (nhiều pin cùng người bán)
+          sellerId = transaction.batteries[0].sellerId;
+          isAuction = transaction.batteries[0].isAuction;
+
+          const allSameSeller = transaction.batteries.every(
+            (b) => b.sellerId === sellerId,
+          );
+          if (!allSameSeller) {
+            throw new InternalServerError(
+              "Child transaction contains batteries from multiple sellers.",
+            );
+          }
+        } else {
+          throw new InternalServerError("Listing not found for transaction");
+        }
+
+        // Tính hoa hồng dựa trên giá trị thực tế của giao dịch
         const feeRule = await tx.fee.findUnique({
           where: {
-            type: listing.isAuction ? "AUCTION_SALE" : "REGULAR_SALE",
+            type: isAuction ? "AUCTION_SALE" : "REGULAR_SALE",
           },
         });
-        const commission = (listing.price * (feeRule?.percentage || 0)) / 100;
-        const amountToRelease = priceToUse - commission;
 
-        // Sử dụng hàm releaseLockedBalance
+        const commission = (priceToUse * (feeRule?.percentage || 0)) / 100;
+        const sellerRevenue = priceToUse - commission;
+
+        // SỬA LỖI CHÍNH: Thu hoa hồng vào ví hệ thống
+        await walletService.addCommissionFeeToSystemWallet(commission, tx);
+
+        // Giải ngân cho người bán (SAU KHI ĐÃ TRỪ hoa hồng)
         await walletService.releaseLockedBalance(
-          listing.sellerId,
-          amountToRelease,
+          sellerId,
+          priceToUse,
+          sellerRevenue,
           tx,
         );
 
@@ -247,7 +276,7 @@ export const transactionService = {
         });
       },
       {
-        timeout: 15000, // Tăng thời gian chờ
+        timeout: 15000,
       },
     );
   },
@@ -375,7 +404,13 @@ export const transactionService = {
 
       // Lấy tổng giá trị của xe
       const totalVehiclePrice = transaction.vehicle.price;
-      const depositAmount = totalVehiclePrice * 0.1;
+
+      // SỬA LỖI: Khóa số tiền 90% vừa thanh toán vào lockedBalance của người bán
+      await walletService.addLockedBalance(
+        transaction.vehicle.sellerId,
+        paidAmount,
+        tx,
+      );
 
       // Tìm quy tắc tính phí và tính hoa hồng
       const feeRule = await tx.fee.findUnique({
@@ -384,14 +419,15 @@ export const transactionService = {
       const commissionPercentage = feeRule?.percentage || 0;
       const commissionAmount = (totalVehiclePrice * commissionPercentage) / 100;
 
-      // Giải ngân toàn bộ số tiền đã khóa (10% cọc) và số tiền vừa thanh toán (90%)
-      // sau đó chuyển doanh thu cho người bán và hoa hồng cho hệ thống.
-      // Hàm releaseFunds đã bao gồm logic này.
+      // Thu hoa hồng cho hệ thống
+      await walletService.addCommissionFeeToSystemWallet(commissionAmount, tx);
+
+      // Giải ngân cho người bán
+      // Lúc này lockedBalance của seller = 10% (cọc) + 90% (vừa khóa) = 100%
       await walletService.releaseFunds(
         transaction.vehicle.sellerId,
-        depositAmount,
-        paidAmount,
-        commissionAmount,
+        totalVehiclePrice, // totalLockedAmount = 100% giá trị xe
+        totalVehiclePrice - commissionAmount, // revenueToReceive = 100% - hoa hồng
         tx,
       );
 

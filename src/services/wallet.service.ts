@@ -90,7 +90,8 @@ export const walletService = {
   },
   releaseLockedBalance: async (
     sellerId: string,
-    amount: number,
+    lockedAmountToRelease: number, // Số tiền thực sự đang bị khóa
+    revenueToReceive: number, // Số tiền người bán thực nhận
     tx?: PrismaTransactionClient,
   ) => {
     const prismaClient = tx || prisma;
@@ -98,22 +99,23 @@ export const walletService = {
       where: { userId: sellerId },
       data: {
         lockedBalance: {
-          decrement: amount,
+          decrement: lockedAmountToRelease, // Trừ đúng số tiền đã khóa
         },
         availableBalance: {
-          increment: amount,
+          increment: revenueToReceive, // Cộng đúng số tiền thực nhận
         },
       },
     });
 
+    // Ghi lại giao dịch tài chính cho người bán
     await prismaClient.financialTransaction.create({
       data: {
         walletId: wallet.id,
-        amount: amount,
-        type: "SALE_REVENUE", // Was "SALE_PAYOUT" -> use existing enum value
-        status: "COMPLETED", // required by schema
-        gateway: "INTERNAL", // required by schema
-        description: `Funds released from sale.`,
+        amount: revenueToReceive,
+        type: "SALE_REVENUE",
+        status: "COMPLETED",
+        gateway: "INTERNAL",
+        description: `Funds released from completed sale.`,
       },
     });
 
@@ -216,24 +218,22 @@ export const walletService = {
   },
   releaseFunds: async (
     sellerId: string,
-    lockedAmountToRelease: number, // Số tiền đang bị khóa cần giải ngân
-    newlyPaidAmount: number, // Số tiền mới thanh toán
-    commission: number,
+    totalLockedAmount: number, // Tổng số tiền đang bị khóa (100%)
+    revenueToReceive: number, // Doanh thu thực nhận (100% - hoa hồng)
     tx: Prisma.TransactionClient,
   ) => {
-    const totalRevenue = lockedAmountToRelease + newlyPaidAmount - commission;
+    // SỬA LỖI: Không tính toán gì ở đây nữa. Chỉ thực hiện lệnh từ service cha.
     await tx.wallet.update({
       where: { userId: sellerId },
       data: {
         lockedBalance: {
-          decrement: lockedAmountToRelease, // Chỉ trừ đi số tiền thực sự đã bị khóa
+          decrement: totalLockedAmount, // Trừ toàn bộ số tiền đã khóa
         },
         availableBalance: {
-          increment: totalRevenue, // Cộng vào số dư khả dụng
+          increment: revenueToReceive, // Cộng đúng doanh thu thực nhận
         },
       },
     });
-    await walletService.addCommissionFeeToSystemWallet(commission, tx);
   },
   refundToBuyer: async (
     buyerId: string,

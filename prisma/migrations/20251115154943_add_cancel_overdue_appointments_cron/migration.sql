@@ -37,10 +37,12 @@ BEGIN
             UPDATE "Wallet"
             SET "lockedBalance" = "lockedBalance" - overdue_txn."finalPrice"
             WHERE id = seller_wallet_id;
-
-            -- 2. Create a financial transaction record for the refund
+            
+            -- 2. Create financial transaction records for the refund for BOTH parties
             INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, description, "createdAt", "updatedAt")
-            VALUES (gen_random_uuid(), buyer_wallet_id, overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'Refund for failed appointment scheduling on transaction ' || overdue_txn.id, now(), now());
+            VALUES 
+                (gen_random_uuid(), buyer_wallet_id, overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'Refund for failed appointment on transaction ' || overdue_txn.id, now(), now()),
+                (gen_random_uuid(), seller_wallet_id, -overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'Deposit returned to buyer for transaction ' || overdue_txn.id, now(), now());
 
             -- 3. Update transaction and appointment status to CANCELLED
             UPDATE "Transaction" SET "status" = 'CANCELLED', "updatedAt" = now() WHERE id = overdue_txn.id;

@@ -131,6 +131,8 @@ export const appointmentService = {
             select: {
               id: true,
               status: true,
+              listingType: true,
+              type: true,
               vehicle: { select: { title: true, images: true } },
             },
           },

@@ -582,6 +582,8 @@ export const adminService = {
             select: {
               id: true,
               status: true,
+              listingType: true,
+              type: true,
               vehicle: { select: { id: true, title: true, images: true } },
             },
           },

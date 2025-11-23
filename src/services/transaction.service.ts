@@ -129,9 +129,10 @@ export const transactionService = {
     if (transaction.buyerId !== buyerId) {
       throw new ForbiddenError("You are not the buyer of this transaction.");
     }
-    if (transaction.status !== "SHIPPED") {
+    const allowedStatuses: string[] = ["SHIPPED", "APPOINTMENT_SCHEDULED"];
+    if (!allowedStatuses.includes(transaction.status)) {
       throw new BadRequestError(
-        "Transaction must be in SHIPPED status to be confirmed.",
+        "Transaction must be in SHIPPED or APPOINTMENT_SCHEDULED status to be confirmed.",
       );
     }
 

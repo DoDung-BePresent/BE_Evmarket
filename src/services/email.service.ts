@@ -106,7 +106,7 @@ export const emailService = {
     to: string,
     name: string | null,
     transactionId: string,
-    pdfBuffer?: Buffer,
+    // pdfBuffer?: Buffer,
   ) => {
     const subject = `Your Purchase Contract for Transaction #${transactionId}`;
     const templatePath = path.join(
@@ -117,20 +117,17 @@ export const emailService = {
       "contractNotification.ejs",
     );
 
+    const viewUrl = `${config.CLIENT_URL}/profile/transactions/${transactionId}/contract`;
+    const downloadUrl = `${config.SERVER_URL}/contracts/${transactionId}/download`;
+
     const html = await ejs.renderFile(templatePath, {
       name: name || "user",
       transactionId,
+      viewUrl,
+      downloadUrl,
     });
 
-    const attachments = [];
-    if (pdfBuffer) {
-      attachments.push({
-        filename: `contract-${transactionId}.pdf`,
-        content: pdfBuffer,
-      });
-    }
-
-    await sendEmail(to, subject, html, attachments);
+    await sendEmail(to, subject, html);
   },
   sendPasswordResetEmail: async (
     to: string,

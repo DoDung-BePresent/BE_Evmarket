@@ -39,10 +39,10 @@ BEGIN
             WHERE id = seller_wallet_id;
             
             -- 2. Create financial transaction records for the refund for BOTH parties
-            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, description, "createdAt", "updatedAt")
+            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, gateway, description, "createdAt", "updatedAt")
             VALUES 
-                (gen_random_uuid(), buyer_wallet_id, overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'Refund for failed appointment on transaction ' || overdue_txn.id, now(), now()),
-                (gen_random_uuid(), seller_wallet_id, -overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'Deposit returned to buyer for transaction ' || overdue_txn.id, now(), now());
+                (gen_random_uuid(), buyer_wallet_id, overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'INTERNAL', 'Refund for failed appointment on transaction ' || overdue_txn.id, now(), now()),
+                (gen_random_uuid(), seller_wallet_id, -overdue_txn."finalPrice", 'REFUND', 'COMPLETED', 'INTERNAL', 'Deposit returned to buyer from transaction ' || overdue_txn.id, now(), now());
 
             -- 3. Update transaction and appointment status to CANCELLED
             UPDATE "Transaction" SET "status" = 'CANCELLED', "updatedAt" = now() WHERE id = overdue_txn.id;

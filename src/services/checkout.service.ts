@@ -30,6 +30,46 @@ import {
   NotFoundError,
 } from "@/libs/error";
 
+// HÀM HELPER MỚI: Xử lý logic sau khi thanh toán cho xe thành công
+const _handleSuccessfulVehiclePayment = async (transaction: any, tx: any) => {
+  // Cập nhật trạng thái xe thành RESERVED (chờ giao dịch)
+  await tx.vehicle.update({
+    where: { id: transaction.vehicleId! },
+    data: { status: "RESERVED" },
+  });
+
+  // Tạo lịch hẹn
+  const appointmentDeadline = new Date();
+  appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
+
+  await tx.appointment.create({
+    data: {
+      transactionId: transaction.id,
+      buyerId: transaction.buyerId,
+      sellerId: transaction.vehicle.sellerId,
+      vehicleId: transaction.vehicleId,
+      location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
+    },
+  });
+
+  // Cập nhật trạng thái giao dịch
+  // Nếu là đặt cọc (SALE), trạng thái là DEPOSIT_PAID
+  // Nếu là thanh toán đấu giá (AUCTION), trạng thái là PAID
+  const newStatus = transaction.type === "SALE" ? "DEPOSIT_PAID" : "PAID";
+
+  return tx.transaction.update({
+    where: { id: transaction.id },
+    data: {
+      status: newStatus,
+      appointmentDeadline: appointmentDeadline,
+    },
+    include: {
+      buyer: true,
+      vehicle: { include: { seller: true } },
+    },
+  });
+};
+
 export const checkoutService = {
   initiateCheckout: async (
     buyerId: string,
@@ -335,48 +375,13 @@ export const checkoutService = {
         await walletService.updateBalance(buyerId, -price, "PURCHASE", tx);
         await walletService.addLockedBalance(listing.sellerId, price, tx);
 
-        // Nếu là giao dịch đặt cọc xe
-        if (
-          transaction.listingType === "VEHICLE" &&
-          transaction.type === "SALE"
-        ) {
-          const appointmentDeadline = new Date();
-          appointmentDeadline.setDate(appointmentDeadline.getDate() + 7);
-
-          await tx.appointment.create({
-            data: {
-              transactionId: transaction.id,
-              buyerId: transaction.buyerId,
-              sellerId: listing.sellerId,
-              vehicleId: transaction.vehicleId,
-              location:
-                "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
-            },
-          });
-
-          await tx.vehicle.update({
-            where: { id: transaction.vehicleId! },
-            data: { status: "RESERVED" },
-          });
-
-          return tx.transaction.update({
-            where: { id: transactionId },
-            data: {
-              status: "DEPOSIT_PAID",
-              isDepositPaid: true,
-              appointmentDeadline: appointmentDeadline,
-            },
-            include: {
-              vehicle: { include: { seller: true } },
-              battery: { include: { seller: true } },
-              buyer: true,
-            },
-          });
+        // SỬA LỖI: Gọi hàm helper để xử lý cho tất cả các loại giao dịch xe
+        if (transaction.listingType === "VEHICLE") {
+          return _handleSuccessfulVehiclePayment(transaction, tx);
         }
 
-        // Nếu là giao dịch mua pin (luồng cũ)
-        const model = transaction.vehicleId ? tx.vehicle : tx.battery;
-        await (model as any).update({
+        // Logic cho mua pin (không đổi)
+        await tx.battery.update({
           where: { id: listing.id },
           data: { status: "SOLD" },
         });
@@ -562,46 +567,9 @@ export const checkoutService = {
           );
         }
 
-        // Nếu là giao dịch đặt cọc xe
+        // SỬA LỖI: Gọi hàm helper để xử lý cho tất cả các loại giao dịch xe
         if (transaction.listingType === "VEHICLE") {
-          await walletService.addLockedBalance(
-            listing.sellerId,
-            paidAmount,
-            tx,
-          );
-
-          const appointmentDeadline = new Date();
-          appointmentDeadline.setDate(appointmentDeadline.getDate() + 7); // Hạn 7 ngày
-
-          // TẠO LẠI APPOINTMENT
-          await tx.appointment.create({
-            data: {
-              transactionId: transaction.id,
-              buyerId: transaction.buyerId,
-              sellerId: listing.sellerId,
-              location:
-                "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
-            },
-          });
-
-          // Cập nhật trạng thái xe thành RESERVED
-          await tx.vehicle.update({
-            where: { id: transaction.vehicleId! },
-            data: { status: "RESERVED" },
-          });
-
-          // Cập nhật trạng thái giao dịch thành DEPOSIT_PAID
-          return tx.transaction.update({
-            where: { id: transactionId },
-            data: {
-              status: "DEPOSIT_PAID",
-              appointmentDeadline: appointmentDeadline, // Lưu deadline vào Transaction
-            },
-            include: {
-              buyer: true,
-              vehicle: { include: { seller: true } },
-            },
-          });
+          return _handleSuccessfulVehiclePayment(transaction, tx);
         }
 
         // Nếu là mua pin đơn lẻ

@@ -47,8 +47,8 @@ BEGIN
             UPDATE "AuctionDeposit" SET "status" = 'FORFEITED' WHERE "id" = deposit_record.id;
 
             -- THÊM MỚI: Ghi lại giao dịch tài chính
-            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, description, "createdAt", "updatedAt")
-            SELECT gen_random_uuid(), w.id, deposit_record.amount, 'SALE_REVENUE', 'COMPLETED', 'Auction deposit forfeited by buyer for transaction ' || expired_txn.id, now(), now()
+            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, gateway, description, "createdAt", "updatedAt")
+            SELECT gen_random_uuid(), w.id, deposit_record.amount, 'SALE_REVENUE', 'COMPLETED', 'INTERNAL', 'Auction deposit forfeited by buyer for transaction ' || expired_txn.id, now(), now()
             FROM "Wallet" w WHERE w."userId" = listing_seller_id;
             
         END IF;

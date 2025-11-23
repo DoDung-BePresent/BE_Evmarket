@@ -272,6 +272,45 @@ export const auctionService = {
         },
       });
 
+      // SỬA LỖI: Nếu là mua xe, tạo lịch hẹn và cập nhật trạng thái
+      if (listingType === "VEHICLE") {
+        const appointmentDeadline = new Date();
+        appointmentDeadline.setDate(appointmentDeadline.getDate() + 7);
+
+        await tx.appointment.create({
+          data: {
+            transactionId: transaction.id,
+            buyerId: userId,
+            sellerId: listing.sellerId,
+            vehicleId: listingId,
+            location: "7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Thành phố Hồ Chí Minh",
+          },
+        });
+
+        // Cập nhật lại trạng thái giao dịch thành APPOINTMENT_SCHEDULED
+        const updatedTransaction = await tx.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: "APPOINTMENT_SCHEDULED",
+            appointmentDeadline: appointmentDeadline,
+          },
+          include: {
+            vehicle: { include: { seller: true } },
+            battery: { include: { seller: true } },
+            buyer: true,
+          },
+        });
+
+        // Hoàn cọc và trả về giao dịch đã được cập nhật
+        await walletService.refundAllDeposits(
+          listingId,
+          listingType,
+          userId,
+          tx,
+        );
+        return updatedTransaction;
+      }
+
       await walletService.refundAllDeposits(listingId, listingType, userId, tx);
 
       await walletService.createFinancialTransaction(

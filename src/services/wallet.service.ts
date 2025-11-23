@@ -222,8 +222,8 @@ export const walletService = {
     revenueToReceive: number, // Doanh thu thực nhận (100% - hoa hồng)
     tx: Prisma.TransactionClient,
   ) => {
-    // SỬA LỖI: Không tính toán gì ở đây nữa. Chỉ thực hiện lệnh từ service cha.
-    await tx.wallet.update({
+    // Không tính toán gì ở đây nữa. Chỉ thực hiện lệnh từ service cha.
+    const wallet = await tx.wallet.update({
       where: { userId: sellerId },
       data: {
         lockedBalance: {
@@ -232,6 +232,18 @@ export const walletService = {
         availableBalance: {
           increment: revenueToReceive, // Cộng đúng doanh thu thực nhận
         },
+      },
+    });
+
+    // SỬA LỖI: Bổ sung ghi lại FinancialTransaction cho người bán
+    await tx.financialTransaction.create({
+      data: {
+        walletId: wallet.id,
+        amount: revenueToReceive,
+        type: "SALE_REVENUE",
+        status: "COMPLETED",
+        gateway: "INTERNAL",
+        description: `Revenue from completed vehicle sale.`,
       },
     });
   },

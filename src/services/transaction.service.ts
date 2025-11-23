@@ -208,10 +208,12 @@ export const transactionService = {
           include: { vehicle: true, battery: true, batteries: true },
         });
 
-        if (
-          !transaction ||
-          (transaction.status !== "SHIPPED" && transaction.status !== "PAID")
-        ) {
+        const allowedStatuses: string[] = [
+          "SHIPPED",
+          "PAID",
+          "APPOINTMENT_SCHEDULED",
+        ];
+        if (!transaction || !allowedStatuses.includes(transaction.status)) {
           throw new BadRequestError("Transaction cannot be completed.");
         }
 

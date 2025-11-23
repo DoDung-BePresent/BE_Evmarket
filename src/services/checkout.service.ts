@@ -190,7 +190,11 @@ export const checkoutService = {
         parentTransaction.id,
         buyerId,
       );
-      return { transactionId: paidTransaction.id, paymentInfo: null };
+
+      return {
+        transactionId: paidTransaction.id,
+        paymentInfo: { amount: totalAmount },
+      };
     } else if (paymentMethod === "MOMO") {
       const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;
       const redirectUrl =
@@ -259,7 +263,11 @@ export const checkoutService = {
       }
       // SỬA LỖI: Gọi payWithWallet ngay lập tức để xử lý thanh toán và tạo hợp đồng
       await checkoutService.payWithWallet(transaction.id, buyerId);
-      return { transactionId: transaction.id, paymentInfo: null };
+
+      return {
+        transactionId: transaction.id,
+        paymentInfo: { amount: priceToPay },
+      };
     }
 
     const ipnUrl = `${config.SERVER_URL}/payments/momo/ipn`;

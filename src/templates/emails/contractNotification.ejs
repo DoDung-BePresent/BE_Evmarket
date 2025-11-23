@@ -14,16 +14,44 @@
         border-radius: 5px;
       "
     >
-      <h2 style="color: #0275d8">Purchase Contract Attached</h2>
+      <h2 style="color: #0275d8">Your Purchase Contract is Ready</h2>
       <p>Hello <%= name %>,</p>
       <p>
-        Thank you for your transaction on EV-Market. The purchase contract for
-        your transaction #<strong><%= transactionId %></strong> is attached to
-        this email.
+        Thank you for your transaction on EV-Market. The electronic purchase
+        contract for your transaction #<strong><%= transactionId %></strong> is
+        now available.
       </p>
       <p>
-        Please keep this document for your records. You can also access it
-        anytime from your transaction history on our platform.
+        You can view or download your contract using the links below. We
+        recommend keeping this document for your records.
+      </p>
+      <p style="text-align: center; margin: 25px 0">
+        <a
+          href="<%= viewUrl %>"
+          style="
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #0275d8;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+          "
+          >View Contract</a
+        >
+        <a
+          href="<%= downloadUrl %>"
+          style="
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #5cb85c;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+          "
+          >Download PDF</a
+        >
       </p>
       <p>Best regards,<br />The EV-Market Team</p>
     </div>

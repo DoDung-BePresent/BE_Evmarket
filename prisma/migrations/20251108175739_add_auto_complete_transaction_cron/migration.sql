@@ -57,6 +57,12 @@ BEGIN
             SET "availableBalance" = "availableBalance" + commission_amount
             WHERE "id" = system_wallet_id;
 
+            -- SỬA LỖI: Bổ sung ghi lại FinancialTransaction cho cả người bán và hệ thống
+            INSERT INTO "FinancialTransaction" (id, "walletId", amount, type, status, gateway, description, "createdAt", "updatedAt")
+            VALUES
+                (gen_random_uuid(), (SELECT id FROM "Wallet" WHERE "userId" = listing_seller_id), seller_revenue, 'SALE_REVENUE', 'COMPLETED', 'INTERNAL', 'Auto-completed sale for transaction ' || txn.id, now(), now()),
+                (gen_random_uuid(), system_wallet_id, commission_amount, 'COMMISSION', 'COMPLETED', 'INTERNAL', 'Commission from auto-completed transaction ' || txn.id, now(), now());
+
             -- Finally, update the transaction status to COMPLETED
             UPDATE "Transaction"
             SET "status" = 'COMPLETED'

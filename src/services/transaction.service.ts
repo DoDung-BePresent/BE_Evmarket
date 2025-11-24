@@ -442,7 +442,10 @@ export const transactionService = {
 
       return tx.transaction.update({
         where: { id: transactionId },
-        data: { status: "COMPLETED" }, // Chuyển thẳng sang COMPLETED
+        data: {
+          status: "COMPLETED",
+          finalPrice: totalVehiclePrice, // Cập nhật giá cuối cùng thành 100%
+        },
       });
     });
   },
